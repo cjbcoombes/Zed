@@ -19,7 +19,18 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="assembler\assembler.cpp" />
     <ClCompile Include="main\main.cpp" />
+    <ClCompile Include="utils\utils.cpp" />
+    <ClCompile Include="vm\executor.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="assembler\assembler.h" />
+    <ClInclude Include="main\main.h" />
+    <ClInclude Include="utils\bytecode.h" />
+    <ClInclude Include="utils\opcode.h" />
+    <ClInclude Include="utils\utils.h" />
+    <ClInclude Include="vm\executor.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

@@ -16,10 +16,48 @@
     <Filter Include="Source Files\main">
       <UniqueIdentifier>{689cbd60-37e3-498f-b897-d4b6952cd34f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\utils">
+      <UniqueIdentifier>{a754a5cd-de4b-44bf-908d-f17b7b4029af}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\assembler">
+      <UniqueIdentifier>{98c9b458-4696-41a0-98c7-b9e36739b188}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\vm">
+      <UniqueIdentifier>{c8d13fab-ef01-4c3a-9c5d-b889395df53e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main\main.cpp">
       <Filter>Source Files\main</Filter>
     </ClCompile>
+    <ClCompile Include="utils\utils.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="assembler\assembler.cpp">
+      <Filter>Source Files\assembler</Filter>
+    </ClCompile>
+    <ClCompile Include="vm\executor.cpp">
+      <Filter>Source Files\vm</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="utils\utils.h">
+      <Filter>Source Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="main\main.h">
+      <Filter>Source Files\main</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\opcode.h">
+      <Filter>Source Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="assembler\assembler.h">
+      <Filter>Source Files\assembler</Filter>
+    </ClInclude>
+    <ClInclude Include="vm\executor.h">
+      <Filter>Source Files\vm</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\bytecode.h">
+      <Filter>Source Files\utils</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
