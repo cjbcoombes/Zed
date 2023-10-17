@@ -14,6 +14,7 @@
 - Tokenizer does matching with a word tree rather than certain very specific tokens
 - Formalize the grammar of the language somewhat
 - No more `Constructor(varIn) : var(varIn)` just `var` instead of `varIn`
+- Use safe pointers, and const
 
 ##### Formatting?
 - enums with strings should have `Enum`, `enumCount`, and `enumStrings` defined

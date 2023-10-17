@@ -25,6 +25,12 @@
     <Filter Include="Source Files\vm">
       <UniqueIdentifier>{c8d13fab-ef01-4c3a-9c5d-b889395df53e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Lang">
+      <UniqueIdentifier>{14651311-fc10-4bea-b6cb-002e8b40a8c1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Lang\AssemblyExamples">
+      <UniqueIdentifier>{19f41b2e-9d97-47f6-9314-43dedd2d248f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main\main.cpp">
@@ -38,6 +44,9 @@
     </ClCompile>
     <ClCompile Include="vm\executor.cpp">
       <Filter>Source Files\vm</Filter>
+    </ClCompile>
+    <ClCompile Include="utils\bytecode.cpp">
+      <Filter>Source Files\utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -59,5 +68,43 @@
     <ClInclude Include="utils\bytecode.h">
       <Filter>Source Files\utils</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Lang\AssemblyExamples\babylonian_sqrt.azm">
+      <Filter>Source Files\Lang\AssemblyExamples</Filter>
+    </None>
+    <None Include="Lang\AssemblyExamples\babylonian_sqrt.eze">
+      <Filter>Source Files\Lang\AssemblyExamples</Filter>
+    </None>
+    <None Include="Lang\AssemblyExamples\example1.azm">
+      <Filter>Source Files\Lang\AssemblyExamples</Filter>
+    </None>
+    <None Include="Lang\AssemblyExamples\example1.eze">
+      <Filter>Source Files\Lang\AssemblyExamples</Filter>
+    </None>
+    <None Include="Lang\AssemblyExamples\fibonacci_fast.azm">
+      <Filter>Source Files\Lang\AssemblyExamples</Filter>
+    </None>
+    <None Include="Lang\AssemblyExamples\fibonacci_fast.eze">
+      <Filter>Source Files\Lang\AssemblyExamples</Filter>
+    </None>
+    <None Include="Lang\AssemblyExamples\fibonacci_recursive.azm">
+      <Filter>Source Files\Lang\AssemblyExamples</Filter>
+    </None>
+    <None Include="Lang\AssemblyExamples\fibonacci_recursive.eze">
+      <Filter>Source Files\Lang\AssemblyExamples</Filter>
+    </None>
+    <None Include="Lang\AssemblyExamples\guessing_game.azm">
+      <Filter>Source Files\Lang\AssemblyExamples</Filter>
+    </None>
+    <None Include="Lang\AssemblyExamples\guessing_game.eze">
+      <Filter>Source Files\Lang\AssemblyExamples</Filter>
+    </None>
+    <None Include="Lang\AssemblyExamples\simple_user_input.azm">
+      <Filter>Source Files\Lang\AssemblyExamples</Filter>
+    </None>
+    <None Include="Lang\AssemblyExamples\simple_user_input.eze">
+      <Filter>Source Files\Lang\AssemblyExamples</Filter>
+    </None>
   </ItemGroup>
 </Project>

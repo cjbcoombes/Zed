@@ -1,0 +1,46 @@
+; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+; 
+; Babylonian Square Root Algorithm
+; 
+; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+; 
+; Approximation is as follows, repeated for some number of iterations (n = number to take sqrt of, x = estimate)
+; 
+; x_initial = n / 2
+; x_next = (x + n/x) / 2
+; 
+; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+globalw %N, 1024
+globalw %ITERS, 10
+
+globalstr %SQOF "The square root of \c[92m"
+globalstr %IS	"\c[0m is \c[92m"
+globalstr %ENDL	"\c[0m\n"
+
+movw W0, 2.					; const 2
+loadw W1, PP, %N			; const N
+movw W2, 1					; counter
+
+@OUTER
+	loadw W3, PP, %ITERS	; iters
+
+	itof W4, W2				; n
+	fdiv W5, W4, W0			; Current estimate (k)
+
+	@INNER
+		fdiv W6, W4, W5		; n/k
+		fadd W5, W5, W6		; k + n/k
+		fdiv W5, W5, W0		; (k + n/k) / 2
+		idec W3
+		jmpnz @INNER
+	
+	prntstr PP, %SQOF
+	rprnti W2
+	prntstr PP, %IS
+	rprntf W5
+	prntstr PP, %ENDL
+
+	iinc W2
+	icmple W2, W1
+	jmpnz @OUTER

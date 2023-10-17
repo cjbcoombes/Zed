@@ -1,4 +1,6 @@
-#include "../utils/utils.h"
+#pragma once
+#include "..\utils\utils.h"
+#include "..\assembler\assembler.h"
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Main
@@ -9,6 +11,7 @@ int main(int argc, const char* args[]);
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Command Line Arguments
 
+// The possible cli args
 enum class CLArg {
 	DEBUG,
 	NODEBUG,

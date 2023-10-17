@@ -215,6 +215,7 @@ namespace bytecode {
 		ARG_VAR,		// 5 (Only for setting vars, use ARG_WORD for reading them)
 		ARG_STR			// 6
 	};
+	// A list of the arguments for each opcode
 	constexpr int opcodeArgs[][OPCODE_MAX_ARGS] = {
 		{0, 0, 0},	// NOP
 		{0, 0, 0},	// HALT

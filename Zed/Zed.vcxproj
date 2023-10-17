@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="assembler\assembler.cpp" />
     <ClCompile Include="main\main.cpp" />
+    <ClCompile Include="utils\bytecode.cpp" />
     <ClCompile Include="utils\utils.cpp" />
     <ClCompile Include="vm\executor.cpp" />
   </ItemGroup>
@@ -31,6 +32,20 @@
     <ClInclude Include="utils\opcode.h" />
     <ClInclude Include="utils\utils.h" />
     <ClInclude Include="vm\executor.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Lang\AssemblyExamples\babylonian_sqrt.azm" />
+    <None Include="Lang\AssemblyExamples\babylonian_sqrt.eze" />
+    <None Include="Lang\AssemblyExamples\example1.azm" />
+    <None Include="Lang\AssemblyExamples\example1.eze" />
+    <None Include="Lang\AssemblyExamples\fibonacci_fast.azm" />
+    <None Include="Lang\AssemblyExamples\fibonacci_fast.eze" />
+    <None Include="Lang\AssemblyExamples\fibonacci_recursive.azm" />
+    <None Include="Lang\AssemblyExamples\fibonacci_recursive.eze" />
+    <None Include="Lang\AssemblyExamples\guessing_game.azm" />
+    <None Include="Lang\AssemblyExamples\guessing_game.eze" />
+    <None Include="Lang\AssemblyExamples\simple_user_input.azm" />
+    <None Include="Lang\AssemblyExamples\simple_user_input.eze" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

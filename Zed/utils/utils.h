@@ -1,9 +1,10 @@
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Includes
+#pragma once
 
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <vector>
+#include <unordered_map>
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ANSI codes (and other io utils)
@@ -39,6 +40,9 @@ int lookupString(const char* const& match, const char* const stringArr[], const 
 
 // Holds flags set as bits
 struct Flags {
+	static constexpr int FLAG_DEBUG = 1;
+	static constexpr int FLAG_PROFILE = 2;
+
 	int bits;
 
 	Flags();

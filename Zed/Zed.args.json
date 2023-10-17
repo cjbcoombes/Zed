@@ -4,7 +4,7 @@
   "Items": [
     {
       "Id": "5ea19085-abb7-4508-aea9-ad185af8827b",
-      "Command": "-debug -compile -bob"
+      "Command": "-debug -assemble \".\\Lang\\AssemblyExamples\\guessing_game.azm\" \".\\Lang\\AssemblyExamples\\guessing_game.eze\""
     }
   ]
 }
