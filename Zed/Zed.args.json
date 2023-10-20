@@ -3,8 +3,20 @@
   "Id": "fcaf17ea-72f6-483a-a663-40fd8ca5f75d",
   "Items": [
     {
+      "Id": "86eb3e22-25b5-46d3-b3b5-9261a3dae1ee",
+      "Command": "-debug"
+    },
+    {
       "Id": "5ea19085-abb7-4508-aea9-ad185af8827b",
-      "Command": "-debug -assemble \".\\Lang\\AssemblyExamples\\guessing_game.azm\" \".\\Lang\\AssemblyExamples\\guessing_game.eze\""
+      "Command": "-assemble \".\\Lang\\AssemblyExamples\\guessing_game.azm\" \".\\Lang\\AssemblyExamples\\guessing_game.eze\""
+    },
+    {
+      "Id": "62513ae1-c161-4b27-b6b3-cf887e644ed1",
+      "Command": "-execute \".\\Lang\\AssemblyExamples\\guessing_game.eze\""
+    },
+    {
+      "Id": "3a08cef5-7b06-4436-81ca-e35c68416aa1",
+      "Command": "-wow"
     }
   ]
 }

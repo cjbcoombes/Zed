@@ -20,19 +20,19 @@ int assembler::assemble(const char* const& inputPath, const char* const& outputP
 	using namespace assembler;
 	using std::cout;
 
-	cout << IO_MAIN "Attempting to assemble file >> " << inputPath << " << into output file >> " << outputPath << " <<\n" IO_NORM;
+	cout << IO_MAIN "Attempting to assemble file \"" << inputPath << "\" into output file \"" << outputPath << "\"\n" IO_NORM;
 
 	std::fstream inputFile, outputFile;
 
 	inputFile.open(inputPath, std::ios::in);
 	if (!inputFile.is_open()) {
-		cout << IO_ERR "Could not open file >> " << inputPath << " <<" IO_NORM IO_END;
+		cout << IO_ERR "Could not open file \"" << inputPath << "\"" IO_NORM IO_END;
 		return 1;
 	}
 
 	outputFile.open(outputPath, std::ios::out | std::ios::binary | std::ios::trunc);
 	if (!outputFile.is_open()) {
-		cout << IO_ERR "Could not open file >> " << outputPath << " <<" IO_NORM IO_END;
+		cout << IO_ERR "Could not open file \"" << outputPath << "\"" IO_NORM IO_END;
 		return 1;
 	}
 
@@ -245,12 +245,12 @@ int assembler::assemble_(std::iostream& inputFile, std::iostream& outputFile, As
 						break;
 
 					case 1: // ARG_WORD_REG
-						reg = parseWordRegister(str, strlen, line, column);
+						reg = parseWordReg(str, strlen, line, column);
 						ASM_WRITE(reg, reg_t);
 						break;
 
 					case 2: // ARG_BYTE_REG
-						reg = parseByteRegister(str, strlen, line, column);
+						reg = parseByteReg(str, strlen, line, column);
 						ASM_WRITE(reg, reg_t);
 						break;
 
@@ -261,13 +261,13 @@ int assembler::assemble_(std::iostream& inputFile, std::iostream& outputFile, As
 							ASM_WRITE(labelPlaceholder, word_t);
 						} else {
 							// TODO : printed wrong line/column?
-							word = parseNumber<word_t, AssemblerException::ErrorType::INVALID_WORD_PARSE>(str, strlen, line, column);
+							word = parseWord(str, strlen, line, column);
 							ASM_WRITE(word, word_t);
 						}
 						break;
 
 					case 4: // ARG_BYTE
-						byte = parseNumber<byte_t, AssemblerException::ErrorType::INVALID_BYTE_PARSE>(str, strlen, line, column);
+						byte = parseByte(str, strlen, line, column);
 						ASM_WRITE(byte, byte_t);
 						break;
 
@@ -283,7 +283,9 @@ int assembler::assemble_(std::iostream& inputFile, std::iostream& outputFile, As
 						break;
 
 					case 6: // ARG_STR
-						ASM_WRITERAW(str, strlen + 1);
+						// Basically this: ASM_WRITERAW(str, strlen + 1);
+						outputFile.write(str, static_cast<std::streamsize>(strlen) + 1);
+						byteCounter += strlen + 1;
 						break;
 				}
 
@@ -334,7 +336,7 @@ int assembler::assemble_(std::iostream& inputFile, std::iostream& outputFile, As
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Parsing Helper Functions
 
-bytecode::types::reg_t assembler::parseWordRegister(char* const& str, const int& strlen, const int& line, const int& column) {
+bytecode::types::reg_t assembler::parseWordReg(char* const& str, const int& strlen, const int& line, const int& column) {
 	using namespace assembler;
 	using namespace bytecode;
 
@@ -347,7 +349,7 @@ bytecode::types::reg_t assembler::parseWordRegister(char* const& str, const int&
 		if (match == reg::PP || match == reg::BP) return match;
 		else throw ex;
 	} else if (str[0] == 'W') {
-		types::reg_t out = parseNumber<types::reg_t, AssemblerException::ErrorType::INVALID_WORD_REG_PARSE>(str + 1, strlen - 1, line, column);
+		types::reg_t out = parseReg(str + 1, strlen - 1, line, column, AssemblerException::ErrorType::INVALID_WORD_REG_PARSE);
 
 		if (out >= NUM_WORD_REGISTERS || out < 0) {
 			throw ex;
@@ -359,7 +361,7 @@ bytecode::types::reg_t assembler::parseWordRegister(char* const& str, const int&
 	throw ex;
 }
 
-bytecode::types::reg_t assembler::parseByteRegister(char* const& str, const int& strlen, const int& line, const int& column) {
+bytecode::types::reg_t assembler::parseByteReg(char* const& str, const int& strlen, const int& line, const int& column) {
 	using namespace assembler;
 	using namespace bytecode;
 
@@ -372,7 +374,7 @@ bytecode::types::reg_t assembler::parseByteRegister(char* const& str, const int&
 		if (match == reg::FZ) return match;
 		else throw ex;
 	} else if (str[0] == 'B') {
-		types::reg_t out = parseNumber<types::reg_t, AssemblerException::ErrorType::INVALID_BYTE_REG_PARSE>(str + 1, strlen - 1, line, column);
+		types::reg_t out = parseReg(str + 1, strlen - 1, line, column, AssemblerException::ErrorType::INVALID_BYTE_REG_PARSE);
 
 		if (out >= NUM_WORD_REGISTERS || out < 0) {
 			throw ex;
@@ -384,12 +386,13 @@ bytecode::types::reg_t assembler::parseByteRegister(char* const& str, const int&
 	throw ex;
 }
 
-template<typename T, assembler::AssemblerException::ErrorType eType>
-T assembler::parseNumber(const char* str, int strlen, const int& line, const int& column) {
-	AssemblerException ex(eType, line, column);
+bytecode::types::word_t assembler::parseWord(const char* str, int strlen, const int& line, const int& column) {
+	using bytecode::types::word_t;
 
-	T base = 10;
-	T mul = 1;
+	AssemblerException ex(AssemblerException::ErrorType::INVALID_WORD_PARSE, line, column);
+
+	word_t base = 10;
+	word_t mul = 1;
 
 	if (str[0] == '-') {
 		str++;
@@ -419,14 +422,13 @@ T assembler::parseNumber(const char* str, int strlen, const int& line, const int
 		}
 	}
 
-	T out = 0;
+	word_t out = 0;
 	bool isFloat = false;
 	char c;
 	while (strlen > 0) {
 		c = *str;
 
 		if (c == '.') {
-			if (sizeof(T) != sizeof(float)) throw ex;
 			isFloat = true;
 			strlen--;
 			str++;
@@ -482,8 +484,141 @@ T assembler::parseNumber(const char* str, int strlen, const int& line, const int
 
 		floatOut += static_cast<float>(out);
 		floatOut *= mul;
-		return *reinterpret_cast<T*>(&floatOut);
+		return *reinterpret_cast<word_t*>(&floatOut);
 	}
 
 	return out * mul;
+}
+
+bytecode::types::byte_t assembler::parseByte(const char* str, int strlen, const int& line, const int& column) {
+	using bytecode::types::byte_t;
+
+	AssemblerException ex(AssemblerException::ErrorType::INVALID_BYTE_PARSE, line, column);
+
+	byte_t base = 10;
+	byte_t mul = 1;
+
+	if (str[0] == '-') {
+		str++;
+		strlen--;
+		mul = -1;
+	}
+
+	if (strlen > 2 && str[0] == '0') {
+		char t = str[1];
+		if ((t < '0' || t > '9') && t != '.') {
+			str += 2;
+			strlen -= 2;
+			switch (t) {
+				case 'x':
+					base = 16;
+					break;
+
+				case 'b':
+					base = 2;
+					break;
+
+				case 'd':break;
+
+				default:
+					throw ex;
+			}
+		}
+	}
+
+	byte_t out = 0;
+	bool isFloat = false;
+	char c;
+	while (strlen > 0) {
+		c = *str;
+
+		if (c == '.') {
+			throw ex;
+		}
+
+		out *= base;
+
+		if ('0' <= c && c <= '9') {
+			if (c - '0' >= base) throw ex;
+			out += c - '0';
+		} else if ('A' <= c && c <= 'Z') {
+			if (c - 'A' + 10 >= base) throw ex;
+			out += c - 'A' + 10;
+		} else if ('a' <= c && c <= 'z') {
+			if (c - 'a' + 10 >= base) throw ex;
+			out += c - 'a' + 10;
+		} else {
+			throw ex;
+		}
+
+		strlen--;
+		str++;
+	}
+
+	return out * mul;
+}
+
+bytecode::types::reg_t assembler::parseReg(const char* str, int strlen, const int& line, const int& column, AssemblerException::ErrorType eType) {
+	using bytecode::types::reg_t;
+
+	AssemblerException ex(eType, line, column);
+
+	reg_t base = 10;
+
+	if (str[0] == '-') {
+		throw ex;
+	}
+
+	if (strlen > 2 && str[0] == '0') {
+		char t = str[1];
+		if ((t < '0' || t > '9') && t != '.') {
+			str += 2;
+			strlen -= 2;
+			switch (t) {
+				case 'x':
+					base = 16;
+					break;
+
+				case 'b':
+					base = 2;
+					break;
+
+				case 'd':break;
+
+				default:
+					throw ex;
+			}
+		}
+	}
+
+	reg_t out = 0;
+	bool isFloat = false;
+	char c;
+	while (strlen > 0) {
+		c = *str;
+
+		if (c == '.') {
+			throw ex;
+		}
+
+		out *= base;
+
+		if ('0' <= c && c <= '9') {
+			if (c - '0' >= base) throw ex;
+			out += c - '0';
+		} else if ('A' <= c && c <= 'Z') {
+			if (c - 'A' + 10 >= base) throw ex;
+			out += c - 'A' + 10;
+		} else if ('a' <= c && c <= 'z') {
+			if (c - 'a' + 10 >= base) throw ex;
+			out += c - 'a' + 10;
+		} else {
+			throw ex;
+		}
+
+		strlen--;
+		str++;
+	}
+
+	return out;
 }

@@ -46,5 +46,23 @@ namespace executor {
 		virtual const char* what();
 	};
 
-	
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// The Stack
+
+	// Acts as the stack memory for the program execution
+	class Stack {
+	public:
+		char* start;
+		char* end;
+
+		Stack(const int& size);
+
+		~Stack();
+	};
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Executor Functions
+
+	int exec(const char* const& path, ExecutorSettings& settings);
+	int exec_(std::iostream& file, ExecutorSettings& settings, std::ostream& outstream, std::istream& instream);
 }

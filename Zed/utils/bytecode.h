@@ -105,5 +105,11 @@ namespace bytecode {
 
 		template<typename T>
 		void read(T* val);
+
+		// template void read<types::word_t>(word_t* val);
 	};
+	template void Program::read<types::reg_t>(types::reg_t* val);
+	template void Program::read<types::opcode_t>(types::opcode_t* val);
+	template void Program::read<types::word_t>(types::word_t* val);
+	template void Program::read<types::byte_t>(types::byte_t* val);
 }

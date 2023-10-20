@@ -5,6 +5,8 @@
 #include <fstream>
 #include <vector>
 #include <unordered_map>
+// #define NDEBUG
+#include <cassert>
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ANSI codes (and other io utils)

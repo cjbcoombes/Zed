@@ -76,15 +76,9 @@ namespace assembler {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Parsing Helper Functions
 
-	bytecode::types::reg_t parseWordRegister(char* const& str, const int& strlen, const int& line, const int& column);
-	bytecode::types::reg_t parseByteRegister(char* const& str, const int& strlen, const int& line, const int& column);
-	// Parses a number to a particular type
-	template<typename T, AssemblerException::ErrorType eType>
-	T parseNumber(const char* str, int strlen, const int& line, const int& column);
-
-	// Declare for number types
-	template bytecode::types::reg_t parseNumber<bytecode::types::reg_t, AssemblerException::ErrorType::INVALID_WORD_REG_PARSE>(const char*, int, const int&, const int&);
-	template bytecode::types::reg_t parseNumber<bytecode::types::reg_t, AssemblerException::ErrorType::INVALID_BYTE_REG_PARSE>(const char*, int, const int&, const int&);
-	template bytecode::types::word_t parseNumber<bytecode::types::word_t, AssemblerException::ErrorType::INVALID_WORD_PARSE>(const char*, int, const int&, const int&);
-	template bytecode::types::byte_t parseNumber<bytecode::types::byte_t, AssemblerException::ErrorType::INVALID_BYTE_PARSE>(const char*, int, const int&, const int&);
+	bytecode::types::reg_t parseWordReg(char* const& str, const int& strlen, const int& line, const int& column);
+	bytecode::types::reg_t parseByteReg(char* const& str, const int& strlen, const int& line, const int& column);
+	bytecode::types::byte_t parseByte(const char* str, int strlen, const int& line, const int& column);
+	bytecode::types::word_t parseWord(const char* str, int strlen, const int& line, const int& column);
+	bytecode::types::reg_t parseReg(const char* str, int strlen, const int& line, const int& column, AssemblerException::ErrorType eType);
 }

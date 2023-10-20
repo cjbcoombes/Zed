@@ -9,6 +9,7 @@ bytecode::Program::Program(std::iostream& program) {
 	program.ignore(std::numeric_limits<std::streamsize>::max());
 	std::streamsize length = program.gcount();
 
+#pragma warning (suppress : 4244) // Conversion from streamsize to unsigned int
 	start = new char[length + FILLER_SIZE];
 	ip = start;
 	end = start + length;
