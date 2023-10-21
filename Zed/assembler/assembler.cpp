@@ -346,7 +346,7 @@ bytecode::types::reg_t assembler::parseWordReg(char* const& str, const int& strl
 	int match = lookupString(str, regStrings, namedRegCount);
 
 	if (match >= 0) {
-		if (match == reg::PP || match == reg::BP) return match;
+		if (match == reg::PP || match == reg::BP || match == reg::RP) return match;
 		else throw ex;
 	} else if (str[0] == 'W') {
 		types::reg_t out = parseReg(str + 1, strlen - 1, line, column, AssemblerException::ErrorType::INVALID_WORD_REG_PARSE);

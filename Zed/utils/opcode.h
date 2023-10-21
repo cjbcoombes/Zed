@@ -103,6 +103,7 @@ namespace bytecode {
 		constexpr int FirstSyscall = PRNT_C;
 		constexpr int FirstDebug = R_PRNT_I;
 		constexpr int FirstGlobal = GLOBAL_W;
+		constexpr int ValidCount = GLOBAL_W;
 		constexpr int Count = GLOBAL_STR + 1;
 	}
 

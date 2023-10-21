@@ -9,6 +9,7 @@ int main(int argc, const char* args[]) {
 	// cout << args[0] << "\n";
 
 	assembler::AssemblerSettings asmSettings;
+	disassembler::DisassemblerSettings disasmSettings;
 	executor::ExecutorSettings execSettings;
 
 	int out = 0;
@@ -24,11 +25,13 @@ int main(int argc, const char* args[]) {
 				// TODO: Set debug flags
 				asmSettings.flags.setFlags(Flags::FLAG_DEBUG);
 				execSettings.flags.setFlags(Flags::FLAG_DEBUG);
+				disasmSettings.flags.setFlags(Flags::FLAG_DEBUG);
 				break;
 			case CLArg::NODEBUG:
 				// TODO: Unset debug flags 
 				asmSettings.flags.unsetFlags(Flags::FLAG_DEBUG);
 				execSettings.flags.setFlags(Flags::FLAG_DEBUG);
+				disasmSettings.flags.setFlags(Flags::FLAG_DEBUG);
 				break;
 			case CLArg::ASSEMBLE:
 				i += 2;
@@ -37,6 +40,9 @@ int main(int argc, const char* args[]) {
 				break;
 			case CLArg::DISASSEMBLE:
 				// TODO: Disassembler
+				i += 2;
+				CHECK_ARGS("disassembler");
+				out = disassembler::disassemble(args[i - 1], args[i], disasmSettings);
 				break;
 			case CLArg::EXECUTE:
 				i++;

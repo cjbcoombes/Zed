@@ -1,6 +1,7 @@
 #pragma once
 #include "..\utils\utils.h"
 #include "..\assembler\assembler.h"
+#include "..\disassembler\disassembler.h"
 #include "..\vm\executor.h"
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~

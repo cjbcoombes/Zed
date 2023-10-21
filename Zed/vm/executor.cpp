@@ -54,7 +54,6 @@ int executor::exec_(std::iostream& file, ExecutorSettings& settings, std::ostrea
 	using namespace bytecode::types;
 	using namespace bytecode::Opcode;
 	using namespace bytecode;
-	using bytecode::Program;
 
 
 	Program program(file);

@@ -31,6 +31,9 @@
     <Filter Include="Source Files\Lang\AssemblyExamples">
       <UniqueIdentifier>{19f41b2e-9d97-47f6-9314-43dedd2d248f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\disassembler">
+      <UniqueIdentifier>{31bcb238-42ef-4817-8692-5700c294c023}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main\main.cpp">
@@ -47,6 +50,9 @@
     </ClCompile>
     <ClCompile Include="utils\bytecode.cpp">
       <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="disassembler\disassembler.cpp">
+      <Filter>Source Files\disassembler</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -67,6 +73,9 @@
     </ClInclude>
     <ClInclude Include="utils\bytecode.h">
       <Filter>Source Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="disassembler\disassembler.h">
+      <Filter>Source Files\disassembler</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -104,6 +113,9 @@
       <Filter>Source Files\Lang\AssemblyExamples</Filter>
     </None>
     <None Include="Lang\AssemblyExamples\simple_user_input.eze">
+      <Filter>Source Files\Lang\AssemblyExamples</Filter>
+    </None>
+    <None Include="Lang\AssemblyExamples\disasmdump.azm">
       <Filter>Source Files\Lang\AssemblyExamples</Filter>
     </None>
   </ItemGroup>

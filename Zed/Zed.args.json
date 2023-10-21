@@ -15,6 +15,10 @@
       "Command": "-execute \".\\Lang\\AssemblyExamples\\guessing_game.eze\""
     },
     {
+      "Id": "8a55ee51-a3a1-40fa-9ddf-f617e771ebd7",
+      "Command": "-disassemble \".\\Lang\\AssemblyExamples\\guessing_game.eze\" \".\\Lang\\AssemblyExamples\\disasmdump.azm\""
+    },
+    {
       "Id": "3a08cef5-7b06-4436-81ca-e35c68416aa1",
       "Command": "-wow"
     }
