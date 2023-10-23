@@ -3,6 +3,7 @@
 #include "..\assembler\assembler.h"
 #include "..\disassembler\disassembler.h"
 #include "..\vm\executor.h"
+#include "..\compiler\compiler.h"
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Main
@@ -21,16 +22,18 @@ enum class CLArg {
 	DISASSEMBLE,
 	EXECUTE,
 	COMPILE,
+	STACK_SIZE,
 
 	Count
 };
 
 constexpr int clargCount = static_cast<int>(CLArg::Count);
 constexpr const char* clargStrings[] = {
-	"-debug",
-	"-nodebug",
-	"-assemble",
-	"-disassemble",
-	"-execute",
-	"-compile"
+	"--debug",
+	"--nodebug",
+	"--assemble",
+	"--disassemble",
+	"--execute",
+	"--compile",
+	"--stacksize"
 };

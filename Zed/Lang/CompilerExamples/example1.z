@@ -1,0 +1,11 @@
+float.y = ((3.4 + 2) * 7) - false
+{
+int.x = 2.8 / 1.4
+float.z = 7
+{
+x = y - 2
+float.z = x
+char.w = 65
+}
+z
+}

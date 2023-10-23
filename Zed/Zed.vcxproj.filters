@@ -34,6 +34,12 @@
     <Filter Include="Source Files\disassembler">
       <UniqueIdentifier>{31bcb238-42ef-4817-8692-5700c294c023}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\compiler">
+      <UniqueIdentifier>{54c4267f-0bd8-4de8-a77e-cf8d14befb6c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Lang\CompilerExamples">
+      <UniqueIdentifier>{5e2cad0a-bf91-4a93-ba9a-ea04ffa3ac8f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main\main.cpp">
@@ -53,6 +59,12 @@
     </ClCompile>
     <ClCompile Include="disassembler\disassembler.cpp">
       <Filter>Source Files\disassembler</Filter>
+    </ClCompile>
+    <ClCompile Include="compiler\compiler.cpp">
+      <Filter>Source Files\compiler</Filter>
+    </ClCompile>
+    <ClCompile Include="compiler\tokenizer.cpp">
+      <Filter>Source Files\compiler</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -76,6 +88,12 @@
     </ClInclude>
     <ClInclude Include="disassembler\disassembler.h">
       <Filter>Source Files\disassembler</Filter>
+    </ClInclude>
+    <ClInclude Include="compiler\compiler.h">
+      <Filter>Source Files\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="compiler\tokenizer.h">
+      <Filter>Source Files\compiler</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -117,6 +135,15 @@
     </None>
     <None Include="Lang\AssemblyExamples\disasmdump.azm">
       <Filter>Source Files\Lang\AssemblyExamples</Filter>
+    </None>
+    <None Include="Lang\CompilerExamples\example1.eze">
+      <Filter>Source Files\Lang\CompilerExamples</Filter>
+    </None>
+    <None Include="Lang\CompilerExamples\example1.z">
+      <Filter>Source Files\Lang\CompilerExamples</Filter>
+    </None>
+    <None Include="Lang\CompilerExamples\fibonacci.z">
+      <Filter>Source Files\Lang\CompilerExamples</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -11,8 +11,11 @@ int main(int argc, const char* args[]) {
 	assembler::AssemblerSettings asmSettings;
 	disassembler::DisassemblerSettings disasmSettings;
 	executor::ExecutorSettings execSettings;
+	compiler::CompilerSettings compSettings;
 
 	int out = 0;
+	char* dummy = nullptr;
+	char res = 'X';
 
 	for (int clarg, i = 1; i < argc; i++) {
 		clarg = lookupString(args[i], clargStrings, clargCount);
@@ -26,12 +29,14 @@ int main(int argc, const char* args[]) {
 				asmSettings.flags.setFlags(Flags::FLAG_DEBUG);
 				execSettings.flags.setFlags(Flags::FLAG_DEBUG);
 				disasmSettings.flags.setFlags(Flags::FLAG_DEBUG);
+				compSettings.flags.setFlags(Flags::FLAG_DEBUG);
 				break;
 			case CLArg::NODEBUG:
 				// TODO: Unset debug flags 
 				asmSettings.flags.unsetFlags(Flags::FLAG_DEBUG);
-				execSettings.flags.setFlags(Flags::FLAG_DEBUG);
-				disasmSettings.flags.setFlags(Flags::FLAG_DEBUG);
+				execSettings.flags.unsetFlags(Flags::FLAG_DEBUG);
+				disasmSettings.flags.unsetFlags(Flags::FLAG_DEBUG);
+				compSettings.flags.unsetFlags(Flags::FLAG_DEBUG);
 				break;
 			case CLArg::ASSEMBLE:
 				i += 2;
@@ -39,7 +44,6 @@ int main(int argc, const char* args[]) {
 				out = assembler::assemble(args[i - 1], args[i], asmSettings);
 				break;
 			case CLArg::DISASSEMBLE:
-				// TODO: Disassembler
 				i += 2;
 				CHECK_ARGS("disassembler");
 				out = disassembler::disassemble(args[i - 1], args[i], disasmSettings);
@@ -50,7 +54,37 @@ int main(int argc, const char* args[]) {
 				out = executor::exec(args[i], execSettings);
 				break;
 			case CLArg::COMPILE:
-				// TODO: Compiler
+				i += 2;
+				CHECK_ARGS("compiler");
+				out = compiler::compile(args[i - 1], args[i], compSettings);
+				break;
+			case CLArg::STACK_SIZE:
+				i++;
+				CHECK_ARGS("setting stack size");
+				try {
+					execSettings.stackSize = std::strtoul(args[i], &dummy, 0);
+					if (execSettings.stackSize < 256 || execSettings.stackSize > 512000000) {
+						if (execSettings.stackSize < 256) {
+							cout << "Are you sure you want your stack size to be " << execSettings.stackSize << " bytes? (That's really small)\n";
+						} else {
+							cout << "Are you sure you want your stack size to be " << execSettings.stackSize << " bytes? (That's really big - over 512 MB)\n";
+						}
+						while (true) {
+							cout << "(Y/N): ";
+							cin >> res;
+							cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+							if (res == 'Y' || res == 'y') {
+								break;
+							} else if (res == 'N' || res == 'n') {
+								out = 1;
+								break;
+							}
+						}
+					}
+				} catch (std::exception& e) {
+					cout << IO_ERR "Invalid stack size" IO_NORM "\n";
+					out = 1;
+				}
 				break;
 		}
 		if (out) {

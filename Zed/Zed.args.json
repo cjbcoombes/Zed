@@ -4,23 +4,27 @@
   "Items": [
     {
       "Id": "86eb3e22-25b5-46d3-b3b5-9261a3dae1ee",
-      "Command": "-debug"
-    },
-    {
-      "Id": "5ea19085-abb7-4508-aea9-ad185af8827b",
-      "Command": "-assemble \".\\Lang\\AssemblyExamples\\guessing_game.azm\" \".\\Lang\\AssemblyExamples\\guessing_game.eze\""
-    },
-    {
-      "Id": "62513ae1-c161-4b27-b6b3-cf887e644ed1",
-      "Command": "-execute \".\\Lang\\AssemblyExamples\\guessing_game.eze\""
-    },
-    {
-      "Id": "8a55ee51-a3a1-40fa-9ddf-f617e771ebd7",
-      "Command": "-disassemble \".\\Lang\\AssemblyExamples\\guessing_game.eze\" \".\\Lang\\AssemblyExamples\\disasmdump.azm\""
+      "Command": "--debug"
     },
     {
       "Id": "3a08cef5-7b06-4436-81ca-e35c68416aa1",
-      "Command": "-wow"
+      "Command": "--stacksize 0x1000"
+    },
+    {
+      "Id": "5ea19085-abb7-4508-aea9-ad185af8827b",
+      "Command": "--assemble \".\\Lang\\AssemblyExamples\\guessing_game.azm\" \".\\Lang\\AssemblyExamples\\guessing_game.eze\""
+    },
+    {
+      "Id": "8a55ee51-a3a1-40fa-9ddf-f617e771ebd7",
+      "Command": "--disassemble \".\\Lang\\AssemblyExamples\\guessing_game.eze\" \".\\Lang\\AssemblyExamples\\disasmdump.azm\""
+    },
+    {
+      "Id": "62513ae1-c161-4b27-b6b3-cf887e644ed1",
+      "Command": "--execute \".\\Lang\\AssemblyExamples\\guessing_game.eze\""
+    },
+    {
+      "Id": "8e4a2e36-aab0-4ef9-830a-294b824c0563",
+      "Command": "--compile \".\\Lang\\CompilerExamples\\example1.z\" \".\\Lang\\CompilerExamples\\example1.eze\""
     }
   ]
 }

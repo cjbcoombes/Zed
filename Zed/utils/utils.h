@@ -5,7 +5,8 @@
 #include <fstream>
 #include <vector>
 #include <unordered_map>
-// #define NDEBUG
+#include <string>
+// #define NDEBUG to disable asserts
 #include <cassert>
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
