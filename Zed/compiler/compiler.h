@@ -22,6 +22,8 @@ namespace compiler {
 			UNKNOWN,
 			STRING_TOO_LONG,
 			INVALID_CHAR,
+			UNCLOSED_STRING,
+			UNCLOSED_CHAR,
 			Count
 		};
 
@@ -29,7 +31,9 @@ namespace compiler {
 		static constexpr const char* const errorTypeStrings[] = {
 			"I don't really know how this happened but it shouldn't have",
 			"A string or identifier name is too long",
-			"A char must have length 1"
+			"A char must have length 1",
+			"Unclosed string",
+			"Unclosed char"
 		};
 
 		const ErrorType eType;

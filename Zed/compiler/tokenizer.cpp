@@ -201,6 +201,8 @@ int compiler::tokenize(std::iostream& inputFile, TokenData& outputData, Compiler
 	// Starting line and column for the current token
 	int startLine = 0;
 	int startColumn = 0;
+	// end
+	bool end = inputFile.eof();
 
 	// In each loop, it does something based on the current type and the current char
 	// If it processes the char and retains its type, the char is simply appended to currGroup
@@ -208,8 +210,9 @@ int compiler::tokenize(std::iostream& inputFile, TokenData& outputData, Compiler
 	// and the char will be used to start a new token
 	// if it processes the char and sets type to GroupType::SKIP, it means it doesn't want the char
 	// but also not to use the char to start a new token
-	while (!inputFile.eof()) {
+	while (!end) {
 		inputFile.get(c);
+		end = inputFile.eof();
 		if (c == '\n') {
 			line++;
 			column = 0;
@@ -223,7 +226,9 @@ int compiler::tokenize(std::iostream& inputFile, TokenData& outputData, Compiler
 
 			case GroupType::STRING:
 				// Match certain escape sequences
-				if (isEscaped) {
+				if (end) {
+					throw CompilerException(CompilerException::ErrorType::UNCLOSED_STRING, startLine, startColumn);
+				} else if (isEscaped) {
 					if (c == 'n') {
 						c = '\n';
 						// line--;
@@ -257,7 +262,9 @@ int compiler::tokenize(std::iostream& inputFile, TokenData& outputData, Compiler
 
 			case GroupType::CHAR:
 				// Match certain escape sequences
-				if (isEscaped) {
+				if (end) {
+					throw CompilerException(CompilerException::ErrorType::UNCLOSED_CHAR, startLine, startColumn);
+				} if (isEscaped) {
 					if (c == 'n') {
 						c = '\n';
 						// line--;
@@ -301,9 +308,9 @@ int compiler::tokenize(std::iostream& inputFile, TokenData& outputData, Compiler
 					continue;
 				} else if (!hasDecimal && c == '.') {
 					hasDecimal = true;
-				} else if (('0' <= c && c <= '9') ||
-						   ('A' <= c && c < ('A' + numBase - 10)) ||
-						   ('a' <= c && c < ('a' + numBase - 10))) {
+				} else if (!end && (('0' <= c && c <= '9') ||
+									('A' <= c && c < ('A' + numBase - 10)) ||
+									('a' <= c && c < ('a' + numBase - 10)))) {
 					// All good
 				} else {
 					// PUT number
@@ -318,8 +325,8 @@ int compiler::tokenize(std::iostream& inputFile, TokenData& outputData, Compiler
 				break;
 
 			case GroupType::SYMBOL:
-				if (currGroupLen >= 1) {
-					if (currGroup[currGroupLen-1] == '/' && c == '/') {
+				if (!end && currGroupLen >= 1) {
+					if (currGroup[currGroupLen - 1] == '/' && c == '/') {
 						currGroupType = GroupType::COMMENT;
 						currGroupLen--;
 					} else if (currGroup[currGroupLen - 1] == '/' && c == '*') {
@@ -327,7 +334,7 @@ int compiler::tokenize(std::iostream& inputFile, TokenData& outputData, Compiler
 						currGroupLen--;
 					}
 				}
-				if (currGroupType != GroupType::SYMBOL || !isSymbolChar(c)) {
+				if (end || currGroupType != GroupType::SYMBOL || !isSymbolChar(c)) {
 					// PUT symbols (greedy thing)
 					currGroup[currGroupLen] = '\0';
 					putSymbols(currGroup, currGroupLen, startLine, startColumn, outputData);
@@ -336,7 +343,7 @@ int compiler::tokenize(std::iostream& inputFile, TokenData& outputData, Compiler
 				break;
 
 			case GroupType::ID:
-				if (!isIdChar(c)) {
+				if (end || !isIdChar(c)) {
 					currGroup[currGroupLen] = '\0';
 					keyword = lookupString(currGroup, keywordStrings, keywordCount);
 					if (keyword == -1) {
@@ -349,20 +356,21 @@ int compiler::tokenize(std::iostream& inputFile, TokenData& outputData, Compiler
 				break;
 
 			case GroupType::COMMENT:
-				if (c == '\n') {
+				if (end || c == '\n') {
 					// Don't PUT comment
 					currGroupType = GroupType::SKIP;
 				}
 				break;
 
 			case GroupType::BLOCK_COMMENT:
-				if (currGroupLen > 0 && currGroup[0] == '*' && c == '/') {
+				if (end || (currGroupLen > 0 && currGroup[0] == '*' && c == '/')) {
 					// Don't PUT comment
 					currGroupType = GroupType::SKIP;
 				}
 				break;
 		}
 
+		if (end) break;
 		if (currGroupType == GroupType::NONE) {
 			// Start a new token
 			currGroupLen = 1;
