@@ -85,7 +85,7 @@ int disassembler::disassemble_(std::iostream& inputFile, std::iostream& outputFi
 					program.read<reg_t>(&rid1);
 					if (rid1 == reg::FZ) {
 						outputFile << std::left << std::setw(10) << regStrings[rid1] << std::right << "  ";
-					} else if (rid1 >= reg::B0 && rid1 < reg::COUNT) {
+					} else if (rid1 >= reg::B0 && rid1 < reg::Count) {
 						outputFile << "B" << std::left << std::setw(9) << (rid1 - reg::B0) << std::right << "  ";
 					} else {
 						throw DisassemblerException(DisassemblerException::ErrorType::INVALID_BYTE_REG);

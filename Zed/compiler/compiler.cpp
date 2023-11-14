@@ -52,7 +52,13 @@ int compiler::compile_(std::iostream& inputFile, std::iostream& outputFile, Comp
 	// Flags/settings
 	const bool isDebug = settings.flags.hasFlags(Flags::FLAG_DEBUG);
 
-	stream << "[Insert Compiler Here]\n";
+	TokenData tokenData;
+	stream << IO_MAIN "Tokenizing..." IO_NORM "\n";
+	int out = tokenize(inputFile, tokenData, settings, stream);
+	stream << IO_MAIN "Tokenization finished with code: " << out << IO_NORM "\n";
+	if (out) return out;
 
+	//Inspect!
+	
 	return 0;
 }

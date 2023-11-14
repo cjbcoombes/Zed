@@ -15,12 +15,12 @@
       "Command": "--assemble \".\\Lang\\AssemblyExamples\\guessing_game.azm\" \".\\Lang\\AssemblyExamples\\guessing_game.eze\""
     },
     {
-      "Id": "8a55ee51-a3a1-40fa-9ddf-f617e771ebd7",
-      "Command": "--disassemble \".\\Lang\\AssemblyExamples\\guessing_game.eze\" \".\\Lang\\AssemblyExamples\\disasmdump.azm\""
-    },
-    {
       "Id": "62513ae1-c161-4b27-b6b3-cf887e644ed1",
       "Command": "--execute \".\\Lang\\AssemblyExamples\\guessing_game.eze\""
+    },
+    {
+      "Id": "8a55ee51-a3a1-40fa-9ddf-f617e771ebd7",
+      "Command": "--disassemble \".\\Lang\\AssemblyExamples\\guessing_game.eze\" \".\\Lang\\AssemblyExamples\\disasmdump.azm\""
     },
     {
       "Id": "8e4a2e36-aab0-4ef9-830a-294b824c0563",

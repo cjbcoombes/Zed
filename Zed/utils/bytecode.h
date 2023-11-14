@@ -74,7 +74,7 @@ namespace bytecode {
 			FZ = 3,	// 3
 			W0 = 4,	// 4
 			B0 = 18,
-			COUNT = 32
+			Count = 32
 		};
 	}
 

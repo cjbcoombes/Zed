@@ -58,8 +58,8 @@ int executor::exec_(std::iostream& file, ExecutorSettings& settings, std::ostrea
 
 	Program program(file);
 	Stack stack(settings.stackSize);
-	WordVal wordReg[reg::COUNT];
-	ByteVal byteReg[reg::COUNT];
+	WordVal wordReg[reg::Count];
+	ByteVal byteReg[reg::Count];
 	wordReg[reg::BP].word = reinterpret_cast<word_t>(stack.start);
 	wordReg[reg::RP].word = reinterpret_cast<word_t>(stack.start);
 	wordReg[reg::PP].word = reinterpret_cast<word_t>(program.start);

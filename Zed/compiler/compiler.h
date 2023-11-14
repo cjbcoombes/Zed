@@ -20,12 +20,16 @@ namespace compiler {
 	public:
 		enum class ErrorType {
 			UNKNOWN,
+			STRING_TOO_LONG,
+			INVALID_CHAR,
 			Count
 		};
 
 		static constexpr int errorTypeCount = static_cast<int>(ErrorType::Count);
 		static constexpr const char* const errorTypeStrings[] = {
-			"I don't really know how this happened but it shouldn't have"
+			"I don't really know how this happened but it shouldn't have",
+			"A string or identifier name is too long",
+			"A char must have length 1"
 		};
 
 		const ErrorType eType;
@@ -47,4 +51,10 @@ namespace compiler {
 	// Compiles from an input file to an output file
 	int compile(const char* const& inputPath, const char* const& outputPath, CompilerSettings& settings);
 	int compile_(std::iostream& inputFile, std::iostream& outputFile, CompilerSettings& settings, std::ostream& stream);
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Tokenizer Functions
+
+	int tokenize(std::iostream& inputFile, TokenData& ouputData, CompilerSettings& settings, std::ostream& stream);
+	void printTokens(TokenData& tokenData, std::ostream& stream);
 }

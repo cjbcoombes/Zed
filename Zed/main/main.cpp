@@ -81,7 +81,7 @@ int main(int argc, const char* args[]) {
 							}
 						}
 					}
-				} catch (std::exception& e) {
+				} catch (std::exception&) {
 					cout << IO_ERR "Invalid stack size" IO_NORM "\n";
 					out = 1;
 				}

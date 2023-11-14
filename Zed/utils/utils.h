@@ -22,6 +22,7 @@
 #define IO_BLUE "\033[34m"
 #define IO_MAGENTA "\033[35m"
 #define IO_CYAN "\033[36m"
+#define IO_WHITE "\033[37m"
 #define IO_GRAY "\033[90m"
 
 #define IO_ERR IO_RED "[ERROR] "

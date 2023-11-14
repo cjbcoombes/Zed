@@ -1,0 +1,63 @@
+// Basic stuff
+int.x = 15
+int.y = -123
+float.z = 123098.123
+char.w = 'w'
+
+x *= y
+
+// Tuples galore!
+<int.a, int.b>.t1 = [15, -1]
+t1.a // 15
+t1[0] // 15
+t1[0,1] // [15,-1]
+t1[1,0] // [-1, 15]
+t1.b // -1
+
+<int, float.a, char, int.b>.t2 = [50, 3.5, '+', x]
+t2.a // 3.5
+t2[3,1] // [15, 3.5]
+t2[3,1].a // 3.5
+t2[0:2] // [50, 3.5, '+']
+t2[3, 0:2] // [15, 50, 3.5, '+']
+
+// Evaluables? Possibly could be extended to generators later
+// Also these are begging to be inlined once I add optimizations
+// Functions that are just single expressions don't need "return"
+*int.e1 = {->int: x * x}
+<void -> int>.equive1 = {->int: x * x}
+// Should it inherently evaluate "e1" or should it be like "&e1" to eval?
+e1 // 225
+t2[0] = e1
+x = 9
+e1 // 81
+t2[0] // 225
+t2.b // 15
+// Worth having "put" be a synonym for "return"?
+// Or maybe they're different based on what scope they return to
+*int.e2 = {->int: y += 1; put y;}
+e2 // -122
+e2 // -121
+
+// Functions
+// Are TECHNICALLY always of one argument, but it can be a tuple so it can really be anything
+<int, int -> int>.sqmax1 = {<int.a, int.b> -> int:
+    // Wrapping the if in parens is kinda ugly
+    return (if (a > b) {->int:
+        put a * a;
+    } else {->int:
+        put b * b;
+    })
+}
+<int, int -> int>.sqmax2 = {<int.a, int.b> -> int:
+    if (a > b) {
+        return a * a;
+    } else {
+        return b * b;
+    }
+}
+<int, int -> int>.sqmax3 = {<int.a, int.b> -> int:
+    // if can handle expressions or evaluables
+    k = (if (a > b) a else b)
+    return k * k
+}
