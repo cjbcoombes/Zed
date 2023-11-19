@@ -67,9 +67,7 @@ int compiler::compile_(std::iostream& inputFile, std::iostream& outputFile, Comp
 	ast::Tree astTree;
 	stream << IO_MAIN "Creating AST..." IO_NORM "\n";
 	out = initAST(astTree, tokenData, settings, stream);
-	if (!out) {
-		// More AST processing
-	}
+	if (!out) out = constructAST(astTree, settings, stream);
 	if (isDebug) {
 		stream << IO_DEBUG "AST output\n" IO_DEBUG "---------------------------------------------" IO_NORM "\n";
 		astTree.print(stream);

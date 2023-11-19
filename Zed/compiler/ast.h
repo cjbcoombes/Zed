@@ -26,6 +26,10 @@ namespace compiler {
 			virtual void print(std::ostream& stream, std::string&& indent, bool last);
 		};
 
+		class Expr : public Node {
+			// ExprType -- Some storage of type
+		};
+
 		// A node wrapping a token
 		class NodeToken : public Node {
 		public:

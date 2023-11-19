@@ -85,6 +85,8 @@ namespace compiler {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// AST Functions
 
-	// Constructs a simple AST from a token list, with all parentheses/brackets/etc. matched
-	int initAST(compiler::ast::Tree& astTree, TokenData& tokenData, CompilerSettings& settings, std::ostream& stream);
+	// Constructs a base AST from a token list, with all parentheses/brackets/etc. matched
+	int initAST(ast::Tree& astTree, TokenData& tokenData, CompilerSettings& settings, std::ostream& stream);
+	// Applies rules to make the full AST tree
+	int constructAST(ast::Tree& astTree, CompilerSettings& settings, std::ostream& stream);
 }

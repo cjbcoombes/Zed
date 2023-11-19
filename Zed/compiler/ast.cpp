@@ -34,8 +34,8 @@ void compiler::ast::NodeGroup::print(std::ostream& stream, std::string&& indent,
 	else if (type == NodeType::ANGLE_GROUP) stream << "<>";
 	else stream << "??";
 	stream << '\n';
-	
-	for (auto i = elems.begin(); i < elems.end(); i++) {
+
+	for (auto i = elems.cbegin(); i < elems.cend(); i++) {
 		(*i)->print(stream, indent + (last ? TREE_SPACE : TREE_PASS), i + 1 == elems.end());
 	}
 }
@@ -56,7 +56,7 @@ int compiler::initAST(compiler::ast::Tree& astTree, TokenData& tokenData, Compil
 
 	// Stores the current "stack" of parenthesis/bracket/etc. groups that we're inside of
 	std::stack<NodeGroup*> groups;
-	
+
 	// The "root" node is a group
 	NodeGroup* root = astTree.addNode<NodeGroup>(std::make_unique<NodeGroup>(NodeType::ROOT_GROUP));
 	astTree.root = root;
@@ -85,8 +85,8 @@ int compiler::initAST(compiler::ast::Tree& astTree, TokenData& tokenData, Compil
 				topLine = token.line;
 				topCol = token.column;
 				break;
-			// case TokenType::LEFT_ANGLE:
-				// break;
+				// case TokenType::LEFT_ANGLE:
+					// break;
 			case TokenType::RIGHT_PAREN:
 				if (groups.top()->type == NodeType::PAREN_GROUP) {
 					temp = groups.top();
@@ -140,4 +140,40 @@ int compiler::initAST(compiler::ast::Tree& astTree, TokenData& tokenData, Compil
 	}
 
 	return 0;
+}
+
+// Check if a type is a group
+bool isNodeGroup(compiler::ast::NodeType type) {
+	using compiler::ast::NodeType;
+	return type == NodeType::ROOT_GROUP
+		|| type == NodeType::PAREN_GROUP
+		|| type == NodeType::SQUARE_GROUP
+		|| type == NodeType::CURLY_GROUP;
+}
+
+// Fully process a node group into a tree
+int reduceNodeGroup(compiler::ast::NodeGroup* group, compiler::ast::Tree& astTree, compiler::CompilerSettings& settings, std::ostream& stream) {
+	using namespace compiler::ast;
+
+	// Pass 1: Reduce child groups and replace primitives
+	for (Node*& n : group->elems) {
+		if (isNodeGroup(n->type)) {
+			reduceNodeGroup(dynamic_cast<NodeGroup*>(n), astTree, settings, stream);
+			// Maybe do other stuff
+			// Like if the result is a number remove the group wrapper
+		}
+
+		// Token int -> Node int
+		// Token float -> Node float
+		// etc..
+	}
+
+	return 0;
+}
+
+// Construct the AST
+int compiler::constructAST(ast::Tree& astTree, CompilerSettings& settings, std::ostream& stream) {
+	using namespace compiler::ast;
+
+	return reduceNodeGroup(dynamic_cast<NodeGroup*>(astTree.root), astTree, settings, stream);
 }

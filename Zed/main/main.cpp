@@ -25,14 +25,12 @@ int main(int argc, const char* args[]) {
 		}
 		switch (static_cast<CLArg>(clarg)) {
 			case CLArg::DEBUG:
-				// TODO: Set debug flags
 				asmSettings.flags.setFlags(Flags::FLAG_DEBUG);
 				execSettings.flags.setFlags(Flags::FLAG_DEBUG);
 				disasmSettings.flags.setFlags(Flags::FLAG_DEBUG);
 				compSettings.flags.setFlags(Flags::FLAG_DEBUG);
 				break;
 			case CLArg::NODEBUG:
-				// TODO: Unset debug flags 
 				asmSettings.flags.unsetFlags(Flags::FLAG_DEBUG);
 				execSettings.flags.unsetFlags(Flags::FLAG_DEBUG);
 				disasmSettings.flags.unsetFlags(Flags::FLAG_DEBUG);
