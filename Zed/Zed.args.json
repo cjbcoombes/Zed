@@ -28,7 +28,7 @@
     },
     {
       "Id": "cb9691a2-4c60-465a-adc2-970f17a27101",
-      "Command": "--compile \"C:\\Users\\cjbco\\Documents\\Visual Studio 2019\\Projects and Solutions\\Z\\LanguageDesign\\example1.z\" \".\\Lang\\CompilerExamples\\example1.eze\""
+      "Command": "--compile \".\\main\\main.cpp\" \".\\Lang\\CompilerExamples\\example1.eze\""
     }
   ]
 }

@@ -36,8 +36,6 @@ namespace compiler {
 		BSLASH,
 		COLON,
 		SEMICOLON,
-		DBLQUOTE,
-		QUOTE,
 		COMMA,
 		PERIOD,
 		QMARK,
@@ -95,7 +93,7 @@ namespace compiler {
 	constexpr int symbolCount = static_cast<int>(TokenType::RIGHT_ANGLE) + 1 - firstSymbol;
 	constexpr char symbolChars[] = {
 		'~', '`', '!', '@', '#', '$', '%',  '^', '&', '*', '_', '-', '+', '=',
-		'|', '\\', ':', ';', '"', '\'', ',', '.', '?', '/',
+		'|', '\\', ':', ';', ',', '.', '?', '/',
 		'(', ')', '[', ']', '{', '}', '<', '>'
 	};
 	static_assert(sizeof(symbolChars) / sizeof(char) == symbolCount,

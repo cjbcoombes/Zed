@@ -51,14 +51,32 @@ int compiler::compile(const char* const& inputPath, const char* const& outputPat
 int compiler::compile_(std::iostream& inputFile, std::iostream& outputFile, CompilerSettings& settings, std::ostream& stream) {
 	// Flags/settings
 	const bool isDebug = settings.flags.hasFlags(Flags::FLAG_DEBUG);
+	int out = 0;
 
 	TokenData tokenData;
 	stream << IO_MAIN "Tokenizing..." IO_NORM "\n";
-	int out = tokenize(inputFile, tokenData, settings, stream);
+	out = tokenize(inputFile, tokenData, settings, stream);
+	if (isDebug) {
+		stream << IO_DEBUG "Tokenizer output\n" IO_DEBUG "---------------------------------------------" IO_NORM "\n";
+		printTokens(tokenData, stream);
+		stream << IO_DEBUG "---------------------------------------------" IO_NORM "\n";
+	}
 	stream << IO_MAIN "Tokenization finished with code: " << out << IO_NORM "\n";
 	if (out) return out;
 
-	//Inspect!
-	
+	ast::Tree astTree;
+	stream << IO_MAIN "Creating AST..." IO_NORM "\n";
+	out = initAST(astTree, tokenData, settings, stream);
+	if (!out) {
+		// More AST processing
+	}
+	if (isDebug) {
+		stream << IO_DEBUG "AST output\n" IO_DEBUG "---------------------------------------------" IO_NORM "\n";
+		astTree.print(stream);
+		stream << IO_DEBUG "---------------------------------------------" IO_NORM "\n";
+	}
+	stream << IO_MAIN "AST Construction finished with code: " << out << IO_NORM "\n";
+	if (out) return out;
+
 	return 0;
 }

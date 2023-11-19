@@ -1,5 +1,8 @@
 #include "compiler.h"
 
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Tokenizer Helper Functions
+
 bool compiler::isIdChar(char c) {
 	return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || ('0' <= c && c <= '9') || c == '_';
 }
@@ -91,6 +94,8 @@ void putSymbols(const char* str, int slen, int line, int column, compiler::Token
 	putSymbols(str + 1, slen - 1, line, column + 1, outputData);
 }
 
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// TokenData
 
 compiler::Token* compiler::TokenData::put(TokenType type, int line, int column) {
 	tokens.emplace_back(type, line, column);
@@ -124,6 +129,9 @@ void compiler::TokenData::putStr(TokenType type, int line, int column, std::stri
 
 	put(type, line, column)->strIndex = index;
 }
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Tokenizer Functions
 
 int compiler::tokenize(std::iostream& inputFile, TokenData& outputData, CompilerSettings& settings, std::ostream& stream) {
 	// Go to the start of the file
@@ -413,14 +421,11 @@ int compiler::tokenize(std::iostream& inputFile, TokenData& outputData, Compiler
 		}
 	}
 
-	if (isDebug) {
-		stream << IO_DEBUG "Tokenizer output\n" IO_DEBUG "---------------------------------------------" IO_NORM "\n";
-		printTokens(outputData, stream);
-		stream << IO_DEBUG "---------------------------------------------" IO_NORM "\n";
-	}
-
 	return 0;
 }
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Printing Functions
 
 void compiler::printTokens(TokenData& tokenData, std::ostream& stream) {
 	int line = 0;

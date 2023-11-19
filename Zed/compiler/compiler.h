@@ -1,5 +1,6 @@
 #include "..\utils\utils.h"
 #include "tokenizer.h"
+#include "ast.h"
 
 namespace compiler {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -24,6 +25,15 @@ namespace compiler {
 			INVALID_CHAR,
 			UNCLOSED_STRING,
 			UNCLOSED_CHAR,
+			INVALID_CLOSING_PAREN,
+			INVALID_CLOSING_SQUARE,
+			INVALID_CLOSING_CURLY,
+			INVALID_CLOSING_ANGLE,
+			UNMATCHED_PAREN,
+			UNMATCHED_SQUARE,
+			UNMATCHED_CURLY,
+			UNMATCHED_ANGLE,
+
 			Count
 		};
 
@@ -33,7 +43,15 @@ namespace compiler {
 			"A string or identifier name is too long",
 			"A char must have length 1",
 			"Unclosed string",
-			"Unclosed char"
+			"Unclosed char",
+			"Invalid closing parenthesis",
+			"Invalid closing square bracket",
+			"Invalid closing curly bracket",
+			"Invalid closing angle bracket",
+			"Unmatched parenthesis",
+			"Unmatched square bracket",
+			"Unmatched curly bracket",
+			"Unmatched angle bracket"
 		};
 
 		const ErrorType eType;
@@ -59,6 +77,14 @@ namespace compiler {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Tokenizer Functions
 
+	// Turns a file into a list of tokens
 	int tokenize(std::iostream& inputFile, TokenData& ouputData, CompilerSettings& settings, std::ostream& stream);
+	// Prints tokens nicely
 	void printTokens(TokenData& tokenData, std::ostream& stream);
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// AST Functions
+
+	// Constructs a simple AST from a token list, with all parentheses/brackets/etc. matched
+	int initAST(compiler::ast::Tree& astTree, TokenData& tokenData, CompilerSettings& settings, std::ostream& stream);
 }

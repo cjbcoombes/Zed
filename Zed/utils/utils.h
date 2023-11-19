@@ -4,8 +4,10 @@
 #include <iomanip>
 #include <fstream>
 #include <vector>
+#include <stack>
 #include <unordered_map>
 #include <string>
+#include <memory>
 // #define NDEBUG to disable asserts
 #include <cassert>
 

@@ -66,6 +66,9 @@
     <ClCompile Include="compiler\tokenizer.cpp">
       <Filter>Source Files\compiler</Filter>
     </ClCompile>
+    <ClCompile Include="compiler\ast.cpp">
+      <Filter>Source Files\compiler</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="utils\utils.h">
@@ -93,6 +96,9 @@
       <Filter>Source Files\compiler</Filter>
     </ClInclude>
     <ClInclude Include="compiler\tokenizer.h">
+      <Filter>Source Files\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="compiler\ast.h">
       <Filter>Source Files\compiler</Filter>
     </ClInclude>
   </ItemGroup>
