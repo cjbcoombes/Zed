@@ -49,7 +49,7 @@ namespace compiler {
 		LEFT_ANGLE,
 		RIGHT_ANGLE,
 
-		// Multi-Symbols
+		// Multi-Symbols (decreasing size order)
 		EASTER_EGG,
 		EQ_EQ_EQUALS,
 		PLUS_EQUALS,

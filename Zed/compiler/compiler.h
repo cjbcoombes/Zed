@@ -81,6 +81,7 @@ namespace compiler {
 	int tokenize(std::iostream& inputFile, TokenData& ouputData, CompilerSettings& settings, std::ostream& stream);
 	// Prints tokens nicely
 	void printTokens(TokenData& tokenData, std::ostream& stream);
+	void printToken(Token& token, TokenData& tokenData, std::ostream& stream);
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// AST Functions

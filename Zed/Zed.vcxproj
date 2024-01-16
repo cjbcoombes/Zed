@@ -57,6 +57,8 @@
     <None Include="Lang\AssemblyExamples\simple_user_input.eze" />
     <None Include="Lang\CompilerExamples\example1.eze" />
     <None Include="Lang\CompilerExamples\example1.z" />
+    <None Include="Lang\CompilerExamples\fibonacci.eze" />
+    <None Include="Lang\CompilerExamples\tokenstest.z" />
     <None Include="Lang\CompilerExamples\fibonacci.z" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

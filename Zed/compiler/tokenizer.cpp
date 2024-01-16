@@ -74,7 +74,7 @@ void putSymbols(const char* str, int slen, int line, int column, compiler::Token
 
 	int currlen = slen > maxMultiSymbolLen ? maxMultiSymbolLen : slen;
 	int i = 0, j;
-	while (strlen(multiSymbolStrings[i]) > currlen && i < multiSymbolCount) i++;
+	while (static_cast<int>(strlen(multiSymbolStrings[i])) > currlen && i < multiSymbolCount) i++;
 	while (i < multiSymbolCount) {
 		currlen = strlen(multiSymbolStrings[i]);
 		j = 0;
@@ -115,7 +115,7 @@ void compiler::TokenData::putType(TokenType type, int line, int column) {
 }
 void compiler::TokenData::putStr(TokenType type, int line, int column, std::string str) {
 	int index = -1;
-	for (int i = 0; i < strList.size(); i++) {
+	for (size_t i = 0; i < strList.size(); i++) {
 		if (strList[i] == str) {
 			index = i;
 			break;
@@ -325,7 +325,7 @@ int compiler::tokenize(std::iostream& inputFile, TokenData& outputData, Compiler
 					if (!hasDecimal) {
 						outputData.putInt(parseInt(currGroup, currGroupLen, numBase), startLine, startColumn);
 					} else {
-						outputData.putFloat(parseFloat(currGroup, currGroupLen, numBase), startLine, startColumn);
+						outputData.putFloat(parseFloat(currGroup, currGroupLen, static_cast<float>(numBase)), startLine, startColumn);
 					}
 					currGroup[currGroupLen] = '\0';
 					currGroupType = GroupType::NONE;
@@ -429,29 +429,34 @@ int compiler::tokenize(std::iostream& inputFile, TokenData& outputData, Compiler
 
 void compiler::printTokens(TokenData& tokenData, std::ostream& stream) {
 	int line = 0;
-	int type;
+	stream << IO_NORM;
 	for (Token& t : tokenData.tokens) {
 		if (line != t.line) stream << '\n';
 		line = t.line;
-		type = static_cast<int>(t.type);
-		stream << IO_NORM;
-		if (t.type == TokenType::STRING) {
-			stream << IO_YELLOW << '"' << tokenData.strList[t.strIndex] << "\" ";
-		} else if (t.type == TokenType::IDENTIFIER) {
-			stream << IO_RED << tokenData.strList[t.strIndex] << ' ';
-		} else if (t.type == TokenType::NUM_INT) {
-			stream << IO_CYAN << t.int_ << ' ';
-		} else if (t.type == TokenType::NUM_FLOAT) {
-			stream << IO_BLUE << t.float_ << ' ';
-		} else if (t.type == TokenType::CHAR) {
-			stream << IO_YELLOW << '\'' << t.char_ << "\' ";
-		} else if (type >= firstSymbol && type - firstSymbol < symbolCount) {
-			stream << IO_WHITE << symbolChars[type - firstSymbol] << ' ';
-		} else if (type >= firstMultiSymbol && type - firstMultiSymbol < multiSymbolCount) {
-			stream << IO_GRAY << multiSymbolStrings[type - firstMultiSymbol] << ' ';
-		} else if (type >= firstKeyword && type - firstKeyword < keywordCount) {
-			stream << IO_MAGENTA << keywordStrings[type - firstKeyword] << ' ';
-		}
+		printToken(t, tokenData, stream);
+		stream << ' ';
 	}
 	stream << '\n';
+}
+
+void compiler::printToken(Token& t, TokenData& tokenData, std::ostream& stream) {
+	int type = static_cast<int>(t.type);
+	if (t.type == TokenType::STRING) {
+		stream << IO_YELLOW << '"' << tokenData.strList[t.strIndex] << '\"';
+	} else if (t.type == TokenType::IDENTIFIER) {
+		stream << IO_RED << tokenData.strList[t.strIndex];
+	} else if (t.type == TokenType::NUM_INT) {
+		stream << IO_CYAN << t.int_;
+	} else if (t.type == TokenType::NUM_FLOAT) {
+		stream << IO_BLUE << t.float_;
+	} else if (t.type == TokenType::CHAR) {
+		stream << IO_YELLOW << '\'' << t.char_ << '\'';
+	} else if (type >= firstSymbol && type - firstSymbol < symbolCount) {
+		stream << IO_WHITE << symbolChars[type - firstSymbol];
+	} else if (type >= firstMultiSymbol && type - firstMultiSymbol < multiSymbolCount) {
+		stream << IO_GRAY << multiSymbolStrings[type - firstMultiSymbol];
+	} else if (type >= firstKeyword && type - firstKeyword < keywordCount) {
+		stream << IO_MAGENTA << keywordStrings[type - firstKeyword];
+	}
+	stream << IO_NORM;
 }

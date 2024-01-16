@@ -8,25 +8,48 @@
 #define TREE_SPACE "    "
 #define TREE_PASS "|   "
 
-void compiler::ast::Node::print(std::ostream& stream, std::string&& indent, bool last) {
+void compiler::ast::Node::print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) {
 	stream << indent;
 	if (last) stream << TREE_BRANCH_END;
 	else stream << TREE_BRANCH_MID;
+	printSimple(tokenData, stream);
+}
+
+void compiler::ast::Node::printSimple(TokenData& tokenData, std::ostream& stream) {
 	stream << "??? Node ??? \n";
 }
 
-void compiler::ast::NodeToken::print(std::ostream& stream, std::string&& indent, bool last) {
-	stream << indent;
-	if (last) stream << TREE_BRANCH_END;
-	else stream << TREE_BRANCH_MID;
-	stream << "NodeToken \n";
+void compiler::ast::NodeToken::printSimple(TokenData& tokenData, std::ostream& stream) {
+	stream << "Token ( ";
+	if (token) {
+		printToken(*token, tokenData, stream);
+	} else {
+		stream << "NO TOKEN";
+	}
+	stream << " )\n";
 }
 
-void compiler::ast::NodeGroup::print(std::ostream& stream, std::string&& indent, bool last) {
+void compiler::ast::NodeInt::printSimple(TokenData& tokenData, std::ostream& stream) {
+	stream << "Int " << val << '\n';
+}
+
+void compiler::ast::NodeFloat::printSimple(TokenData& tokenData, std::ostream& stream) {
+	stream << "Float " << val << '\n';
+}
+
+void compiler::ast::NodeChar::printSimple(TokenData& tokenData, std::ostream& stream) {
+	stream << "Char \'" << val << "\'\n";
+}
+
+void compiler::ast::NodeString::printSimple(TokenData& tokenData, std::ostream& stream) {
+	stream << "String \"" << tokenData.strList[strIndex] << "\"\n";
+}
+
+void compiler::ast::NodeGroup::print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) {
 	stream << indent;
 	if (last) stream << TREE_BRANCH_END;
 	else stream << TREE_BRANCH_MID;
-	stream << "NodeGroup ";
+	stream << "Group ";
 	if (type == NodeType::ROOT_GROUP) stream << "--root--";
 	else if (type == NodeType::PAREN_GROUP) stream << "()";
 	else if (type == NodeType::SQUARE_GROUP) stream << "[]";
@@ -36,13 +59,22 @@ void compiler::ast::NodeGroup::print(std::ostream& stream, std::string&& indent,
 	stream << '\n';
 
 	for (auto i = elems.cbegin(); i < elems.cend(); i++) {
-		(*i)->print(stream, indent + (last ? TREE_SPACE : TREE_PASS), i + 1 == elems.end());
+		(*i)->print(tokenData, stream, indent + (last ? TREE_SPACE : TREE_PASS), i + 1 == elems.end());
 	}
 }
 
+void compiler::ast::Tree::print(TokenData& tokenData, std::ostream& stream) {
+	if (root) root->print(tokenData, stream, "", true);
+}
 
-void compiler::ast::Tree::print(std::ostream& stream) {
-	if (root) root->print(stream, "", true);
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// AST Tree Functions
+
+template<class N>
+N* compiler::ast::Tree::addNode(std::unique_ptr<N> n) {
+	N* temp = n.get();
+	nodes.push_back(std::move(n));
+	return temp;
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -58,7 +90,7 @@ int compiler::initAST(compiler::ast::Tree& astTree, TokenData& tokenData, Compil
 	std::stack<NodeGroup*> groups;
 
 	// The "root" node is a group
-	NodeGroup* root = astTree.addNode<NodeGroup>(std::make_unique<NodeGroup>(NodeType::ROOT_GROUP));
+	NodeGroup* root = astTree.addNode<NodeGroup>(std::make_unique<NodeGroup>(nullptr, NodeType::ROOT_GROUP));
 	astTree.root = root;
 	groups.push(root);
 
@@ -68,20 +100,21 @@ int compiler::initAST(compiler::ast::Tree& astTree, TokenData& tokenData, Compil
 
 	// For each token, opening braces push a new group to the stack, closing braces pop a group but check that
 	// it's the right type, and other tokens are just added to the top group
-	for (const Token& token : tokenData.tokens) {
+	for (auto i = tokenData.tokens.begin(); i != tokenData.tokens.end(); i++) {
+		Token& token = *i;
 		switch (token.type) {
 			case TokenType::LEFT_PAREN:
-				groups.push(astTree.addNode<NodeGroup>(std::make_unique<NodeGroup>(NodeType::PAREN_GROUP)));
+				groups.push(astTree.addNode<NodeGroup>(std::make_unique<NodeGroup>(&token, NodeType::PAREN_GROUP)));
 				topLine = token.line;
 				topCol = token.column;
 				break;
 			case TokenType::LEFT_SQUARE:
-				groups.push(astTree.addNode<NodeGroup>(std::make_unique<NodeGroup>(NodeType::SQUARE_GROUP)));
+				groups.push(astTree.addNode<NodeGroup>(std::make_unique<NodeGroup>(&token, NodeType::SQUARE_GROUP)));
 				topLine = token.line;
 				topCol = token.column;
 				break;
 			case TokenType::LEFT_CURLY:
-				groups.push(astTree.addNode<NodeGroup>(std::make_unique<NodeGroup>(NodeType::CURLY_GROUP)));
+				groups.push(astTree.addNode<NodeGroup>(std::make_unique<NodeGroup>(&token, NodeType::CURLY_GROUP)));
 				topLine = token.line;
 				topCol = token.column;
 				break;
@@ -116,8 +149,22 @@ int compiler::initAST(compiler::ast::Tree& astTree, TokenData& tokenData, Compil
 				break;
 				// case TokenType::RIGHT_ANGLE:
 					// break;
+			case TokenType::NUM_INT:
+				groups.top()->elems.push_back(astTree.addNode<NodeInt>(std::make_unique<NodeInt>(&token, token.int_)));
+				break;
+			case TokenType::NUM_FLOAT:
+				groups.top()->elems.push_back(astTree.addNode<NodeFloat>(std::make_unique<NodeFloat>(&token, token.float_)));
+				break;
+			case TokenType::CHAR:
+				groups.top()->elems.push_back(astTree.addNode<NodeChar>(std::make_unique<NodeChar>(&token, token.char_)));
+				break;
+			case TokenType::STRING:
+				groups.top()->elems.push_back(astTree.addNode<NodeString>(std::make_unique<NodeString>(&token, token.strIndex)));
+				break;
+
+
 			default:
-				groups.top()->elems.push_back(astTree.addNode<NodeToken>(std::make_unique<NodeToken>(token)));
+				groups.top()->elems.push_back(astTree.addNode<NodeToken>(std::make_unique<NodeToken>(&token)));
 				break;
 		}
 	}

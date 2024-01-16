@@ -1,33 +1,13 @@
-float.y = ((3.4 + 2) * 7) - false
-{
+// Declare x
+int.x
 
-0xFF
-0b1.01
-10003.14159265
+// Define x
+x = 5
 
-[ "what? "]
-< no // way >
-'c'har
-/* craaa
-zzz
+// Declare and define y
+int.y = 10
 
-yyy
+// Declare and define a tuple
+<int.i, char.c, float.f>.tup = [5, 'x', -3.4]
 
-*/
-
-+=//*=
--=/*++
-hi
-*/
-{[
-====\(^-^)/==
-]
-(x y)} zeeeee
-for +=== -====
-}
-
-("breaks?")
-
-"\ta str \n ing"
-
-"!!!\""
+string.str = "Does this work?"

@@ -70,7 +70,7 @@ int compiler::compile_(std::iostream& inputFile, std::iostream& outputFile, Comp
 	if (!out) out = constructAST(astTree, settings, stream);
 	if (isDebug) {
 		stream << IO_DEBUG "AST output\n" IO_DEBUG "---------------------------------------------" IO_NORM "\n";
-		astTree.print(stream);
+		astTree.print(tokenData, stream);
 		stream << IO_DEBUG "---------------------------------------------" IO_NORM "\n";
 	}
 	stream << IO_MAIN "AST Construction finished with code: " << out << IO_NORM "\n";
