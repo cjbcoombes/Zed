@@ -139,6 +139,7 @@ namespace compiler {
 
 	bool isIdChar(char c);
 	bool isSymbolChar(char c);
+	bool isTypeToken(TokenType type);
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Token Data Types

@@ -14,6 +14,13 @@ bool compiler::isSymbolChar(char c) {
 	return false;
 }
 
+bool compiler::isTypeToken(TokenType type) {
+	return type == TokenType::TYPE_BOOL
+		|| type == TokenType::TYPE_CHAR
+		|| type == TokenType::TYPE_FLOAT
+		|| type == TokenType::TYPE_INT;
+}
+
 int parseInt(char str[], int strlen, int base) {
 	int out = 0;
 	for (int i = 0; i < strlen; i++) {
@@ -441,22 +448,23 @@ void compiler::printTokens(TokenData& tokenData, std::ostream& stream) {
 
 void compiler::printToken(Token& t, TokenData& tokenData, std::ostream& stream) {
 	int type = static_cast<int>(t.type);
+
 	if (t.type == TokenType::STRING) {
-		stream << IO_YELLOW << '"' << tokenData.strList[t.strIndex] << '\"';
+		stream << IO_FMT_STRING(tokenData.strList[t.strIndex]);
 	} else if (t.type == TokenType::IDENTIFIER) {
-		stream << IO_RED << tokenData.strList[t.strIndex];
+		stream << IO_FMT_ID(tokenData.strList[t.strIndex]);
 	} else if (t.type == TokenType::NUM_INT) {
-		stream << IO_CYAN << t.int_;
+		stream << IO_FMT_INT(t.int_);
 	} else if (t.type == TokenType::NUM_FLOAT) {
-		stream << IO_BLUE << t.float_;
+		stream << IO_FMT_FLOAT(t.float_);
 	} else if (t.type == TokenType::CHAR) {
-		stream << IO_YELLOW << '\'' << t.char_ << '\'';
+		stream << IO_FMT_CHAR(t.char_);
 	} else if (type >= firstSymbol && type - firstSymbol < symbolCount) {
-		stream << IO_WHITE << symbolChars[type - firstSymbol];
+		stream << IO_FMT_SYMB(symbolChars[type - firstSymbol]);
 	} else if (type >= firstMultiSymbol && type - firstMultiSymbol < multiSymbolCount) {
-		stream << IO_GRAY << multiSymbolStrings[type - firstMultiSymbol];
+		stream << IO_FMT_MULTISYMB(multiSymbolStrings[type - firstMultiSymbol]);
 	} else if (type >= firstKeyword && type - firstKeyword < keywordCount) {
-		stream << IO_MAGENTA << keywordStrings[type - firstKeyword];
+		stream << IO_FMT_KEYWORD(keywordStrings[type - firstKeyword]);
 	}
-	stream << IO_NORM;
+	
 }

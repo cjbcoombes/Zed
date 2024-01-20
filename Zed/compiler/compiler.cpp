@@ -64,13 +64,13 @@ int compiler::compile_(std::iostream& inputFile, std::iostream& outputFile, Comp
 	stream << IO_MAIN "Tokenization finished with code: " << out << IO_NORM "\n";
 	if (out) return out;
 
-	ast::Tree astTree;
+	ast::Tree astTree(tokenData);
 	stream << IO_MAIN "Creating AST..." IO_NORM "\n";
-	out = initAST(astTree, tokenData, settings, stream);
+	out = initAST(astTree, settings, stream);
 	if (!out) out = constructAST(astTree, settings, stream);
 	if (isDebug) {
 		stream << IO_DEBUG "AST output\n" IO_DEBUG "---------------------------------------------" IO_NORM "\n";
-		astTree.print(tokenData, stream);
+		astTree.print(stream);
 		stream << IO_DEBUG "---------------------------------------------" IO_NORM "\n";
 	}
 	stream << IO_MAIN "AST Construction finished with code: " << out << IO_NORM "\n";

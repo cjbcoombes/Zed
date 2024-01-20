@@ -61,6 +61,9 @@
     <ClCompile Include="compiler\ast.cpp">
       <Filter>Source Files\compiler</Filter>
     </ClCompile>
+    <ClCompile Include="compiler\nodes.cpp">
+      <Filter>Source Files\compiler</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="utils\utils.h">

@@ -1,48 +1,49 @@
 #include "..\utils\utils.h"
 
 namespace compiler {
-	namespace expr {
+	namespace ast {
+
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		// Expression Types
-
-		enum class PrimType {
-			INT,
-			FLOAT,
-			CHAR,
-			// STRING?
-			Count
-		};
-
-		constexpr int primTypeCount = static_cast<int>(PrimType::Count);
-
-		struct TypeInfo {
-			std::vector<int> subtypes;
-
-			TypeInfo() : subtypes(0) {}
-		};
+		// Types
 
 		// <int, float, char>
 		// <int, <float, char>, <char, <int, float, char>>>
 		// 
 		// [
-		//  0: int
-		//  1: float
-		//  2: char
-		//  3: [0,1,2]
-		//  4: [1,2]
-		//  5: [2,3]
-		//  6: [1,4,5]
+		//  0: void
+		//  1: int
+		//  2: float
+		//  3: char
+		//  4: bool
+		//  5: [0,1,2]
+		//  6: [1,2]
+		//  7: [2,3]
+		//  8: [1,4,5]
 		// 
 		// 
 		// ]
 
+		struct TypeInfo {
+			std::vector<int> types;
+			std::vector<int> typeStrIndices;
+			int returnType;
 
-		class TypeSet {
-			std::vector<TypeInfo> types;
+			TypeInfo() : types(0), typeStrIndices(0), returnType(-1) {}
 		};
 
-	}
-	namespace ast {
+		class TypeData {
+		public:
+
+			static constexpr int voidIndex = 0;
+			static constexpr int intIndex = 1;
+			static constexpr int floatIndex = 2;
+			static constexpr int charIndex = 3;
+			static constexpr int boolIndex = 4;
+
+			std::vector<TypeInfo> types;
+
+			TypeData() : types({ TypeInfo(), TypeInfo(), TypeInfo(), TypeInfo(), TypeInfo() }) {}
+		};
 
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// AST Nodes
@@ -50,10 +51,13 @@ namespace compiler {
 		// An enum of node types
 		enum class NodeType {
 			TOKEN,
+			TYPESPEC,
 			INT,
 			FLOAT,
 			CHAR,
+			BOOL,
 			STRING,
+			IDENTIFIER,
 			ROOT_GROUP,
 			PAREN_GROUP,
 			SQUARE_GROUP,
@@ -66,17 +70,22 @@ namespace compiler {
 		public:
 			NodeType type;
 			Token* token;
+			bool isExpr;
 
-			Node(Token* token, NodeType type) : type(type), token(token) {}
+			Node(Token* token, NodeType type) : type(type), token(token), isExpr(false) {}
+			Node(Token* token, NodeType type, bool isExpr) : type(type), token(token), isExpr(isExpr) {}
 			virtual ~Node() {}
-			virtual void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last);
-			virtual void printSimple(TokenData& tokenData, std::ostream& stream);
+			void printToken(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
+			virtual void print(TokenData& tokenData, TypeData& typeData, std::ostream& stream, std::string&& indent, bool last);
+			virtual void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
 		};
 
 		class Expr : public Node {
 		public:
-			// ExprType -- Some storage of type
-			Expr(Token* token, NodeType type) : Node(token, type) {}
+			int typeIndex;
+
+			Expr(Token* token, NodeType type) : Node(token, type, true), typeIndex(-1) {}
+			Expr(Token* token, NodeType type, int typeIndex) : Node(token, type, true), typeIndex(typeIndex) {}
 		};
 
 		// A node wrapping a token
@@ -84,7 +93,16 @@ namespace compiler {
 		public:
 
 			NodeToken(Token* token) : Node(token, NodeType::TOKEN) {}
-			void printSimple(TokenData& tokenData, std::ostream& stream);
+			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
+		};
+
+		// A node representing a type declaration
+		class NodeTypeSpec : public Node {
+		public:
+			int typeIndex;
+
+			NodeTypeSpec(Token* token, int typeIndex) : Node(token, NodeType::TYPESPEC), typeIndex(typeIndex) {}
+			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
 		};
 
 		// A node wrapping an int
@@ -92,8 +110,8 @@ namespace compiler {
 		public:
 			int val;
 
-			NodeInt(Token* token, int val) : Expr(token, NodeType::INT), val(val) {}
-			void printSimple(TokenData& tokenData, std::ostream& stream);
+			NodeInt(Token* token, int val) : Expr(token, NodeType::INT, TypeData::intIndex), val(val) {}
+			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
 		};
 
 		// A node wrapping a float
@@ -101,8 +119,8 @@ namespace compiler {
 		public:
 			float val;
 
-			NodeFloat(Token* token, float val) : Expr(token, NodeType::FLOAT), val(val) {}
-			void printSimple(TokenData& tokenData, std::ostream& stream);
+			NodeFloat(Token* token, float val) : Expr(token, NodeType::FLOAT, TypeData::floatIndex), val(val) {}
+			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
 		};
 
 		// A node wrapping a char
@@ -110,8 +128,17 @@ namespace compiler {
 		public:
 			char val;
 
-			NodeChar(Token* token, char val) : Expr(token, NodeType::CHAR), val(val) {}
-			void printSimple(TokenData& tokenData, std::ostream& stream);
+			NodeChar(Token* token, char val) : Expr(token, NodeType::CHAR, TypeData::charIndex), val(val) {}
+			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
+		};
+
+		// A node wrapping a bool
+		class NodeBool : public Expr {
+		public:
+			bool val;
+
+			NodeBool(Token* token, bool val) : Expr(token, NodeType::BOOL, TypeData::boolIndex), val(val) {}
+			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
 		};
 
 		// A node wrapping a string
@@ -119,8 +146,18 @@ namespace compiler {
 		public:
 			int strIndex;
 
-			NodeString(Token* token, int strIndex) : Expr(token, NodeType::STRING), strIndex(strIndex) {}
-			void printSimple(TokenData& tokenData, std::ostream& stream);
+			NodeString(Token* token, int strIndex) : Expr(token, NodeType::STRING, -1/* TODO : Type of strings? */), strIndex(strIndex) {}
+			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
+		};
+
+		// A node wrapping an identifier
+		class NodeIdentifier : public Expr {
+		public:
+			int strIndex;
+			int scopeIndex;
+
+			NodeIdentifier(Token* token, int strIndex) : Expr(token, NodeType::IDENTIFIER, -1), strIndex(strIndex), scopeIndex(-1) {}
+			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
 		};
 
 		// A node containing a list of other nodes
@@ -136,7 +173,7 @@ namespace compiler {
 					   type == NodeType::ROOT_GROUP ||
 					   type == NodeType::SQUARE_GROUP);
 			}
-			void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last);
+			void print(TokenData& tokenData, TypeData& typeData, std::ostream& stream, std::string&& indent, bool last);
 		};
 
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -148,10 +185,12 @@ namespace compiler {
 			std::vector<std::unique_ptr<Node>> nodes;
 			// Contains the root of the tree
 			Node* root;
+			TokenData& tokenData;
+			TypeData typeData;
 
-			Tree() : root(nullptr), nodes() {}
+			Tree(TokenData& tokenData) : root(nullptr), nodes(), tokenData(tokenData), typeData() {}
 
-			void print(TokenData& tokenData, std::ostream& stream);
+			void print(std::ostream& stream);
 
 			// Adds a node to the list and returns a pointer to the node
 			template<class N>

@@ -1,73 +1,6 @@
 #include "compiler.h"
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Node/Tree Printing
-
-#define TREE_BRANCH_MID "+-- "
-#define TREE_BRANCH_END "\\-- "
-#define TREE_SPACE "    "
-#define TREE_PASS "|   "
-
-void compiler::ast::Node::print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) {
-	stream << indent;
-	if (last) stream << TREE_BRANCH_END;
-	else stream << TREE_BRANCH_MID;
-	printSimple(tokenData, stream);
-}
-
-void compiler::ast::Node::printSimple(TokenData& tokenData, std::ostream& stream) {
-	stream << "??? Node ??? \n";
-}
-
-void compiler::ast::NodeToken::printSimple(TokenData& tokenData, std::ostream& stream) {
-	stream << "Token ( ";
-	if (token) {
-		printToken(*token, tokenData, stream);
-	} else {
-		stream << "NO TOKEN";
-	}
-	stream << " )\n";
-}
-
-void compiler::ast::NodeInt::printSimple(TokenData& tokenData, std::ostream& stream) {
-	stream << "Int " << val << '\n';
-}
-
-void compiler::ast::NodeFloat::printSimple(TokenData& tokenData, std::ostream& stream) {
-	stream << "Float " << val << '\n';
-}
-
-void compiler::ast::NodeChar::printSimple(TokenData& tokenData, std::ostream& stream) {
-	stream << "Char \'" << val << "\'\n";
-}
-
-void compiler::ast::NodeString::printSimple(TokenData& tokenData, std::ostream& stream) {
-	stream << "String \"" << tokenData.strList[strIndex] << "\"\n";
-}
-
-void compiler::ast::NodeGroup::print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) {
-	stream << indent;
-	if (last) stream << TREE_BRANCH_END;
-	else stream << TREE_BRANCH_MID;
-	stream << "Group ";
-	if (type == NodeType::ROOT_GROUP) stream << "--root--";
-	else if (type == NodeType::PAREN_GROUP) stream << "()";
-	else if (type == NodeType::SQUARE_GROUP) stream << "[]";
-	else if (type == NodeType::CURLY_GROUP) stream << "{}";
-	else if (type == NodeType::ANGLE_GROUP) stream << "<>";
-	else stream << "??";
-	stream << '\n';
-
-	for (auto i = elems.cbegin(); i < elems.cend(); i++) {
-		(*i)->print(tokenData, stream, indent + (last ? TREE_SPACE : TREE_PASS), i + 1 == elems.end());
-	}
-}
-
-void compiler::ast::Tree::print(TokenData& tokenData, std::ostream& stream) {
-	if (root) root->print(tokenData, stream, "", true);
-}
-
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // AST Tree Functions
 
 template<class N>
@@ -80,8 +13,9 @@ N* compiler::ast::Tree::addNode(std::unique_ptr<N> n) {
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // AST Functions
 
-int compiler::initAST(compiler::ast::Tree& astTree, TokenData& tokenData, CompilerSettings& settings, std::ostream& stream) {
+int compiler::initAST(compiler::ast::Tree& astTree, CompilerSettings& settings, std::ostream& stream) {
 	using namespace ast;
+	TokenData& tokenData = astTree.tokenData;
 
 	// Flags/settings
 	const bool isDebug = settings.flags.hasFlags(Flags::FLAG_DEBUG);
@@ -102,6 +36,7 @@ int compiler::initAST(compiler::ast::Tree& astTree, TokenData& tokenData, Compil
 	// it's the right type, and other tokens are just added to the top group
 	for (auto i = tokenData.tokens.begin(); i != tokenData.tokens.end(); i++) {
 		Token& token = *i;
+		auto next = i + 1;
 		switch (token.type) {
 			case TokenType::LEFT_PAREN:
 				groups.push(astTree.addNode<NodeGroup>(std::make_unique<NodeGroup>(&token, NodeType::PAREN_GROUP)));
@@ -118,8 +53,16 @@ int compiler::initAST(compiler::ast::Tree& astTree, TokenData& tokenData, Compil
 				topLine = token.line;
 				topCol = token.column;
 				break;
-				// case TokenType::LEFT_ANGLE:
-					// break;
+			case TokenType::LEFT_ANGLE:
+				// TODO: this might not be the correct way to determine if a left angle is specifying a type
+				if (next != tokenData.tokens.end() && ((*next).type == TokenType::LEFT_ANGLE || isTypeToken((*next).type))) {
+					groups.push(astTree.addNode<NodeGroup>(std::make_unique<NodeGroup>(&token, NodeType::ANGLE_GROUP)));
+					topLine = token.line;
+					topCol = token.column;
+				} else {
+					goto doDefaultCase;
+				}
+				break;
 			case TokenType::RIGHT_PAREN:
 				if (groups.top()->type == NodeType::PAREN_GROUP) {
 					temp = groups.top();
@@ -147,8 +90,15 @@ int compiler::initAST(compiler::ast::Tree& astTree, TokenData& tokenData, Compil
 					throw CompilerException(CompilerException::ErrorType::INVALID_CLOSING_CURLY, token.line, token.column);
 				}
 				break;
-				// case TokenType::RIGHT_ANGLE:
-					// break;
+			case TokenType::RIGHT_ANGLE:
+				if (groups.top()->type == NodeType::ANGLE_GROUP) {
+					temp = groups.top();
+					groups.pop();
+					groups.top()->elems.push_back(temp);
+				} else {
+					goto doDefaultCase;
+				}
+				break;
 			case TokenType::NUM_INT:
 				groups.top()->elems.push_back(astTree.addNode<NodeInt>(std::make_unique<NodeInt>(&token, token.int_)));
 				break;
@@ -161,8 +111,29 @@ int compiler::initAST(compiler::ast::Tree& astTree, TokenData& tokenData, Compil
 			case TokenType::STRING:
 				groups.top()->elems.push_back(astTree.addNode<NodeString>(std::make_unique<NodeString>(&token, token.strIndex)));
 				break;
+			case TokenType::TRUE:
+				groups.top()->elems.push_back(astTree.addNode<NodeBool>(std::make_unique<NodeBool>(&token, true)));
+				break;
+			case TokenType::FALSE:
+				groups.top()->elems.push_back(astTree.addNode<NodeBool>(std::make_unique<NodeBool>(&token, false)));
+				break;
+			case TokenType::IDENTIFIER:
+				groups.top()->elems.push_back(astTree.addNode<NodeIdentifier>(std::make_unique<NodeIdentifier>(&token, token.strIndex)));
+				break;
+			case TokenType::TYPE_INT:
+				groups.top()->elems.push_back(astTree.addNode<NodeTypeSpec>(std::make_unique<NodeTypeSpec>(&token, TypeData::intIndex)));
+				break;
+			case TokenType::TYPE_FLOAT:
+				groups.top()->elems.push_back(astTree.addNode<NodeTypeSpec>(std::make_unique<NodeTypeSpec>(&token, TypeData::floatIndex)));
+				break;
+			case TokenType::TYPE_CHAR:
+				groups.top()->elems.push_back(astTree.addNode<NodeTypeSpec>(std::make_unique<NodeTypeSpec>(&token, TypeData::charIndex)));
+				break;
+			case TokenType::TYPE_BOOL:
+				groups.top()->elems.push_back(astTree.addNode<NodeTypeSpec>(std::make_unique<NodeTypeSpec>(&token, TypeData::boolIndex)));
+				break;
 
-
+			doDefaultCase:
 			default:
 				groups.top()->elems.push_back(astTree.addNode<NodeToken>(std::make_unique<NodeToken>(&token)));
 				break;
@@ -197,6 +168,8 @@ bool isNodeGroup(compiler::ast::NodeType type) {
 		|| type == NodeType::SQUARE_GROUP
 		|| type == NodeType::CURLY_GROUP;
 }
+
+
 
 // Fully process a node group into a tree
 int reduceNodeGroup(compiler::ast::NodeGroup* group, compiler::ast::Tree& astTree, compiler::CompilerSettings& settings, std::ostream& stream) {

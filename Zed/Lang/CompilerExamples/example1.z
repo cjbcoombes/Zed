@@ -11,3 +11,5 @@ int.y = 10
 <int.i, char.c, float.f>.tup = [5, 'x', -3.4]
 
 string.str = "Does this work?"
+
+bool.q = false
