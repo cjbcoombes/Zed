@@ -25,14 +25,22 @@ namespace compiler {
 			INVALID_CHAR,
 			UNCLOSED_STRING,
 			UNCLOSED_CHAR,
+
 			INVALID_CLOSING_PAREN,
 			INVALID_CLOSING_SQUARE,
 			INVALID_CLOSING_CURLY,
 			INVALID_CLOSING_ANGLE,
+
 			UNMATCHED_PAREN,
 			UNMATCHED_SQUARE,
 			UNMATCHED_CURLY,
 			UNMATCHED_ANGLE,
+
+			INVALID_TYPE_TOKEN,
+			INVALID_MACRO,
+
+			BAD_TYPE_ADD,
+			BAD_TYPE_SUB,
 
 			Count
 		};
@@ -44,14 +52,22 @@ namespace compiler {
 			"A char must have length 1",
 			"Unclosed string",
 			"Unclosed char",
+
 			"Invalid closing parenthesis",
 			"Invalid closing square bracket",
 			"Invalid closing curly bracket",
 			"Invalid closing angle bracket",
+
 			"Unmatched parenthesis",
 			"Unmatched square bracket",
 			"Unmatched curly bracket",
-			"Unmatched angle bracket"
+			"Unmatched angle bracket",
+
+			"Invalid token in typespec",
+			"Invalid macro (after #)",
+
+			"Cannot add value of type (TODO: more info)",
+			"Cannot subtract value of type (TODO: more info)"
 		};
 
 		const ErrorType eType;

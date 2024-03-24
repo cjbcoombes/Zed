@@ -91,14 +91,14 @@ int compiler::initAST(compiler::ast::Tree& astTree, CompilerSettings& settings, 
 				}
 				break;
 			case TokenType::RIGHT_ANGLE:
-				if (groups.top()->type == NodeType::ANGLE_GROUP) {
-					temp = groups.top();
-					groups.pop();
-					groups.top()->elems.push_back(temp);
-				} else {
-					goto doDefaultCase;
-				}
-				break;
+if (groups.top()->type == NodeType::ANGLE_GROUP) {
+	temp = groups.top();
+	groups.pop();
+	groups.top()->elems.push_back(temp);
+} else {
+	goto doDefaultCase;
+}
+break;
 			case TokenType::NUM_INT:
 				groups.top()->elems.push_back(astTree.addNode<NodeInt>(std::make_unique<NodeInt>(&token, token.int_)));
 				break;
@@ -169,31 +169,156 @@ bool isNodeGroup(compiler::ast::NodeType type) {
 		|| type == NodeType::CURLY_GROUP;
 }
 
-
-
-// Fully process a node group into a tree
-int reduceNodeGroup(compiler::ast::NodeGroup* group, compiler::ast::Tree& astTree, compiler::CompilerSettings& settings, std::ostream& stream) {
+compiler::ast::Node* constructTypespec(compiler::ast::NodeGroup* group, compiler::ast::Tree& astTree, compiler::CompilerSettings& settings, std::ostream& stream) {
 	using namespace compiler::ast;
+	using namespace compiler;
 
-	// Pass 1: Reduce child groups and replace primitives
-	for (Node*& n : group->elems) {
-		if (isNodeGroup(n->type)) {
-			reduceNodeGroup(dynamic_cast<NodeGroup*>(n), astTree, settings, stream);
-			// Maybe do other stuff
-			// Like if the result is a number remove the group wrapper
+	// TODO: this later
+
+	// Reduce to a flat group of only allowed nodes
+	/*for (auto i = group->elems.begin(); i != group->elems.end(); i++) {
+		if ((*i)->type == NodeType::ANGLE_GROUP) {
+			(*i) = constructTypespec(dynamic_cast<NodeGroup*>(*i), astTree, settings, stream);
+			continue;
 		}
+		if ((*i)->type == NodeType::IDENTIFIER || (*i)->type == NodeType::TYPESPEC) continue;
+		if ((*i)->type == NodeType::TOKEN) {
+			if ((*i)->token->type == TokenType::PERIOD || (*i)->token->type == TokenType::COMMA) continue;
+		}
+		throw CompilerException(CompilerException::ErrorType::INVALID_TYPE_TOKEN, (*i)->token->line, (*i)->token->column);
+	}*/
 
-		// Token int -> Node int
-		// Token float -> Node float
-		// etc..
+	return group;
+}
+
+void slideWindow2(compiler::ast::Node* (*windowFunc)(compiler::ast::Node*, compiler::ast::Node*, compiler::ast::Tree& astTree, compiler::CompilerSettings& settings, std::ostream& stream),
+				  compiler::ast::NodeGroup* group, compiler::ast::Tree& astTree, compiler::CompilerSettings& settings, std::ostream& stream) {
+	using namespace compiler::ast;
+	using namespace compiler;
+
+	std::list<Node*>& nodes = group->elems;
+
+	if (nodes.size() < 2) return;
+
+	std::list<Node*>::iterator rangeStart = nodes.begin();
+	std::list<Node*>::iterator rangeEnd = std::next(rangeStart);
+
+	while (rangeEnd != nodes.end()) {
+		Node* ret = windowFunc(*rangeStart, *rangeEnd, astTree, settings, stream);
+		if (ret != nullptr) {
+			nodes.insert(std::next(rangeEnd), ret);
+			rangeStart = nodes.erase(rangeStart, std::next(rangeEnd));
+			rangeEnd = std::next(rangeStart);
+		} else {
+			rangeStart++;
+			rangeEnd++;
+		}
+	}
+}
+
+void slideWindow3(compiler::ast::Node* (*windowFunc)(compiler::ast::Node*, compiler::ast::Node*, compiler::ast::Node*, compiler::ast::Tree& astTree, compiler::CompilerSettings& settings, std::ostream& stream),
+				  compiler::ast::NodeGroup* group, compiler::ast::Tree& astTree, compiler::CompilerSettings& settings, std::ostream& stream) {
+	using namespace compiler::ast;
+	using namespace compiler;
+
+	std::list<Node*>& nodes = group->elems;
+
+	if (nodes.size() < 3) return;
+
+	std::list<Node*>::iterator rangeStart = nodes.begin();
+	std::list<Node*>::iterator rangeEnd = std::next(rangeStart, 2);
+
+	while (rangeEnd != nodes.end()) {
+		Node* ret = windowFunc(*rangeStart, *std::next(rangeStart), *rangeEnd, astTree, settings, stream);
+		if (ret != nullptr) {
+			nodes.insert(std::next(rangeEnd), ret);
+			rangeStart = nodes.erase(rangeStart, std::next(rangeEnd));
+			rangeEnd = std::next(rangeStart);
+			if (rangeEnd == nodes.end()) break;
+			rangeEnd = std::next(rangeEnd);
+		} else {
+			rangeStart++;
+			rangeEnd++;
+		}
+	}
+}
+
+compiler::ast::Node* macroWindow2(compiler::ast::Node* first, compiler::ast::Node* second, compiler::ast::Tree& astTree, compiler::CompilerSettings& settings, std::ostream& stream) {
+	using namespace compiler::ast;
+	using namespace compiler;
+
+	if (first->type == NodeType::TOKEN && first->token->type == TokenType::HASH) {
+		if (second->type == NodeType::IDENTIFIER) {
+			return astTree.addNode(std::make_unique<NodeMacro>(first->token, dynamic_cast<NodeIdentifier*>(second)->strIndex));
+		} else {
+			throw CompilerException(CompilerException::ErrorType::INVALID_MACRO, first->token->line, first->token->column);
+		}
 	}
 
-	return 0;
+	return nullptr;
+}
+
+compiler::ast::Node* addSubWindow3(compiler::ast::Node* first, compiler::ast::Node* second, compiler::ast::Node* third, compiler::ast::Tree& astTree, compiler::CompilerSettings& settings, std::ostream& stream) {
+	using namespace compiler::ast;
+	using namespace compiler;
+
+	TokenType op = second->token->type;
+	if (second->type == NodeType::TOKEN && (op == TokenType::PLUS || op == TokenType::DASH)) {
+		// TODO: non-int types
+		if (first->isExpr && third->isExpr) {
+			Expr* left = dynamic_cast<Expr*>(first);
+			Expr* right = dynamic_cast<Expr*>(third);
+
+			if (left->typeIndex == TypeData::intIndex && right->typeIndex == TypeData::intIndex) {
+				return astTree.addNode(std::make_unique<NodeArithBinop>(second->token, left, right, op == TokenType::PLUS ? NodeArithBinop::OpType::ADD : NodeArithBinop::OpType::SUB, TypeData::intIndex));
+			}
+			// else fall through to error
+		}
+		throw CompilerException(op == TokenType::PLUS ? CompilerException::ErrorType::BAD_TYPE_ADD : CompilerException::ErrorType::BAD_TYPE_SUB, second->token->line, second->token->column);
+	}
+
+	return nullptr;
+}
+
+// Fully process a node group into a tree
+compiler::ast::Node* reduceNodeGroup(compiler::ast::NodeGroup* group, compiler::ast::Tree& astTree, compiler::CompilerSettings& settings, std::ostream& stream) {
+	using namespace compiler::ast;
+	using namespace compiler;
+	
+	std::list<Node*>& nodes = group->elems;
+
+	if (nodes.size() == 0) return group;
+
+	// Pass 1: Reduce child groups
+	for (Node*& n : nodes) {
+		if (n->type == NodeType::ANGLE_GROUP) {
+			n = constructTypespec(dynamic_cast<NodeGroup*>(n), astTree, settings, stream);
+			continue;
+		}
+		if (isNodeGroup(n->type)) {
+			n = reduceNodeGroup(dynamic_cast<NodeGroup*>(n), astTree, settings, stream);
+			continue;
+		}
+	}
+
+	// Pass 2: Macros
+	slideWindow2(macroWindow2, group, astTree, settings, stream);
+
+	// Pass 3: Addition
+	slideWindow3(addSubWindow3, group, astTree, settings, stream);
+
+	if (group->type == NodeType::PAREN_GROUP && nodes.size() == 1 && nodes.front()->isExpr) {
+		// TODO: are we losing important context here?
+		return nodes.front();
+	}
+	return group;
 }
 
 // Construct the AST
 int compiler::constructAST(ast::Tree& astTree, CompilerSettings& settings, std::ostream& stream) {
 	using namespace compiler::ast;
 
-	return reduceNodeGroup(dynamic_cast<NodeGroup*>(astTree.root), astTree, settings, stream);
+	astTree.root = reduceNodeGroup(dynamic_cast<NodeGroup*>(astTree.root), astTree, settings, stream);
+
+	return 0;
 }

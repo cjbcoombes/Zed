@@ -51,18 +51,23 @@ namespace compiler {
 		// An enum of node types
 		enum class NodeType {
 			TOKEN,
+			MACRO,
 			TYPESPEC,
+
 			INT,
 			FLOAT,
 			CHAR,
 			BOOL,
 			STRING,
 			IDENTIFIER,
+
 			ROOT_GROUP,
 			PAREN_GROUP,
 			SQUARE_GROUP,
 			CURLY_GROUP,
-			ANGLE_GROUP
+			ANGLE_GROUP,
+
+			ARITH_BINOP
 		};
 
 		// Root node class
@@ -93,6 +98,14 @@ namespace compiler {
 		public:
 
 			NodeToken(Token* token) : Node(token, NodeType::TOKEN) {}
+			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
+		};
+
+		class NodeMacro : public Node {
+		public:
+			int strIndex;
+
+			NodeMacro(Token* token, int strIndex) : Node(token, NodeType::MACRO), strIndex(strIndex) {}
 			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
 		};
 
@@ -154,7 +167,7 @@ namespace compiler {
 		class NodeIdentifier : public Expr {
 		public:
 			int strIndex;
-			int scopeIndex;
+			int scopeIndex; // TODO : scopes?
 
 			NodeIdentifier(Token* token, int strIndex) : Expr(token, NodeType::IDENTIFIER, -1), strIndex(strIndex), scopeIndex(-1) {}
 			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
@@ -164,7 +177,7 @@ namespace compiler {
 		// Used for groups in parens, brackets, etc.
 		class NodeGroup : public Node {
 		public:
-			std::vector<Node*> elems;
+			std::list<Node*> elems;
 
 			NodeGroup(Token* token, NodeType type) : Node(token, type) {
 				assert(type == NodeType::ANGLE_GROUP ||
@@ -173,6 +186,24 @@ namespace compiler {
 					   type == NodeType::ROOT_GROUP ||
 					   type == NodeType::SQUARE_GROUP);
 			}
+			void print(TokenData& tokenData, TypeData& typeData, std::ostream& stream, std::string&& indent, bool last);
+		};
+
+		class NodeArithBinop : public Expr {
+		public:
+			enum class OpType {
+				ADD,
+				SUB,
+				MUL,
+				DIV
+				// MOD?
+			};
+
+			Expr* left;
+			Expr* right;
+			OpType type;
+
+			NodeArithBinop(Token* token, Expr* left, Expr* right, OpType type, int typeIndex) : Expr(token, NodeType::ARITH_BINOP, typeIndex), left(left), right(right), type(type) {}
 			void print(TokenData& tokenData, TypeData& typeData, std::ostream& stream, std::string&& indent, bool last);
 		};
 
