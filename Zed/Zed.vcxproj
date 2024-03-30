@@ -22,6 +22,7 @@
     <ClCompile Include="assembler\assembler.cpp" />
     <ClCompile Include="compiler\ast.cpp" />
     <ClCompile Include="compiler\compiler.cpp" />
+    <ClCompile Include="compiler\gen.cpp" />
     <ClCompile Include="compiler\nodes.cpp" />
     <ClCompile Include="compiler\tokenizer.cpp" />
     <ClCompile Include="disassembler\disassembler.cpp" />
@@ -34,6 +35,7 @@
     <ClInclude Include="assembler\assembler.h" />
     <ClInclude Include="compiler\ast.h" />
     <ClInclude Include="compiler\compiler.h" />
+    <ClInclude Include="compiler\gen.h" />
     <ClInclude Include="compiler\tokenizer.h" />
     <ClInclude Include="disassembler\disassembler.h" />
     <ClInclude Include="main\main.h" />

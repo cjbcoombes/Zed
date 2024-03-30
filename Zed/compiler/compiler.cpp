@@ -76,5 +76,10 @@ int compiler::compile_(std::iostream& inputFile, std::iostream& outputFile, Comp
 	stream << IO_MAIN "AST Construction finished with code: " << out << IO_NORM "\n";
 	if (out) return out;
 
+	stream << IO_MAIN "Generating bytecode..." IO_NORM "\n";
+	out = generateBytecode(outputFile, astTree, settings, stream);
+	stream << IO_MAIN "Bytecode Generation finished with code: " << out << IO_NORM "\n";
+	if (out) return out;
+
 	return 0;
 }

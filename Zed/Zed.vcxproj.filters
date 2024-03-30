@@ -64,6 +64,9 @@
     <ClCompile Include="compiler\nodes.cpp">
       <Filter>Source Files\compiler</Filter>
     </ClCompile>
+    <ClCompile Include="compiler\gen.cpp">
+      <Filter>Source Files\compiler</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="utils\utils.h">
@@ -94,6 +97,9 @@
       <Filter>Source Files\compiler</Filter>
     </ClInclude>
     <ClInclude Include="compiler\ast.h">
+      <Filter>Source Files\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="compiler\gen.h">
       <Filter>Source Files\compiler</Filter>
     </ClInclude>
   </ItemGroup>

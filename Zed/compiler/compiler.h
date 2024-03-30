@@ -1,6 +1,7 @@
 #include "..\utils\utils.h"
 #include "tokenizer.h"
 #include "ast.h"
+#include "gen.h"
 
 namespace compiler {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -41,6 +42,8 @@ namespace compiler {
 
 			BAD_TYPE_ADD,
 			BAD_TYPE_SUB,
+			BAD_TYPE_MUL,
+			BAD_TYPE_DIV,
 
 			Count
 		};
@@ -67,7 +70,9 @@ namespace compiler {
 			"Invalid macro (after #)",
 
 			"Cannot add value of type (TODO: more info)",
-			"Cannot subtract value of type (TODO: more info)"
+			"Cannot subtract value of type (TODO: more info)",
+			"Cannot multiply value of type (TODO: more info)",
+			"Cannot divide value of type (TODO: more info)"
 		};
 
 		const ErrorType eType;
@@ -106,4 +111,9 @@ namespace compiler {
 	int initAST(ast::Tree& astTree, CompilerSettings& settings, std::ostream& stream);
 	// Applies rules to make the full AST tree
 	int constructAST(ast::Tree& astTree, CompilerSettings& settings, std::ostream& stream);
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Bytecode Generation
+
+	int generateBytecode(std::iostream& outputFile, ast::Tree & astTree, CompilerSettings& settings, std::ostream& stream);
 }

@@ -8,6 +8,11 @@
 #define TREE_SPACE "    "
 #define TREE_PASS "|   "
 
+//#define TREE_BRANCH_MID u8"\u2523\u2501 "
+//#define TREE_BRANCH_END u8"\u2517\u2501 "
+//#define TREE_SPACE "   "
+//#define TREE_PASS u8"\u2503  "
+
 void compiler::ast::Node::print(TokenData& tokenData, TypeData& typeData, std::ostream& stream, std::string&& indent, bool last) {
 	stream << indent;
 	if (last) stream << TREE_BRANCH_END;

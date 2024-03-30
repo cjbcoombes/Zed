@@ -258,6 +258,28 @@ compiler::ast::Node* macroWindow2(compiler::ast::Node* first, compiler::ast::Nod
 	return nullptr;
 }
 
+compiler::ast::Node* mulDivWindow3(compiler::ast::Node* first, compiler::ast::Node* second, compiler::ast::Node* third, compiler::ast::Tree& astTree, compiler::CompilerSettings& settings, std::ostream& stream) {
+	using namespace compiler::ast;
+	using namespace compiler;
+
+	TokenType op = second->token->type;
+	if (second->type == NodeType::TOKEN && (op == TokenType::STAR || op == TokenType::SLASH)) {
+		// TODO: non-int types
+		if (first->isExpr && third->isExpr) {
+			Expr* left = dynamic_cast<Expr*>(first);
+			Expr* right = dynamic_cast<Expr*>(third);
+
+			if (left->typeIndex == TypeData::intIndex && right->typeIndex == TypeData::intIndex) {
+				return astTree.addNode(std::make_unique<NodeArithBinop>(second->token, left, right, op == TokenType::STAR ? NodeArithBinop::OpType::MUL : NodeArithBinop::OpType::DIV, TypeData::intIndex));
+			}
+			// else fall through to error
+		}
+		throw CompilerException(op == TokenType::STAR ? CompilerException::ErrorType::BAD_TYPE_MUL : CompilerException::ErrorType::BAD_TYPE_DIV, second->token->line, second->token->column);
+	}
+
+	return nullptr;
+}
+
 compiler::ast::Node* addSubWindow3(compiler::ast::Node* first, compiler::ast::Node* second, compiler::ast::Node* third, compiler::ast::Tree& astTree, compiler::CompilerSettings& settings, std::ostream& stream) {
 	using namespace compiler::ast;
 	using namespace compiler;
@@ -304,7 +326,10 @@ compiler::ast::Node* reduceNodeGroup(compiler::ast::NodeGroup* group, compiler::
 	// Pass 2: Macros
 	slideWindow2(macroWindow2, group, astTree, settings, stream);
 
-	// Pass 3: Addition
+	// Pass 3: Multiplication and Division
+	slideWindow3(mulDivWindow3, group, astTree, settings, stream);
+
+	// Pass 4: Addition and Subtraction
 	slideWindow3(addSubWindow3, group, astTree, settings, stream);
 
 	if (group->type == NodeType::PAREN_GROUP && nodes.size() == 1 && nodes.front()->isExpr) {
