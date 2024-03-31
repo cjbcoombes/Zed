@@ -3,23 +3,34 @@
 namespace compiler {
 	namespace gen {
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		// Register Management
+		// Stack Frame Management
 
-		struct RegManager {
+		class Frame {
+		public:
+			bool wordRegs[bytecode::NUM_WORD_REGISTERS];
+			bool byteRegs[bytecode::NUM_BYTE_REGISTERS];
+			int nextFreeWord = 0;
+			int nextFreeByte = 0;
 
+			Frame();
+
+			bytecode::types::reg_t allocw();
+			bytecode::types::reg_t allocb();
+			void freew(bytecode::types::reg_t reg);
+			void freeb(bytecode::types::reg_t reg);
 		};
 
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		struct GenState {
+		// Generation
+
+		struct GenOut {
 		public:
 			int byteCounter;
-			RegManager regs;
 			std::iostream& outputFile;
 			// Will also need:
 			// - Global memory
-			// - Scopes?
 
-			GenState(std::iostream& outputFile) : byteCounter(0), regs(), outputFile(outputFile) {}
+			GenOut(std::iostream& outputFile) : byteCounter(0), outputFile(outputFile) {}
 
 			template<typename T>
 			void write(T obj);

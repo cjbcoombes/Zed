@@ -91,14 +91,14 @@ int compiler::initAST(compiler::ast::Tree& astTree, CompilerSettings& settings, 
 				}
 				break;
 			case TokenType::RIGHT_ANGLE:
-if (groups.top()->type == NodeType::ANGLE_GROUP) {
-	temp = groups.top();
-	groups.pop();
-	groups.top()->elems.push_back(temp);
-} else {
-	goto doDefaultCase;
-}
-break;
+				if (groups.top()->type == NodeType::ANGLE_GROUP) {
+					temp = groups.top();
+					groups.pop();
+					groups.top()->elems.push_back(temp);
+				} else {
+					goto doDefaultCase;
+				}
+				break;
 			case TokenType::NUM_INT:
 				groups.top()->elems.push_back(astTree.addNode<NodeInt>(std::make_unique<NodeInt>(&token, token.int_)));
 				break;
@@ -306,7 +306,7 @@ compiler::ast::Node* addSubWindow3(compiler::ast::Node* first, compiler::ast::No
 compiler::ast::Node* reduceNodeGroup(compiler::ast::NodeGroup* group, compiler::ast::Tree& astTree, compiler::CompilerSettings& settings, std::ostream& stream) {
 	using namespace compiler::ast;
 	using namespace compiler;
-	
+
 	std::list<Node*>& nodes = group->elems;
 
 	if (nodes.size() == 0) return group;

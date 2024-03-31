@@ -9,8 +9,6 @@ namespace bytecode {
 
 	constexpr int FIRST_INSTR_ADDR_LOCATION = 0;
 	constexpr int GLOBAL_TABLE_LOCATION = 4;
-	constexpr int NUM_WORD_REGISTERS = 14;
-	constexpr int NUM_BYTE_REGISTERS = 14;
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Types (could maybe be its own file)
@@ -77,6 +75,8 @@ namespace bytecode {
 			Count = 32
 		};
 	}
+	constexpr int NUM_WORD_REGISTERS = reg::B0 - reg::W0;
+	constexpr int NUM_BYTE_REGISTERS = reg::Count - reg::B0;
 
 	constexpr int namedRegCount = reg::W0;
 	constexpr const char* const regStrings[] = {

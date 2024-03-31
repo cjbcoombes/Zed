@@ -1,6 +1,9 @@
 #include "..\utils\utils.h"
+#include "gen.h"
 
 namespace compiler {
+	struct CompilerSettings;
+
 	namespace ast {
 
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -70,6 +73,8 @@ namespace compiler {
 			ARITH_BINOP
 		};
 
+		class Tree;
+
 		// Root node class
 		class Node {
 		public:
@@ -83,6 +88,7 @@ namespace compiler {
 			void printToken(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
 			virtual void print(TokenData& tokenData, TypeData& typeData, std::ostream& stream, std::string&& indent, bool last);
 			virtual void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
+			virtual void genBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		class Expr : public Node {
@@ -91,6 +97,8 @@ namespace compiler {
 
 			Expr(Token* token, NodeType type) : Node(token, type, true), typeIndex(-1) {}
 			Expr(Token* token, NodeType type, int typeIndex) : Node(token, type, true), typeIndex(typeIndex) {}
+			void genBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
+			virtual bytecode::types::reg_t genExprBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		// A node wrapping a token
@@ -101,12 +109,14 @@ namespace compiler {
 			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
 		};
 
+		// A node for a macro. This does not contain the argument of the macro (if any)
 		class NodeMacro : public Node {
 		public:
 			int strIndex;
 
 			NodeMacro(Token* token, int strIndex) : Node(token, NodeType::MACRO), strIndex(strIndex) {}
 			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
+			void genBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		// A node representing a type declaration
@@ -121,37 +131,41 @@ namespace compiler {
 		// A node wrapping an int
 		class NodeInt : public Expr {
 		public:
-			int val;
+			bytecode::types::int_t val;
 
-			NodeInt(Token* token, int val) : Expr(token, NodeType::INT, TypeData::intIndex), val(val) {}
+			NodeInt(Token* token, bytecode::types::int_t val) : Expr(token, NodeType::INT, TypeData::intIndex), val(val) {}
 			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
+			bytecode::types::reg_t genExprBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		// A node wrapping a float
 		class NodeFloat : public Expr {
 		public:
-			float val;
+			bytecode::types::float_t val;
 
-			NodeFloat(Token* token, float val) : Expr(token, NodeType::FLOAT, TypeData::floatIndex), val(val) {}
+			NodeFloat(Token* token, bytecode::types::float_t val) : Expr(token, NodeType::FLOAT, TypeData::floatIndex), val(val) {}
 			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
+			bytecode::types::reg_t genExprBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		// A node wrapping a char
 		class NodeChar : public Expr {
 		public:
-			char val;
+			bytecode::types::char_t val;
 
-			NodeChar(Token* token, char val) : Expr(token, NodeType::CHAR, TypeData::charIndex), val(val) {}
+			NodeChar(Token* token, bytecode::types::char_t val) : Expr(token, NodeType::CHAR, TypeData::charIndex), val(val) {}
 			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
+			bytecode::types::reg_t genExprBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		// A node wrapping a bool
 		class NodeBool : public Expr {
 		public:
-			bool val;
+			bytecode::types::bool_t val;
 
-			NodeBool(Token* token, bool val) : Expr(token, NodeType::BOOL, TypeData::boolIndex), val(val) {}
+			NodeBool(Token* token, bytecode::types::bool_t val) : Expr(token, NodeType::BOOL, TypeData::boolIndex), val(val) {}
 			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
+			bytecode::types::reg_t genExprBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		// A node wrapping a string
@@ -187,8 +201,10 @@ namespace compiler {
 					   type == NodeType::SQUARE_GROUP);
 			}
 			void print(TokenData& tokenData, TypeData& typeData, std::ostream& stream, std::string&& indent, bool last);
+			void genBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
 		};
 
+		// A node for an arithmetic binary operation
 		class NodeArithBinop : public Expr {
 		public:
 			enum class OpType {

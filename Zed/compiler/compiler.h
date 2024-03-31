@@ -1,7 +1,6 @@
 #include "..\utils\utils.h"
 #include "tokenizer.h"
 #include "ast.h"
-#include "gen.h"
 
 namespace compiler {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -45,6 +44,8 @@ namespace compiler {
 			BAD_TYPE_MUL,
 			BAD_TYPE_DIV,
 
+			OUT_OF_REGISTERS,
+
 			Count
 		};
 
@@ -72,7 +73,9 @@ namespace compiler {
 			"Cannot add value of type (TODO: more info)",
 			"Cannot subtract value of type (TODO: more info)",
 			"Cannot multiply value of type (TODO: more info)",
-			"Cannot divide value of type (TODO: more info)"
+			"Cannot divide value of type (TODO: more info)",
+
+			"Ran out of registers"
 		};
 
 		const ErrorType eType;
@@ -115,5 +118,5 @@ namespace compiler {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Bytecode Generation
 
-	int generateBytecode(std::iostream& outputFile, ast::Tree & astTree, CompilerSettings& settings, std::ostream& stream);
+	int generateBytecode(std::iostream& outputFile, ast::Tree& astTree, CompilerSettings& settings, std::ostream& stream);
 }
