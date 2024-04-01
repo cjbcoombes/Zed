@@ -38,8 +38,13 @@ void compiler::ast::NodeToken::printSimple(TokenData& tokenData, TypeData& typeD
 	stream << " )\n";
 }
 
-void compiler::ast::NodeMacro::printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream) {
-	stream << "Macro ( #" << IO_FMT_ID(tokenData.strList[strIndex]) << " )\n";
+void compiler::ast::NodeMacro::print(TokenData& tokenData, TypeData& typeData, std::ostream& stream, std::string&& indent, bool last) {
+	stream << indent;
+	if (last) stream << TREE_BRANCH_END;
+	else stream << TREE_BRANCH_MID;
+	stream << "Macro ( #" << IO_FMT_ID(macroStrings[static_cast<int>(macroType)]) << " )\n";
+
+	target->print(tokenData, typeData, stream, indent + (last ? TREE_SPACE : TREE_PASS), true);
 }
 
 void compiler::ast::NodeTypeSpec::printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream) {
@@ -114,10 +119,10 @@ void compiler::ast::NodeArithBinop::print(TokenData& tokenData, TypeData& typeDa
 	if (last) stream << TREE_BRANCH_END;
 	else stream << TREE_BRANCH_MID;
 	stream << "Arith Binop ( ";
-	if (type == OpType::ADD) stream << "+";
-	else if (type == OpType::SUB) stream << "-";
-	else if (type == OpType::MUL) stream << "*";
-	else if (type == OpType::DIV) stream << "/";
+	if (opType == OpType::ADD) stream << "+";
+	else if (opType == OpType::SUB) stream << "-";
+	else if (opType == OpType::MUL) stream << "*";
+	else if (opType == OpType::DIV) stream << "/";
 	else stream << "??";
 	stream << " )\n";
 

@@ -2,6 +2,7 @@
 
 namespace compiler {
 	namespace gen {
+
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// Stack Frame Management
 

@@ -48,6 +48,23 @@ namespace compiler {
 			TypeData() : types({ TypeInfo(), TypeInfo(), TypeInfo(), TypeInfo(), TypeInfo() }) {}
 		};
 
+
+		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		// Macros
+
+		enum class MacroType {
+			PRINTI,
+			PRINTF,
+
+			Count
+		};
+
+		constexpr int macroCount = static_cast<int>(MacroType::Count);
+		constexpr const char* const macroStrings[] = {
+			"printi",
+			"printf"
+		};
+
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// AST Nodes
 
@@ -112,10 +129,11 @@ namespace compiler {
 		// A node for a macro. This does not contain the argument of the macro (if any)
 		class NodeMacro : public Node {
 		public:
-			int strIndex;
+			MacroType macroType;
+			Expr* target;
 
-			NodeMacro(Token* token, int strIndex) : Node(token, NodeType::MACRO), strIndex(strIndex) {}
-			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
+			NodeMacro(Token* token, MacroType macroType, Expr* target) : Node(token, NodeType::MACRO), macroType(macroType), target(target) {}
+			void print(TokenData& tokenData, TypeData& typeData, std::ostream& stream, std::string&& indent, bool last);
 			void genBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
 		};
 
@@ -217,10 +235,11 @@ namespace compiler {
 
 			Expr* left;
 			Expr* right;
-			OpType type;
+			OpType opType;
 
-			NodeArithBinop(Token* token, Expr* left, Expr* right, OpType type, int typeIndex) : Expr(token, NodeType::ARITH_BINOP, typeIndex), left(left), right(right), type(type) {}
+			NodeArithBinop(Token* token, Expr* left, Expr* right, OpType opType, int typeIndex) : Expr(token, NodeType::ARITH_BINOP, typeIndex), left(left), right(right), opType(opType) {}
 			void print(TokenData& tokenData, TypeData& typeData, std::ostream& stream, std::string&& indent, bool last);
+			bytecode::types::reg_t genExprBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~

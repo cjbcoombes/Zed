@@ -122,14 +122,30 @@ void compiler::ast::NodeGroup::genBytecode(Tree& astTree, gen::GenOut& output, g
 // ----
 
 void compiler::ast::NodeMacro::genBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream) {
-	// TODO
-	// Need to restructure AST so Macro contains its target
+	using namespace bytecode;
+
+	types::reg_t reg;
+	
+	switch (macroType) {
+		case MacroType::PRINTI:
+			reg = target->genExprBytecode(astTree, output, frame, settings, stream);
+			output.write<types::opcode_t>(Opcode::R_PRNT_I);
+			output.write<types::reg_t>(reg);
+			frame.freew(reg);
+			break;
+		case MacroType::PRINTF:
+			reg = target->genExprBytecode(astTree, output, frame, settings, stream);
+			output.write<types::opcode_t>(Opcode::R_PRNT_F);
+			output.write<types::reg_t>(reg);
+			frame.freew(reg);
+			break;
+	}
 }
 
 bytecode::types::reg_t compiler::ast::NodeInt::genExprBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream) {
 	using namespace bytecode;
 	types::reg_t reg = frame.allocw();
-	output.write<types::opcode_t>(Opcode::R_MOV_W);
+	output.write<types::opcode_t>(Opcode::MOV_W);
 	output.write<types::reg_t>(reg);
 	output.write<types::int_t>(val);
 	return reg;
@@ -138,7 +154,7 @@ bytecode::types::reg_t compiler::ast::NodeInt::genExprBytecode(Tree& astTree, ge
 bytecode::types::reg_t compiler::ast::NodeFloat::genExprBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream) {
 	using namespace bytecode;
 	types::reg_t reg = frame.allocw();
-	output.write<types::opcode_t>(Opcode::R_MOV_W);
+	output.write<types::opcode_t>(Opcode::MOV_W);
 	output.write<types::reg_t>(reg);
 	output.write<types::float_t>(val);
 	return reg;
@@ -147,7 +163,7 @@ bytecode::types::reg_t compiler::ast::NodeFloat::genExprBytecode(Tree& astTree, 
 bytecode::types::reg_t compiler::ast::NodeChar::genExprBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream) {
 	using namespace bytecode;
 	types::reg_t reg = frame.allocb();
-	output.write<types::opcode_t>(Opcode::R_MOV_B);
+	output.write<types::opcode_t>(Opcode::MOV_B);
 	output.write<types::reg_t>(reg);
 	output.write<types::char_t>(val);
 	return reg;
@@ -156,8 +172,44 @@ bytecode::types::reg_t compiler::ast::NodeChar::genExprBytecode(Tree& astTree, g
 bytecode::types::reg_t compiler::ast::NodeBool::genExprBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream) {
 	using namespace bytecode;
 	types::reg_t reg = frame.allocb();
-	output.write<types::opcode_t>(Opcode::R_MOV_B);
+	output.write<types::opcode_t>(Opcode::MOV_B);
 	output.write<types::reg_t>(reg);
 	output.write<types::bool_t>(val);
 	return reg;
+}
+
+bytecode::types::reg_t compiler::ast::NodeArithBinop::genExprBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream) {
+	using namespace bytecode;
+	static constexpr types::opcode_t opcodes[][4] = {
+		{ Opcode::I_ADD, Opcode::I_SUB, Opcode::I_MUL, Opcode::I_DIV }, // ints
+		{ Opcode::F_ADD, Opcode::F_SUB, Opcode::F_MUL, Opcode::F_DIV } // floats
+	};
+
+	int i = left->typeIndex == TypeData::intIndex ? 0 :
+		left->typeIndex == TypeData::floatIndex ? 1 :
+		-1;
+
+	int j = opType == OpType::ADD ? 0 :
+		opType == OpType::SUB ? 1 :
+		opType == OpType::MUL ? 2 :
+		opType == OpType::DIV ? 3 : -1; // -1 should be impossible because enum
+
+	if (i < 0 || j < 0 || left->typeIndex != right->typeIndex) {
+		throw std::domain_error("Invalid type for arith binop");
+	}
+
+	types::reg_t reg1 = left->genExprBytecode(astTree, output, frame, settings, stream);
+	types::reg_t reg2 = right->genExprBytecode(astTree, output, frame, settings, stream);
+	output.write<types::opcode_t>(opcodes[i][j]);
+	output.write<types::reg_t>(reg1);
+	output.write<types::reg_t>(reg1);
+	output.write<types::reg_t>(reg2);
+
+	if (i <= 1) {
+		frame.freew(reg2);
+	} else {
+		frame.freeb(reg2);
+	}
+
+	return reg1;
 }

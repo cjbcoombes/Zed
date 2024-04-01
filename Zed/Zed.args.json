@@ -27,8 +27,12 @@
       "Command": "--compile \".\\Lang\\CompilerExamples\\example1.z\" \".\\Lang\\CompilerExamples\\example1.eze\""
     },
     {
-      "Id": "cb9691a2-4c60-465a-adc2-970f17a27101",
-      "Command": "--compile \".\\main\\main.cpp\" \".\\Lang\\CompilerExamples\\example1.eze\""
+      "Id": "c4c80151-389b-4b2b-ae9a-e0c97b4cebc3",
+      "Command": "--disassemble \".\\Lang\\CompilerExamples\\example1.eze\" \".\\Lang\\AssemblyExamples\\disasmdump.azm\""
+    },
+    {
+      "Id": "9c14c963-72cb-46fd-b90f-f7925c606295",
+      "Command": "--execute \".\\Lang\\CompilerExamples\\example1.eze\""
     }
   ]
 }

@@ -43,6 +43,7 @@ namespace compiler {
 			BAD_TYPE_SUB,
 			BAD_TYPE_MUL,
 			BAD_TYPE_DIV,
+			BAD_TYPE_MACRO,
 
 			OUT_OF_REGISTERS,
 
@@ -74,6 +75,7 @@ namespace compiler {
 			"Cannot subtract value of type (TODO: more info)",
 			"Cannot multiply value of type (TODO: more info)",
 			"Cannot divide value of type (TODO: more info)",
+			"Cannot apply macro to type (TODO: more info)",
 
 			"Ran out of registers"
 		};

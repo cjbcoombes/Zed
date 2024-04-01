@@ -243,16 +243,24 @@ void slideWindow3(compiler::ast::Node* (*windowFunc)(compiler::ast::Node*, compi
 	}
 }
 
-compiler::ast::Node* macroWindow2(compiler::ast::Node* first, compiler::ast::Node* second, compiler::ast::Tree& astTree, compiler::CompilerSettings& settings, std::ostream& stream) {
+compiler::ast::Node* macroWindow3(compiler::ast::Node* first, compiler::ast::Node* second, compiler::ast::Node* third, compiler::ast::Tree& astTree, compiler::CompilerSettings& settings, std::ostream& stream) {
 	using namespace compiler::ast;
 	using namespace compiler;
 
 	if (first->type == NodeType::TOKEN && first->token->type == TokenType::HASH) {
-		if (second->type == NodeType::IDENTIFIER) {
-			return astTree.addNode(std::make_unique<NodeMacro>(first->token, dynamic_cast<NodeIdentifier*>(second)->strIndex));
-		} else {
-			throw CompilerException(CompilerException::ErrorType::INVALID_MACRO, first->token->line, first->token->column);
+		if (second->type == NodeType::IDENTIFIER && third->isExpr) {
+			int idx = lookupString(astTree.tokenData.strList[dynamic_cast<NodeIdentifier*>(second)->strIndex].c_str(), macroStrings, macroCount);
+
+			MacroType type = static_cast<MacroType>(idx);
+			if ((type == MacroType::PRINTI && dynamic_cast<Expr*>(third)->typeIndex != TypeData::intIndex) ||
+				(type == MacroType::PRINTF && dynamic_cast<Expr*>(third)->typeIndex != TypeData::floatIndex)) {
+				throw CompilerException(CompilerException::ErrorType::BAD_TYPE_MACRO, third->token->line, third->token->column);
+			}
+			if (idx >= 0) {
+				return astTree.addNode(std::make_unique<NodeMacro>(first->token, type, dynamic_cast<Expr*>(third)));
+			}
 		}
+		throw CompilerException(CompilerException::ErrorType::INVALID_MACRO, first->token->line, first->token->column);
 	}
 
 	return nullptr;
@@ -269,8 +277,9 @@ compiler::ast::Node* mulDivWindow3(compiler::ast::Node* first, compiler::ast::No
 			Expr* left = dynamic_cast<Expr*>(first);
 			Expr* right = dynamic_cast<Expr*>(third);
 
-			if (left->typeIndex == TypeData::intIndex && right->typeIndex == TypeData::intIndex) {
-				return astTree.addNode(std::make_unique<NodeArithBinop>(second->token, left, right, op == TokenType::STAR ? NodeArithBinop::OpType::MUL : NodeArithBinop::OpType::DIV, TypeData::intIndex));
+			if (left->typeIndex == TypeData::intIndex && right->typeIndex == TypeData::intIndex ||
+				left->typeIndex == TypeData::floatIndex && right->typeIndex == TypeData::floatIndex) {
+				return astTree.addNode(std::make_unique<NodeArithBinop>(second->token, left, right, op == TokenType::STAR ? NodeArithBinop::OpType::MUL : NodeArithBinop::OpType::DIV, left->typeIndex));
 			}
 			// else fall through to error
 		}
@@ -291,8 +300,9 @@ compiler::ast::Node* addSubWindow3(compiler::ast::Node* first, compiler::ast::No
 			Expr* left = dynamic_cast<Expr*>(first);
 			Expr* right = dynamic_cast<Expr*>(third);
 
-			if (left->typeIndex == TypeData::intIndex && right->typeIndex == TypeData::intIndex) {
-				return astTree.addNode(std::make_unique<NodeArithBinop>(second->token, left, right, op == TokenType::PLUS ? NodeArithBinop::OpType::ADD : NodeArithBinop::OpType::SUB, TypeData::intIndex));
+			if (left->typeIndex == TypeData::intIndex && right->typeIndex == TypeData::intIndex ||
+				left->typeIndex == TypeData::floatIndex && right->typeIndex == TypeData::floatIndex) {
+				return astTree.addNode(std::make_unique<NodeArithBinop>(second->token, left, right, op == TokenType::PLUS ? NodeArithBinop::OpType::ADD : NodeArithBinop::OpType::SUB, left->typeIndex));
 			}
 			// else fall through to error
 		}
@@ -324,7 +334,7 @@ compiler::ast::Node* reduceNodeGroup(compiler::ast::NodeGroup* group, compiler::
 	}
 
 	// Pass 2: Macros
-	slideWindow2(macroWindow2, group, astTree, settings, stream);
+	slideWindow3(macroWindow3, group, astTree, settings, stream);
 
 	// Pass 3: Multiplication and Division
 	slideWindow3(mulDivWindow3, group, astTree, settings, stream);

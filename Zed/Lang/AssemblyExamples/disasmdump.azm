@@ -1,37 +1,6 @@
-time        W2          
-movw        W0          0x000000ea  
-storew      BP          0x00000004  W0          
-storew      BP          0x00000008  W2          
-jmp         0x00000046  
-rmovw       W2          W0          
-prntln      
-movw        W0          0x00000100  
-alloc       W1          W0          
-prntstr     PP          0x00000004  
-readstr     W1          0x00000000  
-storew      BP          0x00000000  W1          
-storew      BP          0x00000004  W2          
-storew      BP          0x00000008  BP          
-movw        W0          0x00000008  
-iadd        BP          BP          W0          
-movw        W0          0x00000148  
-storew      BP          0x00000004  W0          
-storew      BP          0x00000008  W1          
-movw        W0          0x0000000a  
-storew      BP          0x0000000c  W0          
-jmp         0x00000085  
-loadw       BP          BP          0x00000000  
-loadw       W1          BP          0x00000000  
-loadw       W2          BP          0x00000004  
-icmpeq      W0          W2          
-jmpnz       0x00000185  
-icmpgt      W0          W2          
-jmpz        0x00000179  
-prntstr     PP          0x0000001c  
-prntln      
-jmp         0x000000f7  
-prntstr     PP          0x0000002d  
-prntln      
-jmp         0x000000f7  
-prntstr     PP          0x0000003d  
-free        W1          
+movw        W0          0x00000003  
+movw        W1          0x00000004  
+iadd        W0          W0          W1          
+movw        W2          0x00000064  
+imul        W0          W0          W2          
+rprnti      W0          
