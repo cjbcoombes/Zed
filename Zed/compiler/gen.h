@@ -13,7 +13,15 @@ namespace compiler {
 			int nextFreeWord = 0;
 			int nextFreeByte = 0;
 
+			std::vector<char> bytes;
+			// std::vector<std::pair<?, int>> markers; // markers to addresses to be overwritten
+			// Will also need:
+			// - Global memory
+
 			Frame();
+
+			template<typename T>
+			void write(T obj);
 
 			bytecode::types::reg_t allocw();
 			bytecode::types::reg_t allocb();
@@ -21,20 +29,11 @@ namespace compiler {
 			void freeb(bytecode::types::reg_t reg);
 		};
 
-		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		// Generation
-
-		struct GenOut {
+		class GenOut {
 		public:
-			int byteCounter;
-			std::iostream& outputFile;
-			// Will also need:
-			// - Global memory
+			std::list<std::unique_ptr<Frame>> frames;
 
-			GenOut(std::iostream& outputFile) : byteCounter(0), outputFile(outputFile) {}
-
-			template<typename T>
-			void write(T obj);
+			Frame& addFrame();
 		};
 	}
 }

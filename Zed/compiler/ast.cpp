@@ -24,7 +24,7 @@ int compiler::initAST(compiler::ast::Tree& astTree, CompilerSettings& settings, 
 	std::stack<NodeGroup*> groups;
 
 	// The "root" node is a group
-	NodeGroup* root = astTree.addNode<NodeGroup>(std::make_unique<NodeGroup>(nullptr, NodeType::ROOT_GROUP));
+	NodeGroup* root = astTree.addNode<NodeGroup>(std::make_unique<NodeGroup>(nullptr, NodeType::ROOT_GROUP, nullptr));
 	astTree.root = root;
 	groups.push(root);
 
@@ -39,24 +39,24 @@ int compiler::initAST(compiler::ast::Tree& astTree, CompilerSettings& settings, 
 		auto next = i + 1;
 		switch (token.type) {
 			case TokenType::LEFT_PAREN:
-				groups.push(astTree.addNode<NodeGroup>(std::make_unique<NodeGroup>(&token, NodeType::PAREN_GROUP)));
+				groups.push(astTree.addNode<NodeGroup>(std::make_unique<NodeGroup>(&token, NodeType::PAREN_GROUP, groups.top())));
 				topLine = token.line;
 				topCol = token.column;
 				break;
 			case TokenType::LEFT_SQUARE:
-				groups.push(astTree.addNode<NodeGroup>(std::make_unique<NodeGroup>(&token, NodeType::SQUARE_GROUP)));
+				groups.push(astTree.addNode<NodeGroup>(std::make_unique<NodeGroup>(&token, NodeType::SQUARE_GROUP, groups.top())));
 				topLine = token.line;
 				topCol = token.column;
 				break;
 			case TokenType::LEFT_CURLY:
-				groups.push(astTree.addNode<NodeGroup>(std::make_unique<NodeGroup>(&token, NodeType::CURLY_GROUP)));
+				groups.push(astTree.addNode<NodeGroup>(std::make_unique<NodeGroup>(&token, NodeType::CURLY_GROUP, groups.top())));
 				topLine = token.line;
 				topCol = token.column;
 				break;
 			case TokenType::LEFT_ANGLE:
 				// TODO: this might not be the correct way to determine if a left angle is specifying a type
 				if (next != tokenData.tokens.end() && ((*next).type == TokenType::LEFT_ANGLE || isTypeToken((*next).type))) {
-					groups.push(astTree.addNode<NodeGroup>(std::make_unique<NodeGroup>(&token, NodeType::ANGLE_GROUP)));
+					groups.push(astTree.addNode<NodeGroup>(std::make_unique<NodeGroup>(&token, NodeType::ANGLE_GROUP, groups.top())));
 					topLine = token.line;
 					topCol = token.column;
 				} else {
@@ -243,6 +243,20 @@ void slideWindow3(compiler::ast::Node* (*windowFunc)(compiler::ast::Node*, compi
 	}
 }
 
+compiler::ast::Node* funDefWindow3(compiler::ast::Node* first, compiler::ast::Node* second, compiler::ast::Node* third, compiler::ast::Tree& astTree, compiler::CompilerSettings& settings, std::ostream& stream) {
+	using namespace compiler::ast;
+	using namespace compiler;
+
+	if (first->type == NodeType::TOKEN && 
+		first->token->type == TokenType::FUN && 
+		second->type == NodeType::IDENTIFIER && 
+		third->type == NodeType::CURLY_GROUP) {
+		return astTree.addNode(std::make_unique<NodeFunDef>(second->token, second->token->strIndex, dynamic_cast<NodeGroup*>(third)));
+	}
+
+	return nullptr;
+}
+
 compiler::ast::Node* macroWindow3(compiler::ast::Node* first, compiler::ast::Node* second, compiler::ast::Node* third, compiler::ast::Tree& astTree, compiler::CompilerSettings& settings, std::ostream& stream) {
 	using namespace compiler::ast;
 	using namespace compiler;
@@ -333,13 +347,16 @@ compiler::ast::Node* reduceNodeGroup(compiler::ast::NodeGroup* group, compiler::
 		}
 	}
 
-	// Pass 2: Macros
+	// Pass _: Functions
+	slideWindow3(funDefWindow3, group, astTree, settings, stream);
+
+	// Pass _: Macros
 	slideWindow3(macroWindow3, group, astTree, settings, stream);
 
-	// Pass 3: Multiplication and Division
+	// Pass _: Multiplication and Division
 	slideWindow3(mulDivWindow3, group, astTree, settings, stream);
 
-	// Pass 4: Addition and Subtraction
+	// Pass _: Addition and Subtraction
 	slideWindow3(addSubWindow3, group, astTree, settings, stream);
 
 	if (group->type == NodeType::PAREN_GROUP && nodes.size() == 1 && nodes.front()->isExpr) {

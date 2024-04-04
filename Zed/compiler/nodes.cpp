@@ -71,6 +71,15 @@ void compiler::ast::NodeTypeSpec::printSimple(TokenData& tokenData, TypeData& ty
 	stream << " )\n";
 }
 
+void compiler::ast::NodeFunDef::print(TokenData& tokenData, TypeData& typeData, std::ostream& stream, std::string&& indent, bool last) {
+	stream << indent;
+	if (last) stream << TREE_BRANCH_END;
+	else stream << TREE_BRANCH_MID;
+	stream << "Fun ( " << IO_FMT_ID(tokenData.strList[strIndex]) << " )\n";
+
+	body->print(tokenData, typeData, stream, indent + (last ? TREE_SPACE : TREE_PASS), true);
+}
+
 void compiler::ast::NodeInt::printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream) {
 	stream << "Int ( " << IO_FMT_INT(val) << " )\n";
 }

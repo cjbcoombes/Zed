@@ -77,6 +77,7 @@ namespace compiler {
 		OR,
 		TRUE,
 		FALSE,
+		FUN,
 		// Primitive typenames (included in keywords)
 		TYPE_INT,
 		TYPE_FLOAT,
@@ -129,6 +130,7 @@ namespace compiler {
 		"or",
 		"true",
 		"false",
+		"fun",
 		"int",
 		"float",
 		"bool",

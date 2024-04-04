@@ -4,7 +4,7 @@
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Stack Frame Management
 
-compiler::gen::Frame::Frame() : wordRegs(), byteRegs() {
+compiler::gen::Frame::Frame() : bytes(), wordRegs(), byteRegs() {
 	for (int i = 0; i < bytecode::NUM_WORD_REGISTERS; i++) {
 		wordRegs[i] = false;
 	}
@@ -65,13 +65,20 @@ void compiler::gen::Frame::freeb(bytecode::types::reg_t reg) {
 	}
 }
 
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Generation
-
 template<typename T>
-void compiler::gen::GenOut::write(T obj) {
-	outputFile.write(reinterpret_cast<char*>(&obj), sizeof(T));
-	byteCounter += sizeof(T);
+void compiler::gen::Frame::write(T obj) {
+	char* p = reinterpret_cast<char*>(&obj);
+	for (int i = 0; i < sizeof(T); i++) {
+		bytes.push_back(*p);
+		p++;
+	}
+}
+
+compiler::gen::Frame& compiler::gen::GenOut::addFrame() {
+	std::unique_ptr<Frame> frame = std::make_unique<Frame>();
+	Frame& temp = *frame.get();
+	frames.push_back(std::move(frame));
+	return temp;
 }
 
 int compiler::generateBytecode(std::iostream& outputFile, ast::Tree& astTree, CompilerSettings& settings, std::ostream& stream) {
@@ -79,13 +86,16 @@ int compiler::generateBytecode(std::iostream& outputFile, ast::Tree& astTree, Co
 	using namespace compiler::gen;
 	using namespace bytecode;
 	
-	GenOut output(outputFile);
-	Frame globalFrame{};
+	GenOut output;
+	Frame& globalFrame = output.addFrame();
 
-	output.write<types::word_t>(4); // First instruction address (to be overwritten later)
+	globalFrame.write<types::word_t>(4); // First instruction address (to be overwritten later)
 
 	astTree.root->genBytecode(astTree, output, globalFrame, settings, stream);
 	
+	for (char byte : globalFrame.bytes) {
+		outputFile.write(&byte, 1);
+	}
 
 	return 0;
 }
@@ -95,6 +105,16 @@ int compiler::generateBytecode(std::iostream& outputFile, ast::Tree& astTree, Co
 
 void compiler::ast::Node::genBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream) {
 	throw std::logic_error("This node does not have bytecode generation");
+}
+
+void compiler::ast::NodeFunDef::genBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream) {
+	using namespace compiler;
+	using namespace compiler::gen;
+	using namespace bytecode;
+
+	Frame& newFrame = output.addFrame();
+
+	body->genBytecode(astTree, output, newFrame, settings, stream);
 }
 
 void compiler::ast::Expr::genBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream) {
@@ -129,14 +149,14 @@ void compiler::ast::NodeMacro::genBytecode(Tree& astTree, gen::GenOut& output, g
 	switch (macroType) {
 		case MacroType::PRINTI:
 			reg = target->genExprBytecode(astTree, output, frame, settings, stream);
-			output.write<types::opcode_t>(Opcode::R_PRNT_I);
-			output.write<types::reg_t>(reg);
+			frame.write<types::opcode_t>(Opcode::R_PRNT_I);
+			frame.write<types::reg_t>(reg);
 			frame.freew(reg);
 			break;
 		case MacroType::PRINTF:
 			reg = target->genExprBytecode(astTree, output, frame, settings, stream);
-			output.write<types::opcode_t>(Opcode::R_PRNT_F);
-			output.write<types::reg_t>(reg);
+			frame.write<types::opcode_t>(Opcode::R_PRNT_F);
+			frame.write<types::reg_t>(reg);
 			frame.freew(reg);
 			break;
 	}
@@ -145,36 +165,36 @@ void compiler::ast::NodeMacro::genBytecode(Tree& astTree, gen::GenOut& output, g
 bytecode::types::reg_t compiler::ast::NodeInt::genExprBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream) {
 	using namespace bytecode;
 	types::reg_t reg = frame.allocw();
-	output.write<types::opcode_t>(Opcode::MOV_W);
-	output.write<types::reg_t>(reg);
-	output.write<types::int_t>(val);
+	frame.write<types::opcode_t>(Opcode::MOV_W);
+	frame.write<types::reg_t>(reg);
+	frame.write<types::int_t>(val);
 	return reg;
 }
 
 bytecode::types::reg_t compiler::ast::NodeFloat::genExprBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream) {
 	using namespace bytecode;
 	types::reg_t reg = frame.allocw();
-	output.write<types::opcode_t>(Opcode::MOV_W);
-	output.write<types::reg_t>(reg);
-	output.write<types::float_t>(val);
+	frame.write<types::opcode_t>(Opcode::MOV_W);
+	frame.write<types::reg_t>(reg);
+	frame.write<types::float_t>(val);
 	return reg;
 }
 
 bytecode::types::reg_t compiler::ast::NodeChar::genExprBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream) {
 	using namespace bytecode;
 	types::reg_t reg = frame.allocb();
-	output.write<types::opcode_t>(Opcode::MOV_B);
-	output.write<types::reg_t>(reg);
-	output.write<types::char_t>(val);
+	frame.write<types::opcode_t>(Opcode::MOV_B);
+	frame.write<types::reg_t>(reg);
+	frame.write<types::char_t>(val);
 	return reg;
 }
 
 bytecode::types::reg_t compiler::ast::NodeBool::genExprBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream) {
 	using namespace bytecode;
 	types::reg_t reg = frame.allocb();
-	output.write<types::opcode_t>(Opcode::MOV_B);
-	output.write<types::reg_t>(reg);
-	output.write<types::bool_t>(val);
+	frame.write<types::opcode_t>(Opcode::MOV_B);
+	frame.write<types::reg_t>(reg);
+	frame.write<types::bool_t>(val);
 	return reg;
 }
 
@@ -200,10 +220,10 @@ bytecode::types::reg_t compiler::ast::NodeArithBinop::genExprBytecode(Tree& astT
 
 	types::reg_t reg1 = left->genExprBytecode(astTree, output, frame, settings, stream);
 	types::reg_t reg2 = right->genExprBytecode(astTree, output, frame, settings, stream);
-	output.write<types::opcode_t>(opcodes[i][j]);
-	output.write<types::reg_t>(reg1);
-	output.write<types::reg_t>(reg1);
-	output.write<types::reg_t>(reg2);
+	frame.write<types::opcode_t>(opcodes[i][j]);
+	frame.write<types::reg_t>(reg1);
+	frame.write<types::reg_t>(reg1);
+	frame.write<types::reg_t>(reg2);
 
 	if (i <= 1) {
 		frame.freew(reg2);

@@ -48,6 +48,14 @@ namespace compiler {
 			TypeData() : types({ TypeInfo(), TypeInfo(), TypeInfo(), TypeInfo(), TypeInfo() }) {}
 		};
 
+		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		// Symbols
+
+		struct Symbol {
+			int strIndex;
+			int typeIndex;
+		};
+
 
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// Macros
@@ -70,9 +78,16 @@ namespace compiler {
 
 		// An enum of node types
 		enum class NodeType {
+			ROOT_GROUP,
+			PAREN_GROUP,
+			SQUARE_GROUP,
+			CURLY_GROUP,
+			ANGLE_GROUP,
+
 			TOKEN,
 			MACRO,
 			TYPESPEC,
+			FUN_DEF,
 
 			INT,
 			FLOAT,
@@ -81,16 +96,11 @@ namespace compiler {
 			STRING,
 			IDENTIFIER,
 
-			ROOT_GROUP,
-			PAREN_GROUP,
-			SQUARE_GROUP,
-			CURLY_GROUP,
-			ANGLE_GROUP,
-
 			ARITH_BINOP
 		};
 
 		class Tree;
+		class NodeGroup;
 
 		// Root node class
 		class Node {
@@ -116,6 +126,27 @@ namespace compiler {
 			Expr(Token* token, NodeType type, int typeIndex) : Node(token, type, true), typeIndex(typeIndex) {}
 			void genBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
 			virtual bytecode::types::reg_t genExprBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
+		};
+
+		// A node containing a list of other nodes
+		// Used for groups in parens, brackets, etc.
+		class NodeGroup : public Node {
+		public:
+			std::list<Node*> elems;
+			std::list<Symbol> symbols;
+			NodeGroup* parentGroup;
+
+			NodeGroup(Token* token, NodeType type, NodeGroup* parentGroup) : Node(token, type), parentGroup(parentGroup) {
+				assert(type == NodeType::ANGLE_GROUP ||
+					   type == NodeType::CURLY_GROUP ||
+					   type == NodeType::PAREN_GROUP ||
+					   type == NodeType::ROOT_GROUP ||
+					   type == NodeType::SQUARE_GROUP);
+			}
+			void print(TokenData& tokenData, TypeData& typeData, std::ostream& stream, std::string&& indent, bool last);
+			void genBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
+			// add symbol
+			// find symbol
 		};
 
 		// A node wrapping a token
@@ -144,6 +175,19 @@ namespace compiler {
 
 			NodeTypeSpec(Token* token, int typeIndex) : Node(token, NodeType::TYPESPEC), typeIndex(typeIndex) {}
 			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
+		};
+
+		// A node representing a function definition
+		class NodeFunDef : public Node {
+		public:
+			int strIndex;
+			NodeGroup* body;
+
+			NodeFunDef(Token* token, int strIndex, NodeGroup* body) : Node(token, NodeType::FUN_DEF), strIndex(strIndex), body(body) {
+				assert(body->type == NodeType::CURLY_GROUP);
+			}
+			void print(TokenData& tokenData, TypeData& typeData, std::ostream& stream, std::string&& indent, bool last);
+			void genBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		// A node wrapping an int
@@ -203,23 +247,6 @@ namespace compiler {
 
 			NodeIdentifier(Token* token, int strIndex) : Expr(token, NodeType::IDENTIFIER, -1), strIndex(strIndex), scopeIndex(-1) {}
 			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
-		};
-
-		// A node containing a list of other nodes
-		// Used for groups in parens, brackets, etc.
-		class NodeGroup : public Node {
-		public:
-			std::list<Node*> elems;
-
-			NodeGroup(Token* token, NodeType type) : Node(token, type) {
-				assert(type == NodeType::ANGLE_GROUP ||
-					   type == NodeType::CURLY_GROUP ||
-					   type == NodeType::PAREN_GROUP ||
-					   type == NodeType::ROOT_GROUP ||
-					   type == NodeType::SQUARE_GROUP);
-			}
-			void print(TokenData& tokenData, TypeData& typeData, std::ostream& stream, std::string&& indent, bool last);
-			void genBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		// A node for an arithmetic binary operation
