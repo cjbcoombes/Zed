@@ -1,6 +1,20 @@
 #include "compiler.h"
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Type Data
+
+const compiler::ast::Type compiler::ast::TypeData::typeUndefined{ -1 };
+const compiler::ast::Type compiler::ast::TypeData::typeVoid{ 0 };
+const compiler::ast::Type compiler::ast::TypeData::typeInt{ 1 };
+const compiler::ast::Type compiler::ast::TypeData::typeFloat{ 2 };
+const compiler::ast::Type compiler::ast::TypeData::typeChar{ 3 };
+const compiler::ast::Type compiler::ast::TypeData::typeBool{ 4 };
+
+bool compiler::ast::TypeData::sameExact(const compiler::ast::Type& a, const compiler::ast::Type& b) {
+	return a.index == b.index;
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // AST Tree Functions
 
 template<class N>
@@ -121,16 +135,16 @@ int compiler::initAST(compiler::ast::Tree& astTree, CompilerSettings& settings, 
 				groups.top()->elems.push_back(astTree.addNode<NodeIdentifier>(std::make_unique<NodeIdentifier>(&token, token.strIndex)));
 				break;
 			case TokenType::TYPE_INT:
-				groups.top()->elems.push_back(astTree.addNode<NodeTypeSpec>(std::make_unique<NodeTypeSpec>(&token, TypeData::intIndex)));
+				groups.top()->elems.push_back(astTree.addNode<NodeTypeSpec>(std::make_unique<NodeTypeSpec>(&token, TypeData::typeInt)));
 				break;
 			case TokenType::TYPE_FLOAT:
-				groups.top()->elems.push_back(astTree.addNode<NodeTypeSpec>(std::make_unique<NodeTypeSpec>(&token, TypeData::floatIndex)));
+				groups.top()->elems.push_back(astTree.addNode<NodeTypeSpec>(std::make_unique<NodeTypeSpec>(&token, TypeData::typeFloat)));
 				break;
 			case TokenType::TYPE_CHAR:
-				groups.top()->elems.push_back(astTree.addNode<NodeTypeSpec>(std::make_unique<NodeTypeSpec>(&token, TypeData::charIndex)));
+				groups.top()->elems.push_back(astTree.addNode<NodeTypeSpec>(std::make_unique<NodeTypeSpec>(&token, TypeData::typeChar)));
 				break;
 			case TokenType::TYPE_BOOL:
-				groups.top()->elems.push_back(astTree.addNode<NodeTypeSpec>(std::make_unique<NodeTypeSpec>(&token, TypeData::boolIndex)));
+				groups.top()->elems.push_back(astTree.addNode<NodeTypeSpec>(std::make_unique<NodeTypeSpec>(&token, TypeData::typeBool)));
 				break;
 
 			doDefaultCase:
@@ -265,12 +279,8 @@ compiler::ast::Node* macroWindow3(compiler::ast::Node* first, compiler::ast::Nod
 		if (second->type == NodeType::IDENTIFIER && third->isExpr) {
 			int idx = lookupString(astTree.tokenData.strList[dynamic_cast<NodeIdentifier*>(second)->strIndex].c_str(), macroStrings, macroCount);
 
-			MacroType type = static_cast<MacroType>(idx);
-			if ((type == MacroType::PRINTI && dynamic_cast<Expr*>(third)->typeIndex != TypeData::intIndex) ||
-				(type == MacroType::PRINTF && dynamic_cast<Expr*>(third)->typeIndex != TypeData::floatIndex)) {
-				throw CompilerException(CompilerException::ErrorType::BAD_TYPE_MACRO, third->token->line, third->token->column);
-			}
 			if (idx >= 0) {
+				MacroType type = static_cast<MacroType>(idx);
 				return astTree.addNode(std::make_unique<NodeMacro>(first->token, type, dynamic_cast<Expr*>(third)));
 			}
 		}
@@ -286,16 +296,11 @@ compiler::ast::Node* mulDivWindow3(compiler::ast::Node* first, compiler::ast::No
 
 	TokenType op = second->token->type;
 	if (second->type == NodeType::TOKEN && (op == TokenType::STAR || op == TokenType::SLASH)) {
-		// TODO: non-int types
 		if (first->isExpr && third->isExpr) {
 			Expr* left = dynamic_cast<Expr*>(first);
 			Expr* right = dynamic_cast<Expr*>(third);
 
-			if (left->typeIndex == TypeData::intIndex && right->typeIndex == TypeData::intIndex ||
-				left->typeIndex == TypeData::floatIndex && right->typeIndex == TypeData::floatIndex) {
-				return astTree.addNode(std::make_unique<NodeArithBinop>(second->token, left, right, op == TokenType::STAR ? NodeArithBinop::OpType::MUL : NodeArithBinop::OpType::DIV, left->typeIndex));
-			}
-			// else fall through to error
+			return astTree.addNode(std::make_unique<NodeArithBinop>(second->token, left, right, op == TokenType::STAR ? NodeArithBinop::OpType::MUL : NodeArithBinop::OpType::DIV));
 		}
 		throw CompilerException(op == TokenType::STAR ? CompilerException::ErrorType::BAD_TYPE_MUL : CompilerException::ErrorType::BAD_TYPE_DIV, second->token->line, second->token->column);
 	}
@@ -309,16 +314,11 @@ compiler::ast::Node* addSubWindow3(compiler::ast::Node* first, compiler::ast::No
 
 	TokenType op = second->token->type;
 	if (second->type == NodeType::TOKEN && (op == TokenType::PLUS || op == TokenType::DASH)) {
-		// TODO: non-int types
 		if (first->isExpr && third->isExpr) {
 			Expr* left = dynamic_cast<Expr*>(first);
 			Expr* right = dynamic_cast<Expr*>(third);
 
-			if (left->typeIndex == TypeData::intIndex && right->typeIndex == TypeData::intIndex ||
-				left->typeIndex == TypeData::floatIndex && right->typeIndex == TypeData::floatIndex) {
-				return astTree.addNode(std::make_unique<NodeArithBinop>(second->token, left, right, op == TokenType::PLUS ? NodeArithBinop::OpType::ADD : NodeArithBinop::OpType::SUB, left->typeIndex));
-			}
-			// else fall through to error
+			return astTree.addNode(std::make_unique<NodeArithBinop>(second->token, left, right, op == TokenType::PLUS ? NodeArithBinop::OpType::ADD : NodeArithBinop::OpType::SUB));
 		}
 		throw CompilerException(op == TokenType::PLUS ? CompilerException::ErrorType::BAD_TYPE_ADD : CompilerException::ErrorType::BAD_TYPE_SUB, second->token->line, second->token->column);
 	}

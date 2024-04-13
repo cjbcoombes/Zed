@@ -38,6 +38,7 @@ namespace compiler {
 
 			INVALID_TYPE_TOKEN,
 			INVALID_MACRO,
+			DUPLICATE_SYMBOL,
 
 			BAD_TYPE_ADD,
 			BAD_TYPE_SUB,
@@ -70,6 +71,7 @@ namespace compiler {
 
 			"Invalid token in typespec",
 			"Invalid macro (after #)",
+			"Duplicate symbol",
 
 			"Cannot add value of type (TODO: more info)",
 			"Cannot subtract value of type (TODO: more info)",

@@ -26,6 +26,12 @@ namespace compiler {
 		// 
 		// ]
 
+		struct Type {
+			const int index;
+
+			Type(int index) : index(index) {}
+		};
+
 		struct TypeInfo {
 			std::vector<int> types;
 			std::vector<int> typeStrIndices;
@@ -37,23 +43,17 @@ namespace compiler {
 		class TypeData {
 		public:
 
-			static constexpr int voidIndex = 0;
-			static constexpr int intIndex = 1;
-			static constexpr int floatIndex = 2;
-			static constexpr int charIndex = 3;
-			static constexpr int boolIndex = 4;
+			static const Type typeUndefined;
+			static const Type typeVoid;
+			static const Type typeInt;
+			static const Type typeFloat;
+			static const Type typeChar;
+			static const Type typeBool;
 
 			std::vector<TypeInfo> types;
 
 			TypeData() : types({ TypeInfo(), TypeInfo(), TypeInfo(), TypeInfo(), TypeInfo() }) {}
-		};
-
-		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		// Symbols
-
-		struct Symbol {
-			int strIndex;
-			int typeIndex;
+			static bool sameExact(const Type& a, const Type& b);
 		};
 
 
@@ -120,10 +120,10 @@ namespace compiler {
 
 		class Expr : public Node {
 		public:
-			int typeIndex;
+			Type exprType;
 
-			Expr(Token* token, NodeType type) : Node(token, type, true), typeIndex(-1) {}
-			Expr(Token* token, NodeType type, int typeIndex) : Node(token, type, true), typeIndex(typeIndex) {}
+			Expr(Token* token, NodeType type) : Node(token, type, true), exprType(TypeData::typeUndefined) {}
+			Expr(Token* token, NodeType type, Type exprType) : Node(token, type, true), exprType(exprType) {}
 			void genBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
 			virtual bytecode::types::reg_t genExprBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
 		};
@@ -133,7 +133,6 @@ namespace compiler {
 		class NodeGroup : public Node {
 		public:
 			std::list<Node*> elems;
-			std::list<Symbol> symbols;
 			NodeGroup* parentGroup;
 
 			NodeGroup(Token* token, NodeType type, NodeGroup* parentGroup) : Node(token, type), parentGroup(parentGroup) {
@@ -145,8 +144,6 @@ namespace compiler {
 			}
 			void print(TokenData& tokenData, TypeData& typeData, std::ostream& stream, std::string&& indent, bool last);
 			void genBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
-			// add symbol
-			// find symbol
 		};
 
 		// A node wrapping a token
@@ -171,9 +168,9 @@ namespace compiler {
 		// A node representing a type declaration
 		class NodeTypeSpec : public Node {
 		public:
-			int typeIndex;
+			Type exprType;
 
-			NodeTypeSpec(Token* token, int typeIndex) : Node(token, NodeType::TYPESPEC), typeIndex(typeIndex) {}
+			NodeTypeSpec(Token* token, Type exprType) : Node(token, NodeType::TYPESPEC), exprType(exprType) {}
 			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
 		};
 
@@ -195,7 +192,7 @@ namespace compiler {
 		public:
 			bytecode::types::int_t val;
 
-			NodeInt(Token* token, bytecode::types::int_t val) : Expr(token, NodeType::INT, TypeData::intIndex), val(val) {}
+			NodeInt(Token* token, bytecode::types::int_t val) : Expr(token, NodeType::INT, TypeData::typeInt), val(val) {}
 			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
 			bytecode::types::reg_t genExprBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
 		};
@@ -205,7 +202,7 @@ namespace compiler {
 		public:
 			bytecode::types::float_t val;
 
-			NodeFloat(Token* token, bytecode::types::float_t val) : Expr(token, NodeType::FLOAT, TypeData::floatIndex), val(val) {}
+			NodeFloat(Token* token, bytecode::types::float_t val) : Expr(token, NodeType::FLOAT, TypeData::typeFloat), val(val) {}
 			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
 			bytecode::types::reg_t genExprBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
 		};
@@ -215,7 +212,7 @@ namespace compiler {
 		public:
 			bytecode::types::char_t val;
 
-			NodeChar(Token* token, bytecode::types::char_t val) : Expr(token, NodeType::CHAR, TypeData::charIndex), val(val) {}
+			NodeChar(Token* token, bytecode::types::char_t val) : Expr(token, NodeType::CHAR, TypeData::typeChar), val(val) {}
 			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
 			bytecode::types::reg_t genExprBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
 		};
@@ -225,7 +222,7 @@ namespace compiler {
 		public:
 			bytecode::types::bool_t val;
 
-			NodeBool(Token* token, bytecode::types::bool_t val) : Expr(token, NodeType::BOOL, TypeData::boolIndex), val(val) {}
+			NodeBool(Token* token, bytecode::types::bool_t val) : Expr(token, NodeType::BOOL, TypeData::typeBool), val(val) {}
 			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
 			bytecode::types::reg_t genExprBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
 		};
@@ -243,9 +240,8 @@ namespace compiler {
 		class NodeIdentifier : public Expr {
 		public:
 			int strIndex;
-			int scopeIndex; // TODO : scopes?
 
-			NodeIdentifier(Token* token, int strIndex) : Expr(token, NodeType::IDENTIFIER, -1), strIndex(strIndex), scopeIndex(-1) {}
+			NodeIdentifier(Token* token, int strIndex) : Expr(token, NodeType::IDENTIFIER, -1), strIndex(strIndex) {}
 			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
 		};
 
@@ -264,7 +260,7 @@ namespace compiler {
 			Expr* right;
 			OpType opType;
 
-			NodeArithBinop(Token* token, Expr* left, Expr* right, OpType opType, int typeIndex) : Expr(token, NodeType::ARITH_BINOP, typeIndex), left(left), right(right), opType(opType) {}
+			NodeArithBinop(Token* token, Expr* left, Expr* right, OpType opType) : Expr(token, NodeType::ARITH_BINOP, TypeData::typeUndefined), left(left), right(right), opType(opType) {}
 			void print(TokenData& tokenData, TypeData& typeData, std::ostream& stream, std::string&& indent, bool last);
 			bytecode::types::reg_t genExprBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
 		};

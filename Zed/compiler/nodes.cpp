@@ -49,20 +49,24 @@ void compiler::ast::NodeMacro::print(TokenData& tokenData, TypeData& typeData, s
 
 void compiler::ast::NodeTypeSpec::printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream) {
 	stream << "Type ( ";
-	switch (typeIndex) {
-		case TypeData::voidIndex:
+	// Note: indices much match TypeData
+	switch (exprType.index) {
+		case -1:
+			stream << IO_FMT_KEYWORD("undefined");
+			break;
+		case 0:
 			stream << IO_FMT_KEYWORD("void");
 			break;
-		case TypeData::intIndex:
+		case 1:
 			stream << IO_FMT_KEYWORD("int");
 			break;
-		case TypeData::floatIndex:
+		case 2:
 			stream << IO_FMT_KEYWORD("float");
 			break;
-		case TypeData::charIndex:
+		case 3:
 			stream << IO_FMT_KEYWORD("char");
 			break;
-		case TypeData::boolIndex:
+		case 4:
 			stream << IO_FMT_KEYWORD("bool");
 			break;
 		default:
@@ -75,7 +79,7 @@ void compiler::ast::NodeFunDef::print(TokenData& tokenData, TypeData& typeData, 
 	stream << indent;
 	if (last) stream << TREE_BRANCH_END;
 	else stream << TREE_BRANCH_MID;
-	stream << "Fun ( " << IO_FMT_ID(tokenData.strList[strIndex]) << " )\n";
+	stream << "Fun ( " << tokenData.strList[strIndex] << " )\n";
 
 	body->print(tokenData, typeData, stream, indent + (last ? TREE_SPACE : TREE_PASS), true);
 }
@@ -101,7 +105,7 @@ void compiler::ast::NodeBool::printSimple(TokenData& tokenData, TypeData& typeDa
 }
 
 void compiler::ast::NodeIdentifier::printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream) {
-	stream << "Identifier ( " << IO_FMT_ID(tokenData.strList[strIndex]) << " )\n";
+	stream << "Identifier ( " << tokenData.strList[strIndex] << " )\n";
 }
 
 void compiler::ast::NodeGroup::print(TokenData& tokenData, TypeData& typeData, std::ostream& stream, std::string&& indent, bool last) {

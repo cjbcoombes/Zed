@@ -113,7 +113,6 @@ void compiler::ast::NodeFunDef::genBytecode(Tree& astTree, gen::GenOut& output, 
 	using namespace bytecode;
 
 	Frame& newFrame = output.addFrame();
-
 	body->genBytecode(astTree, output, newFrame, settings, stream);
 }
 
@@ -131,7 +130,7 @@ bytecode::types::reg_t compiler::ast::Expr::genExprBytecode(Tree& astTree, gen::
 }
 
 void compiler::ast::NodeGroup::genBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream) {
-	if (type == NodeType::ROOT_GROUP) {
+	if (type == NodeType::ROOT_GROUP || type == NodeType::CURLY_GROUP) {
 		for (Node* node : elems) {
 			node->genBytecode(astTree, output, frame, settings, stream);
 		}
@@ -205,8 +204,8 @@ bytecode::types::reg_t compiler::ast::NodeArithBinop::genExprBytecode(Tree& astT
 		{ Opcode::F_ADD, Opcode::F_SUB, Opcode::F_MUL, Opcode::F_DIV } // floats
 	};
 
-	int i = left->typeIndex == TypeData::intIndex ? 0 :
-		left->typeIndex == TypeData::floatIndex ? 1 :
+	int i = TypeData::sameExact(left->exprType, TypeData::typeInt) ? 0 :
+		TypeData::sameExact(left->exprType, TypeData::typeFloat) ? 1 :
 		-1;
 
 	int j = opType == OpType::ADD ? 0 :
@@ -214,7 +213,7 @@ bytecode::types::reg_t compiler::ast::NodeArithBinop::genExprBytecode(Tree& astT
 		opType == OpType::MUL ? 2 :
 		opType == OpType::DIV ? 3 : -1; // -1 should be impossible because enum
 
-	if (i < 0 || j < 0 || left->typeIndex != right->typeIndex) {
+	if (i < 0 || j < 0 || !TypeData::sameExact(left->exprType, right->exprType)) {
 		throw std::domain_error("Invalid type for arith binop");
 	}
 
