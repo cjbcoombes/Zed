@@ -295,14 +295,11 @@ compiler::ast::Node* mulDivWindow3(compiler::ast::Node* first, compiler::ast::No
 	using namespace compiler;
 
 	TokenType op = second->token->type;
-	if (second->type == NodeType::TOKEN && (op == TokenType::STAR || op == TokenType::SLASH)) {
-		if (first->isExpr && third->isExpr) {
-			Expr* left = dynamic_cast<Expr*>(first);
-			Expr* right = dynamic_cast<Expr*>(third);
+	if (second->type == NodeType::TOKEN && (op == TokenType::STAR || op == TokenType::SLASH) && first->isExpr && third->isExpr) {
+		Expr* left = dynamic_cast<Expr*>(first);
+		Expr* right = dynamic_cast<Expr*>(third);
 
-			return astTree.addNode(std::make_unique<NodeArithBinop>(second->token, left, right, op == TokenType::STAR ? NodeArithBinop::OpType::MUL : NodeArithBinop::OpType::DIV));
-		}
-		throw CompilerException(op == TokenType::STAR ? CompilerException::ErrorType::BAD_TYPE_MUL : CompilerException::ErrorType::BAD_TYPE_DIV, second->token->line, second->token->column);
+		return astTree.addNode(std::make_unique<NodeArithBinop>(second->token, left, right, op == TokenType::STAR ? NodeArithBinop::OpType::MUL : NodeArithBinop::OpType::DIV));
 	}
 
 	return nullptr;
@@ -313,14 +310,11 @@ compiler::ast::Node* addSubWindow3(compiler::ast::Node* first, compiler::ast::No
 	using namespace compiler;
 
 	TokenType op = second->token->type;
-	if (second->type == NodeType::TOKEN && (op == TokenType::PLUS || op == TokenType::DASH)) {
-		if (first->isExpr && third->isExpr) {
-			Expr* left = dynamic_cast<Expr*>(first);
-			Expr* right = dynamic_cast<Expr*>(third);
+	if (second->type == NodeType::TOKEN && (op == TokenType::PLUS || op == TokenType::DASH) && first->isExpr && third->isExpr) {
+		Expr* left = dynamic_cast<Expr*>(first);
+		Expr* right = dynamic_cast<Expr*>(third);
 
-			return astTree.addNode(std::make_unique<NodeArithBinop>(second->token, left, right, op == TokenType::PLUS ? NodeArithBinop::OpType::ADD : NodeArithBinop::OpType::SUB));
-		}
-		throw CompilerException(op == TokenType::PLUS ? CompilerException::ErrorType::BAD_TYPE_ADD : CompilerException::ErrorType::BAD_TYPE_SUB, second->token->line, second->token->column);
+		return astTree.addNode(std::make_unique<NodeArithBinop>(second->token, left, right, op == TokenType::PLUS ? NodeArithBinop::OpType::ADD : NodeArithBinop::OpType::SUB));
 	}
 
 	return nullptr;
@@ -371,6 +365,8 @@ int compiler::constructAST(ast::Tree& astTree, CompilerSettings& settings, std::
 	using namespace compiler::ast;
 
 	astTree.root = reduceNodeGroup(dynamic_cast<NodeGroup*>(astTree.root), astTree, settings, stream);
+	Scope scope{};
+	astTree.root->checkForm(astTree, scope, settings, stream);
 
 	return 0;
 }

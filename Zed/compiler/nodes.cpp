@@ -146,3 +146,89 @@ void compiler::ast::NodeArithBinop::print(TokenData& tokenData, TypeData& typeDa
 void compiler::ast::Tree::print(std::ostream& stream) {
 	if (root) root->print(tokenData, typeData, stream, "", true);
 }
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Node/Tree formedness
+
+void compiler::ast::Node::checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream) {
+	// nothing!
+	if (settings.flags.hasFlags(Flags::FLAG_DEBUG)) {
+		stream << IO_DEBUG "raw node form check was called" IO_NORM "\n";
+	}
+}
+
+void compiler::ast::NodeGroup::checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream) {
+	if (type == NodeType::CURLY_GROUP || type == NodeType::ROOT_GROUP) {
+		Scope newScope{};
+
+		for (Node* elem : elems) {
+			elem->checkForm(astTree, newScope, settings, stream);
+		}
+	} else {
+		throw std::logic_error("Check form not implemented for other group types yet");
+	}
+}
+
+void compiler::ast::NodeToken::checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream) {
+	throw CompilerException(CompilerException::ErrorType::BAD_FORM, token->line, token->column, "invalid token in tree");
+}
+
+void compiler::ast::NodeMacro::checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream) {
+	// nothing!
+	target->checkForm(astTree, scope, settings, stream);
+}
+
+void compiler::ast::NodeTypeSpec::checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream) {
+	// nothing!
+}
+
+void compiler::ast::NodeFunDef::checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream) {
+	// nothing!
+	// add to scope
+	body->checkForm(astTree, scope, settings, stream);
+}
+
+void compiler::ast::NodeInt::checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream) {
+	// nothing!
+}
+
+void compiler::ast::NodeFloat::checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream) {
+	// nothing!
+}
+
+void compiler::ast::NodeChar::checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream) {
+	// nothing!
+}
+
+void compiler::ast::NodeBool::checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream) {
+	// nothing!
+}
+
+void compiler::ast::NodeString::checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream) {
+	// nothing!
+}
+
+void compiler::ast::NodeIdentifier::checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream) {
+	// nothing!
+}
+
+void compiler::ast::NodeArithBinop::checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream) {
+	left->checkForm(astTree, scope, settings, stream);
+	right->checkForm(astTree, scope, settings, stream);
+
+	if (!(TypeData::sameExact(left->exprType, TypeData::typeInt) ||
+		  TypeData::sameExact(left->exprType, TypeData::typeFloat))) {
+		throw CompilerException(CompilerException::ErrorType::BAD_TYPE, left->token->line, left->token->column, "invalid type on left of arithmetic binop");
+	}
+
+	if (!(TypeData::sameExact(right->exprType, TypeData::typeInt) ||
+		  TypeData::sameExact(right->exprType, TypeData::typeFloat))) {
+		throw CompilerException(CompilerException::ErrorType::BAD_TYPE, right->token->line, right->token->column, "invalid type on right of arithmetic binop");
+	}
+
+	if (!TypeData::sameExact(left->exprType, right->exprType)) {
+		throw CompilerException(CompilerException::ErrorType::MISMATCH_TYPE, token->line, token->column, "mismatched types of arithmetic binop");
+	}
+
+	exprType = left->exprType;
+}

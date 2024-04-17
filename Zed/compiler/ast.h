@@ -27,7 +27,7 @@ namespace compiler {
 		// ]
 
 		struct Type {
-			const int index;
+			int index;
 
 			Type(int index) : index(index) {}
 		};
@@ -56,6 +56,11 @@ namespace compiler {
 			static bool sameExact(const Type& a, const Type& b);
 		};
 
+		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		// Scopes
+		struct Scope {
+			std::unordered_map<int, Type> types;
+		};
 
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// Macros
@@ -116,8 +121,10 @@ namespace compiler {
 			virtual void print(TokenData& tokenData, TypeData& typeData, std::ostream& stream, std::string&& indent, bool last);
 			virtual void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
 			virtual void genBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
+			virtual void checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream);
 		};
 
+		// Root expression class
 		class Expr : public Node {
 		public:
 			Type exprType;
@@ -144,6 +151,7 @@ namespace compiler {
 			}
 			void print(TokenData& tokenData, TypeData& typeData, std::ostream& stream, std::string&& indent, bool last);
 			void genBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
+			void checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		// A node wrapping a token
@@ -152,6 +160,7 @@ namespace compiler {
 
 			NodeToken(Token* token) : Node(token, NodeType::TOKEN) {}
 			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
+			void checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		// A node for a macro. This does not contain the argument of the macro (if any)
@@ -163,6 +172,7 @@ namespace compiler {
 			NodeMacro(Token* token, MacroType macroType, Expr* target) : Node(token, NodeType::MACRO), macroType(macroType), target(target) {}
 			void print(TokenData& tokenData, TypeData& typeData, std::ostream& stream, std::string&& indent, bool last);
 			void genBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
+			void checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		// A node representing a type declaration
@@ -172,6 +182,7 @@ namespace compiler {
 
 			NodeTypeSpec(Token* token, Type exprType) : Node(token, NodeType::TYPESPEC), exprType(exprType) {}
 			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
+			void checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		// A node representing a function definition
@@ -185,6 +196,7 @@ namespace compiler {
 			}
 			void print(TokenData& tokenData, TypeData& typeData, std::ostream& stream, std::string&& indent, bool last);
 			void genBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
+			void checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		// A node wrapping an int
@@ -195,6 +207,7 @@ namespace compiler {
 			NodeInt(Token* token, bytecode::types::int_t val) : Expr(token, NodeType::INT, TypeData::typeInt), val(val) {}
 			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
 			bytecode::types::reg_t genExprBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
+			void checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		// A node wrapping a float
@@ -205,6 +218,7 @@ namespace compiler {
 			NodeFloat(Token* token, bytecode::types::float_t val) : Expr(token, NodeType::FLOAT, TypeData::typeFloat), val(val) {}
 			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
 			bytecode::types::reg_t genExprBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
+			void checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		// A node wrapping a char
@@ -215,6 +229,7 @@ namespace compiler {
 			NodeChar(Token* token, bytecode::types::char_t val) : Expr(token, NodeType::CHAR, TypeData::typeChar), val(val) {}
 			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
 			bytecode::types::reg_t genExprBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
+			void checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		// A node wrapping a bool
@@ -225,6 +240,7 @@ namespace compiler {
 			NodeBool(Token* token, bytecode::types::bool_t val) : Expr(token, NodeType::BOOL, TypeData::typeBool), val(val) {}
 			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
 			bytecode::types::reg_t genExprBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
+			void checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		// A node wrapping a string
@@ -234,6 +250,7 @@ namespace compiler {
 
 			NodeString(Token* token, int strIndex) : Expr(token, NodeType::STRING, -1/* TODO : Type of strings? */), strIndex(strIndex) {}
 			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
+			void checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		// A node wrapping an identifier
@@ -243,6 +260,7 @@ namespace compiler {
 
 			NodeIdentifier(Token* token, int strIndex) : Expr(token, NodeType::IDENTIFIER, -1), strIndex(strIndex) {}
 			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
+			void checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		// A node for an arithmetic binary operation
@@ -263,6 +281,7 @@ namespace compiler {
 			NodeArithBinop(Token* token, Expr* left, Expr* right, OpType opType) : Expr(token, NodeType::ARITH_BINOP, TypeData::typeUndefined), left(left), right(right), opType(opType) {}
 			void print(TokenData& tokenData, TypeData& typeData, std::ostream& stream, std::string&& indent, bool last);
 			bytecode::types::reg_t genExprBytecode(Tree& astTree, gen::GenOut& output, gen::Frame& frame, CompilerSettings& settings, std::ostream& stream);
+			void checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~

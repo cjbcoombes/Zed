@@ -204,8 +204,8 @@ bytecode::types::reg_t compiler::ast::NodeArithBinop::genExprBytecode(Tree& astT
 		{ Opcode::F_ADD, Opcode::F_SUB, Opcode::F_MUL, Opcode::F_DIV } // floats
 	};
 
-	int i = TypeData::sameExact(left->exprType, TypeData::typeInt) ? 0 :
-		TypeData::sameExact(left->exprType, TypeData::typeFloat) ? 1 :
+	int i = TypeData::sameExact(exprType, TypeData::typeInt) ? 0 :
+		TypeData::sameExact(exprType, TypeData::typeFloat) ? 1 :
 		-1;
 
 	int j = opType == OpType::ADD ? 0 :
@@ -213,7 +213,7 @@ bytecode::types::reg_t compiler::ast::NodeArithBinop::genExprBytecode(Tree& astT
 		opType == OpType::MUL ? 2 :
 		opType == OpType::DIV ? 3 : -1; // -1 should be impossible because enum
 
-	if (i < 0 || j < 0 || !TypeData::sameExact(left->exprType, right->exprType)) {
+	if (i < 0 || j < 0) {
 		throw std::domain_error("Invalid type for arith binop");
 	}
 

@@ -40,11 +40,14 @@ namespace compiler {
 			INVALID_MACRO,
 			DUPLICATE_SYMBOL,
 
-			BAD_TYPE_ADD,
+			BAD_TYPE,
+			MISMATCH_TYPE,
+			BAD_FORM,
+			/*BAD_TYPE_ADD,
 			BAD_TYPE_SUB,
 			BAD_TYPE_MUL,
 			BAD_TYPE_DIV,
-			BAD_TYPE_MACRO,
+			BAD_TYPE_MACRO,*/
 
 			OUT_OF_REGISTERS,
 
@@ -73,11 +76,14 @@ namespace compiler {
 			"Invalid macro (after #)",
 			"Duplicate symbol",
 
-			"Cannot add value of type (TODO: more info)",
+			"Bad type",
+			"Mismatched types",
+			"Bad form",
+			/*"Cannot add value of type (TODO: more info)",
 			"Cannot subtract value of type (TODO: more info)",
 			"Cannot multiply value of type (TODO: more info)",
 			"Cannot divide value of type (TODO: more info)",
-			"Cannot apply macro to type (TODO: more info)",
+			"Cannot apply macro to type (TODO: more info)",*/
 
 			"Ran out of registers"
 		};
