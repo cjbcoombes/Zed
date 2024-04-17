@@ -257,6 +257,34 @@ void slideWindow3(compiler::ast::Node* (*windowFunc)(compiler::ast::Node*, compi
 	}
 }
 
+compiler::ast::Node* declWindow3(compiler::ast::Node* first, compiler::ast::Node* second, compiler::ast::Node* third, compiler::ast::Tree& astTree, compiler::CompilerSettings& settings, std::ostream& stream) {
+	using namespace compiler::ast;
+	using namespace compiler;
+
+	if (first->type == NodeType::TYPESPEC &&
+		second->type == NodeType::TOKEN &&
+		second->token->type == TokenType::PERIOD &&
+		third->type == NodeType::IDENTIFIER) {
+		return astTree.addNode(std::make_unique<NodeDeclaration>(third->token, dynamic_cast<NodeIdentifier*>(third)->strIndex, dynamic_cast<NodeTypeSpec*>(first)->exprType));
+	}
+
+	return nullptr;
+}
+
+compiler::ast::Node* asgnWindow3(compiler::ast::Node* first, compiler::ast::Node* second, compiler::ast::Node* third, compiler::ast::Tree& astTree, compiler::CompilerSettings& settings, std::ostream& stream) {
+	using namespace compiler::ast;
+	using namespace compiler;
+
+	if (first->type == NodeType::IDENTIFIER &&
+		second->type == NodeType::TOKEN &&
+		second->token->type == TokenType::EQUALS &&
+		third->isExpr) {
+		return astTree.addNode(std::make_unique<NodeAssignment>(second->token, dynamic_cast<NodeIdentifier*>(first), dynamic_cast<Expr*>(third)));
+	}
+
+	return nullptr;
+}
+
 compiler::ast::Node* funDefWindow3(compiler::ast::Node* first, compiler::ast::Node* second, compiler::ast::Node* third, compiler::ast::Tree& astTree, compiler::CompilerSettings& settings, std::ostream& stream) {
 	using namespace compiler::ast;
 	using namespace compiler;
@@ -343,6 +371,12 @@ compiler::ast::Node* reduceNodeGroup(compiler::ast::NodeGroup* group, compiler::
 
 	// Pass _: Functions
 	slideWindow3(funDefWindow3, group, astTree, settings, stream);
+
+	// Pass _: Declarations
+	slideWindow3(declWindow3, group, astTree, settings, stream);
+
+	// Pass _: Assignment
+	slideWindow3(asgnWindow3, group, astTree, settings, stream);
 
 	// Pass _: Macros
 	slideWindow3(macroWindow3, group, astTree, settings, stream);

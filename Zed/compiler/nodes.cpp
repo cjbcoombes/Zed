@@ -13,6 +13,32 @@
 //#define TREE_SPACE "   "
 //#define TREE_PASS u8"\u2503  "
 
+void compiler::ast::Type::printSimple(std::ostream& stream) {
+	// Note: indices much match TypeData
+	switch (index) {
+		case -1:
+			stream << IO_FMT_KEYWORD("undefined");
+			break;
+		case 0:
+			stream << IO_FMT_KEYWORD("void");
+			break;
+		case 1:
+			stream << IO_FMT_KEYWORD("int");
+			break;
+		case 2:
+			stream << IO_FMT_KEYWORD("float");
+			break;
+		case 3:
+			stream << IO_FMT_KEYWORD("char");
+			break;
+		case 4:
+			stream << IO_FMT_KEYWORD("bool");
+			break;
+		default:
+			stream << "Complex Type"; // TODO: make good
+	}
+}
+
 void compiler::ast::Node::print(TokenData& tokenData, TypeData& typeData, std::ostream& stream, std::string&& indent, bool last) {
 	stream << indent;
 	if (last) stream << TREE_BRANCH_END;
@@ -49,29 +75,7 @@ void compiler::ast::NodeMacro::print(TokenData& tokenData, TypeData& typeData, s
 
 void compiler::ast::NodeTypeSpec::printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream) {
 	stream << "Type ( ";
-	// Note: indices much match TypeData
-	switch (exprType.index) {
-		case -1:
-			stream << IO_FMT_KEYWORD("undefined");
-			break;
-		case 0:
-			stream << IO_FMT_KEYWORD("void");
-			break;
-		case 1:
-			stream << IO_FMT_KEYWORD("int");
-			break;
-		case 2:
-			stream << IO_FMT_KEYWORD("float");
-			break;
-		case 3:
-			stream << IO_FMT_KEYWORD("char");
-			break;
-		case 4:
-			stream << IO_FMT_KEYWORD("bool");
-			break;
-		default:
-			stream << "Complex Type"; // TODO: make good
-	}
+	exprType.printSimple(stream);
 	stream << " )\n";
 }
 
@@ -106,6 +110,22 @@ void compiler::ast::NodeBool::printSimple(TokenData& tokenData, TypeData& typeDa
 
 void compiler::ast::NodeIdentifier::printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream) {
 	stream << "Identifier ( " << tokenData.strList[strIndex] << " )\n";
+}
+
+void compiler::ast::NodeDeclaration::printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream) {
+	stream << "Declaration ( "; 
+	exprType.printSimple(stream);
+	stream << " . " << tokenData.strList[strIndex] << " )\n";
+}
+
+void compiler::ast::NodeAssignment::print(TokenData& tokenData, TypeData& typeData, std::ostream& stream, std::string&& indent, bool last) {
+
+	stream << indent;
+	if (last) stream << TREE_BRANCH_END;
+	else stream << TREE_BRANCH_MID;
+	stream << "Assignment ( " << tokenData.strList[left->strIndex] << " )\n";
+
+	right->print(tokenData, typeData, stream, indent + (last ? TREE_SPACE : TREE_PASS), true);
 }
 
 void compiler::ast::NodeGroup::print(TokenData& tokenData, TypeData& typeData, std::ostream& stream, std::string&& indent, bool last) {
@@ -148,6 +168,17 @@ void compiler::ast::Tree::print(std::ostream& stream) {
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Scopes
+
+void compiler::ast::Scope::push() {
+	scopes.push(++scopeIndex);
+}
+
+void compiler::ast::Scope::pop() {
+	scopes.pop();
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Node/Tree formedness
 
 void compiler::ast::Node::checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream) {
@@ -159,11 +190,11 @@ void compiler::ast::Node::checkForm(Tree& astTree, Scope& scope, CompilerSetting
 
 void compiler::ast::NodeGroup::checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream) {
 	if (type == NodeType::CURLY_GROUP || type == NodeType::ROOT_GROUP) {
-		Scope newScope{};
-
+		scope.push();
 		for (Node* elem : elems) {
-			elem->checkForm(astTree, newScope, settings, stream);
+			elem->checkForm(astTree, scope, settings, stream);
 		}
+		scope.pop();
 	} else {
 		throw std::logic_error("Check form not implemented for other group types yet");
 	}
@@ -183,9 +214,9 @@ void compiler::ast::NodeTypeSpec::checkForm(Tree& astTree, Scope& scope, Compile
 }
 
 void compiler::ast::NodeFunDef::checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream) {
-	// nothing!
+	Scope newScope{};
 	// add to scope
-	body->checkForm(astTree, scope, settings, stream);
+	body->checkForm(astTree, newScope, settings, stream);
 }
 
 void compiler::ast::NodeInt::checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream) {
@@ -209,6 +240,10 @@ void compiler::ast::NodeString::checkForm(Tree& astTree, Scope& scope, CompilerS
 }
 
 void compiler::ast::NodeIdentifier::checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream) {
+	// nothing!
+}
+
+void compiler::ast::NodeDeclaration::checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream) {
 	// nothing!
 }
 

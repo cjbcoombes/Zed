@@ -30,6 +30,7 @@ namespace compiler {
 			int index;
 
 			Type(int index) : index(index) {}
+			void printSimple(std::ostream& stream);
 		};
 
 		struct TypeInfo {
@@ -59,7 +60,14 @@ namespace compiler {
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// Scopes
 		struct Scope {
-			std::unordered_map<int, Type> types;
+			// the pair is <str_id, scope_id, type>
+			std::list<std::tuple<int, int, Type>> types;
+			int scopeIndex;
+			std::stack<int> scopes;
+
+			Scope() : types(), scopeIndex(0), scopes({ 0 }) {}
+			void push();
+			void pop();
 		};
 
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -100,6 +108,9 @@ namespace compiler {
 			BOOL,
 			STRING,
 			IDENTIFIER,
+
+			DECLARATION,
+			ASSIGNMENT,
 
 			ARITH_BINOP
 		};
@@ -261,6 +272,27 @@ namespace compiler {
 			NodeIdentifier(Token* token, int strIndex) : Expr(token, NodeType::IDENTIFIER, -1), strIndex(strIndex) {}
 			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
 			void checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream);
+		};
+
+		// A declaration of the type for a variable
+		class NodeDeclaration : public Node {
+		public:
+			int strIndex;
+			Type exprType;
+
+			NodeDeclaration(Token* token, int strIndex, Type exprType) : Node(token, NodeType::DECLARATION), strIndex(strIndex), exprType(exprType) {}
+			void printSimple(TokenData& tokenData, TypeData& typeData, std::ostream& stream);
+			void checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream);
+		};
+
+		// An assignment to a variable
+		class NodeAssignment : public Node {
+		public:
+			NodeIdentifier* left;
+			Expr* right;
+
+			NodeAssignment(Token* token, NodeIdentifier* left, Expr* right) : Node(token, NodeType::ASSIGNMENT), left(left), right(right) {}
+			void print(TokenData& tokenData, TypeData& typeData, std::ostream& stream, std::string&& indent, bool last);
 		};
 
 		// A node for an arithmetic binary operation
