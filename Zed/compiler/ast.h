@@ -55,6 +55,7 @@ namespace compiler {
 
 			TypeData() : types({ TypeInfo(), TypeInfo(), TypeInfo(), TypeInfo(), TypeInfo() }) {}
 			static bool sameExact(const Type& a, const Type& b);
+			static bool sameCompatible(const Type& a, const Type& b);
 		};
 
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -293,6 +294,7 @@ namespace compiler {
 
 			NodeAssignment(Token* token, NodeIdentifier* left, Expr* right) : Node(token, NodeType::ASSIGNMENT), left(left), right(right) {}
 			void print(TokenData& tokenData, TypeData& typeData, std::ostream& stream, std::string&& indent, bool last);
+			void checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		// A node for an arithmetic binary operation

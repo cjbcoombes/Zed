@@ -124,7 +124,6 @@ void compiler::ast::NodeAssignment::print(TokenData& tokenData, TypeData& typeDa
 	if (last) stream << TREE_BRANCH_END;
 	else stream << TREE_BRANCH_MID;
 	stream << "Assignment ( " << tokenData.strList[left->strIndex] << " )\n";
-
 	right->print(tokenData, typeData, stream, indent + (last ? TREE_SPACE : TREE_PASS), true);
 }
 
@@ -177,7 +176,6 @@ void compiler::ast::Scope::push() {
 void compiler::ast::Scope::pop() {
 	scopes.pop();
 }
-
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Node/Tree formedness
 
@@ -205,7 +203,6 @@ void compiler::ast::NodeToken::checkForm(Tree& astTree, Scope& scope, CompilerSe
 }
 
 void compiler::ast::NodeMacro::checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream) {
-	// nothing!
 	target->checkForm(astTree, scope, settings, stream);
 }
 
@@ -215,7 +212,7 @@ void compiler::ast::NodeTypeSpec::checkForm(Tree& astTree, Scope& scope, Compile
 
 void compiler::ast::NodeFunDef::checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream) {
 	Scope newScope{};
-	// add to scope
+	// TODO: add to scope
 	body->checkForm(astTree, newScope, settings, stream);
 }
 
@@ -247,6 +244,15 @@ void compiler::ast::NodeDeclaration::checkForm(Tree& astTree, Scope& scope, Comp
 	// nothing!
 }
 
+void compiler::ast::NodeAssignment::checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream) {
+	left->checkForm(astTree, scope, settings, stream);
+	right->checkForm(astTree, scope, settings, stream);
+	
+	if (!TypeData::sameCompatible(left->exprType, right->exprType)) {
+		throw CompilerException(CompilerException::ErrorType::MISMATCH_TYPE, token->line, token->column, "mismatched types in assignment");
+	}
+}
+
 void compiler::ast::NodeArithBinop::checkForm(Tree& astTree, Scope& scope, CompilerSettings& settings, std::ostream& stream) {
 	left->checkForm(astTree, scope, settings, stream);
 	right->checkForm(astTree, scope, settings, stream);
@@ -261,7 +267,7 @@ void compiler::ast::NodeArithBinop::checkForm(Tree& astTree, Scope& scope, Compi
 		throw CompilerException(CompilerException::ErrorType::BAD_TYPE, right->token->line, right->token->column, "invalid type on right of arithmetic binop");
 	}
 
-	if (!TypeData::sameExact(left->exprType, right->exprType)) {
+	if (!TypeData::sameCompatible(left->exprType, right->exprType)) {
 		throw CompilerException(CompilerException::ErrorType::MISMATCH_TYPE, token->line, token->column, "mismatched types of arithmetic binop");
 	}
 

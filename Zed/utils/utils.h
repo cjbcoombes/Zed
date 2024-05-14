@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <string>
 #include <memory>
+#include <optional>
 // #define NDEBUG to disable asserts
 #include <cassert>
 

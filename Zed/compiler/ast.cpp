@@ -14,6 +14,10 @@ bool compiler::ast::TypeData::sameExact(const compiler::ast::Type& a, const comp
 	return a.index == b.index;
 }
 
+bool compiler::ast::TypeData::sameCompatible(const compiler::ast::Type& a, const compiler::ast::Type& b) {
+	return a.index == b.index;
+}
+
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // AST Tree Functions
 
@@ -400,7 +404,7 @@ int compiler::constructAST(ast::Tree& astTree, CompilerSettings& settings, std::
 
 	astTree.root = reduceNodeGroup(dynamic_cast<NodeGroup*>(astTree.root), astTree, settings, stream);
 	Scope scope{};
-	astTree.root->checkForm(astTree, scope, settings, stream);
+	// astTree.root->checkForm(astTree, scope, settings, stream);
 
 	return 0;
 }
