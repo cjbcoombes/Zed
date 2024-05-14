@@ -120,13 +120,7 @@ namespace compiler {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// AST Functions
 
-	// Constructs a base AST from a token list, with all parentheses/brackets/etc. matched
-	int initAST(ast::Tree& astTree, CompilerSettings& settings, std::ostream& stream);
-	// Applies rules to make the full AST tree
-	int constructAST(ast::Tree& astTree, CompilerSettings& settings, std::ostream& stream);
-
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Bytecode Generation
 
-	int generateBytecode(std::iostream& outputFile, ast::Tree& astTree, CompilerSettings& settings, std::ostream& stream);
 }
