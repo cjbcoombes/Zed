@@ -42,6 +42,7 @@
 #define IO_WARN IO_YELLOW "[WARNING] "
 #define IO_MAIN IO_GREEN "[MAIN] "
 #define IO_DEBUG IO_CYAN "[DEBUG] "
+#define IO_INFO IO_GRAY "[INFO] "
 
 #define IO_HEX std::hex
 #define IO_DEC std::dec

@@ -175,6 +175,8 @@ namespace compiler {
 	public:
 		std::vector<std::string> strList;
 		std::list<Token> tokens;
+		std::string content;
+		std::vector<int> lineStarts;
 
 		void putInt(int val, int line, int column);
 		void putFloat(float val, int line, int column);

@@ -140,7 +140,7 @@ void compiler::TokenData::putStr(TokenType type, int line, int column, std::stri
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Tokenizer Functions
 
-int compiler::tokenize(std::iostream& inputFile, TokenData& outputData, CompilerSettings& settings, std::ostream& stream) {
+int compiler::tokenize(std::iostream& inputFile, TokenData& outputData, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
 	// Go to the start of the file
 	inputFile.clear();
 	inputFile.seekg(0, std::ios::beg);
@@ -213,6 +213,8 @@ int compiler::tokenize(std::iostream& inputFile, TokenData& outputData, Compiler
 	// Line and column
 	int line = 0;
 	int column = 0;
+	int i = 0;
+	outputData.lineStarts.push_back(0);
 	// Starting line and column for the current token
 	int startLine = 0;
 	int startColumn = 0;
@@ -228,7 +230,10 @@ int compiler::tokenize(std::iostream& inputFile, TokenData& outputData, Compiler
 	while (!end) {
 		inputFile.get(c);
 		end = inputFile.eof();
-		if (c == '\n') {
+		outputData.content += end ? '\n' : c;
+		i++;
+		if (c == '\n' || end) {
+			outputData.lineStarts.push_back(i);
 			line++;
 			column = 0;
 		} else {
@@ -242,7 +247,8 @@ int compiler::tokenize(std::iostream& inputFile, TokenData& outputData, Compiler
 			case GroupType::STRING:
 				// Match certain escape sequences
 				if (end) {
-					throw CompilerException(CompilerException::ErrorType::UNCLOSED_STRING, startLine, startColumn);
+					status.addIssue(CompilerIssue(CompilerIssue::Type::UNCLOSED_STRING, startLine, startColumn));
+					return 1;
 				} else if (isEscaped) {
 					if (c == 'n') {
 						c = '\n';
@@ -278,7 +284,8 @@ int compiler::tokenize(std::iostream& inputFile, TokenData& outputData, Compiler
 			case GroupType::CHAR:
 				// Match certain escape sequences
 				if (end) {
-					throw CompilerException(CompilerException::ErrorType::UNCLOSED_CHAR, startLine, startColumn);
+					status.addIssue(CompilerIssue(CompilerIssue::Type::UNCLOSED_CHAR, startLine, startColumn));
+					return 1;
 				} if (isEscaped) {
 					if (c == 'n') {
 						c = '\n';
@@ -296,13 +303,15 @@ int compiler::tokenize(std::iostream& inputFile, TokenData& outputData, Compiler
 					isEscaped = false;
 				} else if (c == '\'') {
 					if (currGroupLen != 1) {
-						throw CompilerException(CompilerException::ErrorType::INVALID_CHAR, startLine, startColumn);
+						status.addIssue(CompilerIssue(CompilerIssue::Type::INVALID_CHAR, startLine, startColumn));
+						return 1;
 					}
 					outputData.putChar(currGroup[0], startLine, startColumn);
 					currGroupType = GroupType::SKIP;
 				} else {
 					if (currGroupLen != 0) {
-						throw CompilerException(CompilerException::ErrorType::INVALID_CHAR, startLine, startColumn);
+						status.addIssue(CompilerIssue(CompilerIssue::Type::INVALID_CHAR, startLine, startColumn));
+						return 1;
 					}
 					if (c == '\\') {
 						isEscaped = true;
@@ -417,7 +426,8 @@ int compiler::tokenize(std::iostream& inputFile, TokenData& outputData, Compiler
 		} else {
 			// Add current char to the current group
 			if (currGroupLen >= MAX_TOKEN_STR_LEN) {
-				throw CompilerException(CompilerException::ErrorType::STRING_TOO_LONG, startLine, startColumn);
+				status.addIssue(CompilerIssue(CompilerIssue::Type::TOKEN_TOO_LONG, startLine, startColumn));
+				return 1;
 			}
 			// For comments we only care about the single previous character (to check for the ending sequence)
 			if (currGroupType == GroupType::COMMENT || currGroupType == GroupType::BLOCK_COMMENT) {

@@ -4,6 +4,7 @@
 
 namespace compiler {
 	struct CompilerSettings;
+	class CompilerStatus;
 
 	namespace ast {
 
@@ -61,14 +62,14 @@ namespace compiler {
 
 		class Pattern {
 		public:
-			virtual void match(std::list<Match*>& matches, MatchData& matchData, CompilerSettings& settings, std::ostream& stream);
+			virtual int match(std::list<Match*>& matches, MatchData& matchData, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		class GroupingPattern : public Pattern {
 		public:
-			virtual void match(std::list<Match*>& matches, MatchData& matchData, CompilerSettings& settings, std::ostream& stream);
+			virtual int match(std::list<Match*>& matches, MatchData& matchData, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
 		};
 
-		void applyPatterns(std::list<Match*>& matches, MatchData& matchData, CompilerSettings& settings, std::ostream& stream);
+		int applyPatterns(std::list<Match*>& matches, MatchData& matchData, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
 	}
 }
