@@ -64,10 +64,10 @@ int compiler::compile_(std::iostream& inputFile, std::iostream& outputFile, Comp
 	stream << IO_MAIN "Tokenization finished with code: " << out << IO_NORM "\n";
 	if (out) return out;
 
-	//ast::Tree astTree(tokenData);
 	stream << IO_MAIN "Creating AST..." IO_NORM "\n";
-	//out = initAST(astTree, settings, stream);
-	//if (!out) out = constructAST(astTree, settings, stream);
+
+	ast::MatchData matchData;
+	out = matchPatterns(tokenData, matchData, settings, stream);
 	if (isDebug) {
 		stream << IO_DEBUG "AST output\n" IO_DEBUG "---------------------------------------------" IO_NORM "\n";
 		//astTree.print(stream);

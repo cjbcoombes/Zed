@@ -174,7 +174,7 @@ namespace compiler {
 	class TokenData {
 	public:
 		std::vector<std::string> strList;
-		std::vector<Token> tokens;
+		std::list<Token> tokens;
 
 		void putInt(int val, int line, int column);
 		void putFloat(float val, int line, int column);

@@ -1,5 +1,4 @@
 #include "..\utils\utils.h"
-#include "tokenizer.h"
 #include "ast.h"
 
 namespace compiler {
@@ -119,6 +118,8 @@ namespace compiler {
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// AST Functions
+
+	int matchPatterns(TokenData& tokenData, ast::MatchData& matchData, CompilerSettings& settings, std::ostream& stream);
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Bytecode Generation
