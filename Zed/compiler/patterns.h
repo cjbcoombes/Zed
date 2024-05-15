@@ -38,7 +38,7 @@ namespace compiler {
 
 		struct GroupMatch : Match {
 			enum class GroupType {
-				ROOT, SQUARE, PAREN, CURLY
+				SQUARE, PAREN, CURLY
 			};
 
 			GroupType groupType;
