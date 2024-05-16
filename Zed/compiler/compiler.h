@@ -209,7 +209,7 @@ namespace compiler {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// AST Functions
 
-	int matchPatterns(TokenData& tokenData, ast::MatchData& matchData, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
+	int makeAST(ast::Tree& tree, TokenData& tokenData, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Bytecode Generation

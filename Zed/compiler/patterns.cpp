@@ -57,6 +57,8 @@ int compiler::ast::GroupingPattern::match(std::list<Match*>& matches, MatchData&
 					case MatchType::CURLY_GROUP:
 						status.addIssue(CompilerIssue(CompilerIssue::Type::UNMATCHED_CURLY, token->line, token->column));
 						break;
+					default:
+						throw std::logic_error("Group has unexpected MatchType");
 				}
 				return 1;
 			}
@@ -111,6 +113,8 @@ int compiler::ast::GroupingPattern::match(std::list<Match*>& matches, MatchData&
 			case MatchType::CURLY_GROUP:
 				status.addIssue(CompilerIssue(CompilerIssue::Type::UNMATCHED_CURLY, token->line, token->column));
 				break;
+			default:
+				throw std::logic_error("Group has unexpected MatchType");
 		}
 		return 1;
 	}
@@ -133,7 +137,7 @@ int compiler::ast::applyPatterns(std::list<Match*>& matches, MatchData& matchDat
 	return 0;
 }
 
-int compiler::matchPatterns(TokenData& tokenData, ast::MatchData& matchData, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
+int compiler::ast::matchPatterns(TokenData& tokenData, ast::MatchData& matchData, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
 	using namespace compiler::ast;
 
 	GroupMatch* root = matchData.add(std::make_unique<GroupMatch>(MatchType::ROOT_GROUP, -1, -1));

@@ -112,30 +112,28 @@ int compiler::compile_(std::iostream& inputFile, std::iostream& outputFile, Comp
 	TokenData tokenData;
 	stream << IO_MAIN "Tokenizing..." IO_NORM "\n";
 	out = tokenize(inputFile, tokenData, status, settings, stream);
-	if (isDebug) {
-		stream << IO_DEBUG "Tokenizer output\n" IO_DEBUG "---------------------------------------------" IO_NORM "\n";
-		printTokens(tokenData, stream);
-		stream << IO_DEBUG "---------------------------------------------" IO_NORM "\n";
-	}
 	stream << IO_MAIN "Tokenization finished with code: " << out << IO_NORM "\n";
 	if (out) {
 		status.print(tokenData, stream);
 		return out;
+	} else if (isDebug) {
+		stream << IO_DEBUG "Tokenizer output\n" IO_DEBUG "---------------------------------------------" IO_NORM "\n";
+		printTokens(tokenData, stream);
+		stream << IO_DEBUG "---------------------------------------------" IO_NORM "\n";
 	}
 
 	stream << IO_MAIN "Creating AST..." IO_NORM "\n";
 
-	ast::MatchData matchData;
-	out = matchPatterns(tokenData, matchData, status, settings, stream);
-	if (isDebug) {
-		stream << IO_DEBUG "AST output\n" IO_DEBUG "---------------------------------------------" IO_NORM "\n";
-		//astTree.print(stream);
-		stream << IO_DEBUG "---------------------------------------------" IO_NORM "\n";
-	}
+	ast::Tree tree;
+	out = makeAST(tree, tokenData, status, settings, stream);
 	stream << IO_MAIN "AST Construction finished with code: " << out << IO_NORM "\n";
 	if (out) {
 		status.print(tokenData, stream);
 		return out;
+	} else if (isDebug) {
+		stream << IO_DEBUG "AST output\n" IO_DEBUG "---------------------------------------------" IO_NORM "\n";
+		tree.print(tokenData, stream);
+		stream << IO_DEBUG "---------------------------------------------" IO_NORM "\n";
 	}
 
 	stream << IO_MAIN "Generating bytecode..." IO_NORM "\n";
