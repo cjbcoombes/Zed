@@ -23,17 +23,18 @@ int compiler::ast::Pattern::match(std::list<Match*>& matches, MatchData& matchDa
 
 int compiler::ast::GroupingPattern::match(std::list<Match*>& matches, MatchData& matchData, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
 
-	std::stack<std::pair<GroupMatch::GroupType, std::list<Match*>::iterator>> openings;
+	std::stack<std::pair<MatchType, std::list<Match*>::iterator>> openings;
 	auto it = matches.begin();
 
-	auto closeGroup = [&](GroupMatch::GroupType groupType, CompilerIssue::Type errorType) -> int {
+	auto closeGroup = [&](MatchType groupType, CompilerIssue::Type errorType) -> int {
 		if (openings.empty()) {
 			Token* token = dynamic_cast<TokenMatch*>(*it)->token;
 			status.addIssue(CompilerIssue(errorType, token->line, token->column));
 			return 1;
 		} else {
+			Token* token = dynamic_cast<TokenMatch*>(*openings.top().second)->token;
 			if (openings.top().first == groupType) {
-				GroupMatch* group = matchData.add(std::make_unique<GroupMatch>(groupType));
+				GroupMatch* group = matchData.add(std::make_unique<GroupMatch>(groupType, token->line, token->column));
 
 				group->matches.splice(group->matches.begin(), matches, std::next(openings.top().second), it);
 				int out = applyPatterns(group->matches, matchData, status, settings, stream);
@@ -46,15 +47,14 @@ int compiler::ast::GroupingPattern::match(std::list<Match*>& matches, MatchData&
 
 				return out;
 			} else {
-				Token* token = dynamic_cast<TokenMatch*>(*openings.top().second)->token;
 				switch (openings.top().first) {
-					case GroupMatch::GroupType::PAREN:
+					case MatchType::PAREN_GROUP:
 						status.addIssue(CompilerIssue(CompilerIssue::Type::UNMATCHED_PAREN, token->line, token->column));
 						break;
-					case GroupMatch::GroupType::SQUARE:
+					case MatchType::SQUARE_GROUP:
 						status.addIssue(CompilerIssue(CompilerIssue::Type::UNMATCHED_SQUARE, token->line, token->column));
 						break;
-					case GroupMatch::GroupType::CURLY:
+					case MatchType::CURLY_GROUP:
 						status.addIssue(CompilerIssue(CompilerIssue::Type::UNMATCHED_CURLY, token->line, token->column));
 						break;
 				}
@@ -70,29 +70,29 @@ int compiler::ast::GroupingPattern::match(std::list<Match*>& matches, MatchData&
 
 			switch (tokenType) {
 				case TokenType::LEFT_PAREN:
-					openings.emplace(GroupMatch::GroupType::PAREN, it);
+					openings.emplace(MatchType::PAREN_GROUP, it);
 					break;
 
 				case TokenType::RIGHT_PAREN:
-					out = closeGroup(GroupMatch::GroupType::PAREN, CompilerIssue::Type::INVALID_CLOSING_PAREN);
+					out = closeGroup(MatchType::PAREN_GROUP, CompilerIssue::Type::INVALID_CLOSING_PAREN);
 					if (out) return out;
 					break;
 
 				case TokenType::LEFT_SQUARE:
-					openings.emplace(GroupMatch::GroupType::SQUARE, it);
+					openings.emplace(MatchType::SQUARE_GROUP, it);
 					break;
 
 				case TokenType::RIGHT_SQUARE:
-					out = closeGroup(GroupMatch::GroupType::SQUARE, CompilerIssue::Type::INVALID_CLOSING_SQUARE);
+					out = closeGroup(MatchType::SQUARE_GROUP, CompilerIssue::Type::INVALID_CLOSING_SQUARE);
 					if (out) return out;
 					break;
 
 				case TokenType::LEFT_CURLY:
-					openings.emplace(GroupMatch::GroupType::CURLY, it);
+					openings.emplace(MatchType::CURLY_GROUP, it);
 					break;
 
 				case TokenType::RIGHT_CURLY:
-					out = closeGroup(GroupMatch::GroupType::CURLY, CompilerIssue::Type::INVALID_CLOSING_CURLY);
+					out = closeGroup(MatchType::CURLY_GROUP, CompilerIssue::Type::INVALID_CLOSING_CURLY);
 					if (out) return out;
 					break;
 			}
@@ -102,13 +102,13 @@ int compiler::ast::GroupingPattern::match(std::list<Match*>& matches, MatchData&
 	if (!openings.empty()) {
 		Token* token = dynamic_cast<TokenMatch*>(*openings.top().second)->token;
 		switch (openings.top().first) {
-			case GroupMatch::GroupType::PAREN:
+			case MatchType::PAREN_GROUP:
 				status.addIssue(CompilerIssue(CompilerIssue::Type::UNMATCHED_PAREN, token->line, token->column));
 				break;
-			case GroupMatch::GroupType::SQUARE:
+			case MatchType::SQUARE_GROUP:
 				status.addIssue(CompilerIssue(CompilerIssue::Type::UNMATCHED_SQUARE, token->line, token->column));
 				break;
-			case GroupMatch::GroupType::CURLY:
+			case MatchType::CURLY_GROUP:
 				status.addIssue(CompilerIssue(CompilerIssue::Type::UNMATCHED_CURLY, token->line, token->column));
 				break;
 		}
@@ -136,11 +136,14 @@ int compiler::ast::applyPatterns(std::list<Match*>& matches, MatchData& matchDat
 int compiler::matchPatterns(TokenData& tokenData, ast::MatchData& matchData, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
 	using namespace compiler::ast;
 
+	GroupMatch* root = matchData.add(std::make_unique<GroupMatch>(MatchType::ROOT_GROUP, -1, -1));
+	matchData.root = root;
+
 	for (Token& token : tokenData.tokens) {
-		matchData.tree.push_back(matchData.add(std::make_unique<TokenMatch>(&token)));
+		root->matches.push_back(matchData.add(std::make_unique<TokenMatch>(&token)));
 	}
 
-	int out = applyPatterns(matchData.tree, matchData, status, settings, stream);
+	int out = applyPatterns(root->matches, matchData, status, settings, stream);
 
 	return out;
 }

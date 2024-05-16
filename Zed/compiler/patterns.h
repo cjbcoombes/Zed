@@ -13,20 +13,29 @@ namespace compiler {
 
 		enum class MatchType {
 			TOKEN,
-			GROUP
+			ROOT_GROUP,
+			PAREN_GROUP,
+			SQUARE_GROUP,
+			CURLY_GROUP
 		};
 
 		struct Match {
 			MatchType type;
+			int line;
+			int column;
 
-			Match(MatchType type) : type(type) {}
+			Match(MatchType type, int line, int column) : type(type), line(line), column(column) {}
 			virtual ~Match() {}
+
+			virtual std::pair<Node*, int> formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		struct TokenMatch : Match {
 			Token* token;
 
-			TokenMatch(Token* token) : Match(MatchType::TOKEN), token(token) {}
+			TokenMatch(Token* token) : Match(MatchType::TOKEN, token->line, token->column), token(token) {}
+
+			virtual std::pair<Node*, int> formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		struct ThreeMatch : Match {
@@ -34,24 +43,24 @@ namespace compiler {
 			Match* middle;
 			Match* right;
 
-			ThreeMatch(MatchType type, Match* left, Match* middle, Match* right) : Match(type), left(left), middle(middle), right(right) {}
+			ThreeMatch(MatchType type, Match* left, Match* middle, Match* right, int line, int column) 
+				: Match(type, line, column), left(left), middle(middle), right(right) {}
 		};
 
 		struct GroupMatch : Match {
-			enum class GroupType {
-				SQUARE, PAREN, CURLY
-			};
-
-			GroupType groupType;
 			std::list<Match*> matches;
 
-			GroupMatch(GroupType groupType) : Match(MatchType::GROUP), groupType(groupType) {}
+			GroupMatch(MatchType type, int line, int column) : Match(type, line, column) {}
+
+			// TODO: Treeform for groups
 		};
 
 		class MatchData {
 		public:
 			std::list<std::unique_ptr<Match>> matches;
-			std::list<Match*> tree;
+			Match* root;
+
+			MatchData() : matches(), root(nullptr) {}
 
 			template<class M>
 			M* add(std::unique_ptr<M> match);
