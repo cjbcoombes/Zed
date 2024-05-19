@@ -9,6 +9,7 @@
 #include <string>
 #include <memory>
 #include <optional>
+#include <functional>
 // #define NDEBUG to disable asserts
 #include <cassert>
 

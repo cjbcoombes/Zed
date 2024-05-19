@@ -1,4 +1,3 @@
-#include "..\utils\utils.h"
 #include "tokenizer.h"
 #include "nodes.h"
 
@@ -40,16 +39,6 @@ namespace compiler {
 			virtual std::pair<Node*, int> formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
 		};
 
-		// A Match of three tokens in a row
-		struct ThreeMatch : Match {
-			Match* left;
-			Match* middle;
-			Match* right;
-
-			ThreeMatch(MatchType type, Match* left, Match* middle, Match* right, int line, int column) 
-				: Match(type, line, column), left(left), middle(middle), right(right) {}
-		};
-
 		// A Match of a group of tokens
 		struct GroupMatch : Match {
 			std::list<Match*> matches;
@@ -58,6 +47,13 @@ namespace compiler {
 
 
 			virtual std::pair<Node*, int> formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
+		};
+
+		// A Match of a fixed-size group of tokens
+		struct FixedSizeMatch : Match {
+			std::vector<Match*> matches;
+
+			FixedSizeMatch(MatchType type, std::vector<Match*> matches, int line, int column) : Match(type, line, column), matches(matches) {}
 		};
 
 		// Collects matches in a way that avoids memory leaks
@@ -85,6 +81,18 @@ namespace compiler {
 		class GroupingPattern : public Pattern {
 		public:
 			virtual int match(std::list<Match*>& matches, MatchData& matchData, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
+		};
+
+		// A general Pattern for fixed-size matches
+		class FixedSizePattern : public Pattern {
+		public:
+			typedef std::function<bool(Match*)> pred_t;
+
+			std::vector<pred_t> predicates;
+
+			FixedSizePattern(std::vector<pred_t> predicates) : predicates(predicates) {}
+
+			// virtual int match(std::list<Match*>& matches, MatchData& matchData, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		// Applies the patterns to reduce a list of matches

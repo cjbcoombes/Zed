@@ -123,8 +123,18 @@ int compiler::ast::GroupingPattern::match(std::list<Match*>& matches, MatchData&
 }
 
 int compiler::ast::applyPatterns(std::list<Match*>& matches, MatchData& matchData, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
+	typedef FixedSizePattern::pred_t pred_t;
+
+	pred_t predTrue = [](Match* m) -> bool { return true; };
+	auto predToken = [](TokenType t) -> pred_t {
+		return [&](Match* m) -> bool {
+			return m->type == MatchType::TOKEN && dynamic_cast<TokenMatch*>(m)->token->type == t;
+		};
+	};
+
 	const std::unique_ptr<Pattern> patterns[] = {
-		std::make_unique<GroupingPattern>()
+		std::make_unique<GroupingPattern>(),
+		std::make_unique<FixedSizePattern>(std::vector<pred_t>({ predTrue, predToken(TokenType::PLUS), predTrue }))
 	};
 
 	int out = 0;
