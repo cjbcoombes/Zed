@@ -1,4 +1,4 @@
-#include "patterns.h"
+#include "treeform.h"
 
 namespace compiler {
 

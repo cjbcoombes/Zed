@@ -1,5 +1,11 @@
 #include "compiler.h"
 
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Types
+
+bool compiler::ast::sameType(ExprType& a, ExprType& b) {
+	return a.type == b.type;
+}
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Tree
@@ -12,7 +18,7 @@ N* compiler::ast::Tree::add(std::unique_ptr<N> node) {
 }
 
 template<class N, class ...Args>
-N* compiler::ast::Tree::make(Args && ...args) {
+N* compiler::ast::Tree::make(Args&& ...args) {
 	return add<N>(std::make_unique<N>(std::forward<Args>(args)...));
 }
 
@@ -83,7 +89,7 @@ std::pair<compiler::ast::Node*, int> compiler::ast::FixedSizeMatch::formTree(Tre
 			}
 			ArithBinopNode::Type opType;
 			switch (dynamic_cast<TokenMatch*>(matches[1])->token->type) {
-				case TokenType::PLUS: 
+				case TokenType::PLUS:
 					opType = ArithBinopNode::Type::ADD;
 					break;
 				case TokenType::DASH:
@@ -98,7 +104,7 @@ std::pair<compiler::ast::Node*, int> compiler::ast::FixedSizeMatch::formTree(Tre
 				default:
 					throw std::logic_error("Binary Arithmetic Match has invalid arithmetic operation token");
 			}
-			
+
 			return { tree.add(std::make_unique<ArithBinopNode>(opType, tempRes1.first, tempRes2.first, line, column)), 0 };
 
 		default:
