@@ -15,7 +15,13 @@ namespace compiler {
 			ROOT_GROUP,
 			PAREN_GROUP,
 			SQUARE_GROUP,
-			CURLY_GROUP
+			CURLY_GROUP,
+
+			BIN_PLUS,
+			BIN_SUB,
+			BIN_MUL,
+			BIN_DIV,
+			BIN_MOD
 		};
 
 		// Parent Match
@@ -53,7 +59,7 @@ namespace compiler {
 		struct FixedSizeMatch : Match {
 			std::vector<Match*> matches;
 
-			FixedSizeMatch(MatchType type, std::vector<Match*> matches, int line, int column) : Match(type, line, column), matches(matches) {}
+			FixedSizeMatch(MatchType type, int line, int column) : Match(type, line, column), matches() {}
 		};
 
 		// Collects matches in a way that avoids memory leaks
@@ -87,12 +93,18 @@ namespace compiler {
 		class FixedSizePattern : public Pattern {
 		public:
 			typedef std::function<bool(Match*)> pred_t;
+			typedef std::initializer_list<pred_t>&& il_t;
 
 			std::vector<pred_t> predicates;
+			MatchType matchType;
+			int linecolsource;
 
-			FixedSizePattern(std::vector<pred_t> predicates) : predicates(predicates) {}
+			FixedSizePattern(std::vector<pred_t> predicates, MatchType matchType, int linecolsource)
+				: predicates(predicates), matchType(matchType), linecolsource(linecolsource) {}
+			FixedSizePattern(std::initializer_list<pred_t>&& predicates, MatchType matchType, int linecolsource)
+				: predicates(predicates), matchType(matchType), linecolsource(linecolsource) {}
 
-			// virtual int match(std::list<Match*>& matches, MatchData& matchData, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
+			virtual int match(std::list<Match*>& matches, MatchData& matchData, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		// Applies the patterns to reduce a list of matches

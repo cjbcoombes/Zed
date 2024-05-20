@@ -122,19 +122,55 @@ int compiler::ast::GroupingPattern::match(std::list<Match*>& matches, MatchData&
 	return 0;
 }
 
+int compiler::ast::FixedSizePattern::match(std::list<Match*>& matches, MatchData& matchData, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
+	for (auto start = matches.begin(); start != matches.end(); start++) {
+		auto ptr = start;
+		bool matched = true;
+
+		for (auto pred = predicates.begin(); pred != predicates.end(); pred++, ptr++) {
+			if (ptr == matches.end()) return 0; // no more matches possible
+			if (!(*pred)(*ptr)) {
+				matched = false;
+				break;
+			}
+		}
+
+		if (matched) {
+			FixedSizeMatch* match = matchData.add(std::make_unique<FixedSizeMatch>(matchType, -1, -1));
+			std::copy(start, ptr, std::back_inserter(match->matches));
+			match->line = match->matches[linecolsource]->line;
+			match->column = match->matches[linecolsource]->column;
+
+			matches.insert(start, match);
+			start = matches.erase(start, ptr);
+
+			// Backtrack in case the new group now should be put in a match
+			int n = predicates.size();
+			while (n > 0 && start != matches.begin()) {
+				start--;
+				n--;
+			}
+		}
+	}
+
+	return 0;
+}
+
 int compiler::ast::applyPatterns(std::list<Match*>& matches, MatchData& matchData, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
 	typedef FixedSizePattern::pred_t pred_t;
+	// Allows type deduction for use of initializer_list in make_unique
+	typedef FixedSizePattern::il_t il_t;
 
 	pred_t predTrue = [](Match* m) -> bool { return true; };
 	auto predToken = [](TokenType t) -> pred_t {
-		return [&](Match* m) -> bool {
+		return [=](Match* m) -> bool {
 			return m->type == MatchType::TOKEN && dynamic_cast<TokenMatch*>(m)->token->type == t;
 		};
 	};
 
 	const std::unique_ptr<Pattern> patterns[] = {
 		std::make_unique<GroupingPattern>(),
-		std::make_unique<FixedSizePattern>(std::vector<pred_t>({ predTrue, predToken(TokenType::PLUS), predTrue }))
+		std::make_unique<FixedSizePattern, il_t>({ predTrue, predToken(TokenType::PLUS), predTrue }, MatchType::BIN_PLUS, 1)
 	};
 
 	int out = 0;
