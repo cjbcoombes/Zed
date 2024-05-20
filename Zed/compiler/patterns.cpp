@@ -123,7 +123,7 @@ int compiler::ast::GroupingPattern::match(std::list<Match*>& matches, MatchData&
 }
 
 int compiler::ast::FixedSizePattern::match(std::list<Match*>& matches, MatchData& matchData, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
-	for (auto start = matches.begin(); start != matches.end(); start++) {
+	for (auto start = matches.begin(); start != matches.end();) {
 		auto ptr = start;
 		bool matched = true;
 
@@ -150,6 +150,8 @@ int compiler::ast::FixedSizePattern::match(std::list<Match*>& matches, MatchData
 				start--;
 				n--;
 			}
+		} else {
+			start++;
 		}
 	}
 
@@ -167,10 +169,21 @@ int compiler::ast::applyPatterns(std::list<Match*>& matches, MatchData& matchDat
 			return m->type == MatchType::TOKEN && dynamic_cast<TokenMatch*>(m)->token->type == t;
 		};
 	};
+	auto predTokens = [](std::initializer_list<TokenType> tokens) -> pred_t {
+		return [=](Match* m) -> bool {
+			if (m->type != MatchType::TOKEN) return false;
+			TokenType tt = dynamic_cast<TokenMatch*>(m)->token->type;
+			for (TokenType t : tokens) {
+				if (t == tt) return true;
+			}
+			return false;
+		};
+	};
 
 	const std::unique_ptr<Pattern> patterns[] = {
 		std::make_unique<GroupingPattern>(),
-		std::make_unique<FixedSizePattern, il_t>({ predTrue, predToken(TokenType::PLUS), predTrue }, MatchType::BIN_PLUS, 1)
+		std::make_unique<FixedSizePattern, il_t>({ predTrue, predTokens({ TokenType::STAR, TokenType::SLASH }), predTrue }, MatchType::ARITH_BINOP, 1),
+		std::make_unique<FixedSizePattern, il_t>({ predTrue, predTokens({ TokenType::PLUS, TokenType::DASH }), predTrue }, MatchType::ARITH_BINOP, 1)
 	};
 
 	int out = 0;

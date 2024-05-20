@@ -9,7 +9,8 @@ namespace compiler {
 		enum class NodeType {
 			UNIMPL,
 			TOKEN,
-			BLOCK
+			BLOCK,
+			ARITH_BINOP
 		};
 
 		// Parent Node
@@ -29,17 +30,18 @@ namespace compiler {
 		class UnimplNode : public Node {
 		public:
 			std::string msg;
+			std::vector<Node*> nodes;
 
-			UnimplNode(const char* msg, int line, int column) : Node(NodeType::UNIMPL, line, column), msg(msg) {}
-			UnimplNode(std::string msg, int line, int column) : Node(NodeType::UNIMPL, line, column), msg(msg) {}
+			UnimplNode(const char* msg, int line, int column) : Node(NodeType::UNIMPL, line, column), msg(msg), nodes() {}
+			//UnimplNode(std::string msg, int line, int column) : Node(NodeType::UNIMPL, line, column), msg(msg) {}
 
-			virtual void printSimple(TokenData& tokenData, std::ostream& stream);
+			virtual void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last);
 		};
 
 		// A Node for a block (just a group of other Nodes)
 		class BlockNode : public Node {
 		public:
-			std::list<Node*> nodes;
+			std::vector<Node*> nodes;
 
 			BlockNode(int line, int column) : Node(NodeType::BLOCK, line, column) {}
 
@@ -54,6 +56,23 @@ namespace compiler {
 			TokenNode(Token* token) : Node(NodeType::TOKEN, token->line, token->column), token(token) {}
 
 			virtual void printSimple(TokenData& tokenData, std::ostream& stream);
+		};
+
+		// A Node for a binary arithmetic operaton
+		class ArithBinopNode : public Node {
+		public:
+			enum class Type {
+				ADD, SUB, MUL, DIV
+			};
+
+			Node* left;
+			Node* right;
+			Type opType;
+
+			ArithBinopNode(Type opType, Node* left, Node* right, int line, int column)
+				: Node(NodeType::ARITH_BINOP, line, column), opType(opType), left(left), right(right) {}
+
+			virtual void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last);
 		};
 
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~

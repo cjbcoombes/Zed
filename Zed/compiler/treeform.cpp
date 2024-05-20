@@ -60,9 +60,58 @@ std::pair<compiler::ast::Node*, int> compiler::ast::GroupMatch::formTree(Tree& t
 			}
 			break;
 		default:
-			throw std::logic_error("Group has unexpected MatchType");
+			throw std::logic_error("GroupMatch has unexpected MatchType");
 	}
-	return { nullptr, 0 };
+}
+
+std::pair<compiler::ast::Node*, int> compiler::ast::FixedSizeMatch::formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
+	std::pair<compiler::ast::Node*, int> tempRes1;
+	std::pair<compiler::ast::Node*, int> tempRes2;
+
+	switch (type) {
+		case MatchType::ARITH_BINOP:
+			if (matches.size() != 3 || matches[1]->type != MatchType::TOKEN) {
+				throw std::logic_error("Binary Arithmetic Match doesn't have exactly 3 children, where the second is a token");
+			}
+			tempRes1 = matches[0]->formTree(tree, status, settings, stream);
+			if (tempRes1.second) {
+				return { nullptr, tempRes1.second };
+			}
+			tempRes2 = matches[2]->formTree(tree, status, settings, stream);
+			if (tempRes2.second) {
+				return { nullptr, tempRes2.second };
+			}
+			ArithBinopNode::Type opType;
+			switch (dynamic_cast<TokenMatch*>(matches[1])->token->type) {
+				case TokenType::PLUS: 
+					opType = ArithBinopNode::Type::ADD;
+					break;
+				case TokenType::DASH:
+					opType = ArithBinopNode::Type::SUB;
+					break;
+				case TokenType::STAR:
+					opType = ArithBinopNode::Type::MUL;
+					break;
+				case TokenType::SLASH:
+					opType = ArithBinopNode::Type::DIV;
+					break;
+				default:
+					throw std::logic_error("Binary Arithmetic Match has invalid arithmetic operation token");
+			}
+			
+			return { tree.add(std::make_unique<ArithBinopNode>(opType, tempRes1.first, tempRes2.first, line, column)), 0 };
+
+		default:
+			UnimplNode* unimplNode = tree.add(std::make_unique<UnimplNode>("fixed size match with unhandled type", line, column));
+			for (Match* match : matches) {
+				tempRes1 = match->formTree(tree, status, settings, stream);
+				if (tempRes1.second) {
+					return { nullptr, tempRes1.second };
+				}
+				unimplNode->nodes.push_back(tempRes1.first);
+			}
+			return { unimplNode, 0 };
+	}
 }
 
 int compiler::ast::formTree(ast::Tree& tree, ast::MatchData& matchData, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {

@@ -17,11 +17,7 @@ namespace compiler {
 			SQUARE_GROUP,
 			CURLY_GROUP,
 
-			BIN_PLUS,
-			BIN_SUB,
-			BIN_MUL,
-			BIN_DIV,
-			BIN_MOD
+			ARITH_BINOP
 		};
 
 		// Parent Match
@@ -51,7 +47,6 @@ namespace compiler {
 
 			GroupMatch(MatchType type, int line, int column) : Match(type, line, column) {}
 
-
 			virtual std::pair<Node*, int> formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
 		};
 
@@ -60,6 +55,8 @@ namespace compiler {
 			std::vector<Match*> matches;
 
 			FixedSizeMatch(MatchType type, int line, int column) : Match(type, line, column), matches() {}
+
+			virtual std::pair<Node*, int> formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		// Collects matches in a way that avoids memory leaks

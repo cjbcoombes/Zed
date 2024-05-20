@@ -19,8 +19,15 @@ void compiler::ast::Node::printSimple(TokenData& tokenData, std::ostream& stream
 	stream << "??? Node ??? \n";
 }
 
-void compiler::ast::UnimplNode::printSimple(TokenData& tokenData, std::ostream& stream) {
+void compiler::ast::UnimplNode::print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) {
+	stream << indent;
+	if (last) stream << TREE_BRANCH_END;
+	else stream << TREE_BRANCH_MID;
 	stream << "Unimplemented ( " << msg << " )\n";
+
+	for (auto i = nodes.cbegin(); i != nodes.cend(); i++) {
+		(*i)->print(tokenData, stream, indent + (last ? TREE_SPACE : TREE_PASS), std::next(i) == nodes.end());
+	}
 }
 
 void compiler::ast::TokenNode::printSimple(TokenData& tokenData, std::ostream& stream) {
@@ -38,6 +45,21 @@ void compiler::ast::BlockNode::print(TokenData& tokenData, std::ostream& stream,
 	for (auto i = nodes.cbegin(); i != nodes.cend(); i++) {
 		(*i)->print(tokenData, stream, indent + (last ? TREE_SPACE : TREE_PASS), std::next(i) == nodes.end());
 	}
+}
+
+void compiler::ast::ArithBinopNode::print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) {
+	stream << indent;
+	if (last) stream << TREE_BRANCH_END;
+	else stream << TREE_BRANCH_MID;
+	stream << "Arith Binop ( ";
+	if (opType == Type::ADD) stream << "+";
+	else if (opType == Type::SUB) stream << "-";
+	else if (opType == Type::MUL) stream << "*";
+	else if (opType == Type::DIV) stream << "/";
+	stream << " )\n";
+
+	left->print(tokenData, stream, indent + (last ? TREE_SPACE : TREE_PASS), false);
+	right->print(tokenData, stream, indent + (last ? TREE_SPACE : TREE_PASS), true);
 }
 
 void compiler::ast::Tree::print(TokenData& tokenData, std::ostream& stream) {
