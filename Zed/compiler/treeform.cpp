@@ -3,6 +3,12 @@
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Types
 
+const compiler::ast::ExprType compiler::ast::ExprType::primVoid{ PrimType::VOID };
+const compiler::ast::ExprType compiler::ast::ExprType::primInt{ PrimType::INT };
+const compiler::ast::ExprType compiler::ast::ExprType::primFloat{ PrimType::FLOAT };
+const compiler::ast::ExprType compiler::ast::ExprType::primBool{ PrimType::BOOL };
+const compiler::ast::ExprType compiler::ast::ExprType::primChar{ PrimType::CHAR };
+
 bool compiler::ast::sameType(ExprType& a, ExprType& b) {
 	return a.type == b.type;
 }

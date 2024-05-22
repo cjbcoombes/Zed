@@ -24,12 +24,6 @@ namespace compiler {
 			ExprType(PrimType type) : type(type) {}
 		};
 
-		const ExprType ExprType::primVoid{ ExprType::PrimType::VOID };
-		const ExprType ExprType::primInt{ ExprType::PrimType::INT };
-		const ExprType ExprType::primFloat{ ExprType::PrimType::FLOAT };
-		const ExprType ExprType::primBool{ ExprType::PrimType::BOOL };
-		const ExprType ExprType::primChar{ ExprType::PrimType::CHAR };
-
 		bool sameType(ExprType& a, ExprType& b);
 	}
 }
