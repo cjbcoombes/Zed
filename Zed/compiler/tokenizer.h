@@ -160,6 +160,7 @@ namespace compiler {
 			bytecode::types::int_t int_;
 
 			// bytecode::types::byte_t byte; // Might not be necessary
+			//bytecode::types::bool_t bool_; // Might not be necessary
 			bytecode::types::char_t char_;
 
 			// The index of a string in the strList of a TokenData

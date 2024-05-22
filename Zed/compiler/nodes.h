@@ -2,7 +2,32 @@
 
 namespace compiler {
 	namespace ast {
-		
+		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		// Types
+
+		// A type in the type system
+		// Currently not fleshed-out. Just primitives
+		struct ExprType {
+			enum class PrimType {
+				NONE, VOID, INT, FLOAT, BOOL, CHAR
+			};
+
+			static const ExprType primNoType;
+			static const ExprType primVoid;
+			static const ExprType primInt;
+			static const ExprType primFloat;
+			static const ExprType primBool;
+			static const ExprType primChar;
+
+			PrimType type;
+
+			ExprType(PrimType type) : type(type) {}
+
+			void printSimple(std::ostream& stream);
+		};
+
+		bool sameType(const ExprType& a, const ExprType& b);
+
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// Nodes
 
@@ -10,20 +35,24 @@ namespace compiler {
 			UNIMPL,
 			TOKEN,
 			BLOCK,
-			ARITH_BINOP
+			ARITH_BINOP,
+			LITERAL
 		};
 
 		// Parent Node
 		class Node {
 		public:
 			NodeType type;
+			ExprType exprType;
 			int line;
 			int column;
 
-			Node(NodeType type, int line, int column) : type(type), line(line), column(column) {}
+			Node(NodeType type, int line, int column) : type(type), line(line), column(column), exprType(ExprType::primNoType) {}
+			Node(NodeType type, ExprType exprType, int line, int column) : type(type), line(line), column(column), exprType(exprType) {}
 
 			virtual void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last);
 			virtual void printSimple(TokenData& tokenData, std::ostream& stream);
+			void printType(std::ostream& stream);
 		};
 
 		// A Node for currently unimplemented cases
@@ -73,6 +102,28 @@ namespace compiler {
 				: Node(NodeType::ARITH_BINOP, line, column), opType(opType), left(left), right(right) {}
 
 			virtual void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last);
+		};
+
+		// A Node for literal values
+		class LiteralNode : public Node {
+		public:
+			enum class Type {
+				INT, FLOAT, BOOL, CHAR
+			};
+
+			union {
+				bytecode::types::float_t float_;
+				bytecode::types::int_t int_;
+
+				bytecode::types::bool_t bool_; // Might not be necessary
+				bytecode::types::char_t char_;
+			};
+
+			Type litType;
+
+			LiteralNode(Token* token);
+
+			virtual void printSimple(TokenData& tokenData, std::ostream& stream);
 		};
 
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~

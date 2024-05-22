@@ -3,13 +3,14 @@
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Types
 
+const compiler::ast::ExprType compiler::ast::ExprType::primNoType{ PrimType::NONE };
 const compiler::ast::ExprType compiler::ast::ExprType::primVoid{ PrimType::VOID };
 const compiler::ast::ExprType compiler::ast::ExprType::primInt{ PrimType::INT };
 const compiler::ast::ExprType compiler::ast::ExprType::primFloat{ PrimType::FLOAT };
 const compiler::ast::ExprType compiler::ast::ExprType::primBool{ PrimType::BOOL };
 const compiler::ast::ExprType compiler::ast::ExprType::primChar{ PrimType::CHAR };
 
-bool compiler::ast::sameType(ExprType& a, ExprType& b) {
+bool compiler::ast::sameType(const ExprType& a, const ExprType& b) {
 	return a.type == b.type;
 }
 
@@ -28,6 +29,42 @@ N* compiler::ast::Tree::make(Args&& ...args) {
 	return add<N>(std::make_unique<N>(std::forward<Args>(args)...));
 }
 
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Node Constructors
+
+compiler::ast::LiteralNode::LiteralNode(Token* token) : Node(NodeType::LITERAL, token->line, token->column), int_(0) {
+	switch (token->type) {
+		case TokenType::NUM_INT:
+			int_ = token->int_;
+			litType = Type::INT;
+			exprType = ExprType::primInt;
+			break;
+		case TokenType::NUM_FLOAT:
+			float_ = token->float_;
+			litType = Type::FLOAT;
+			exprType = ExprType::primFloat;
+			break;
+		case TokenType::CHAR:
+			char_ = token->char_;
+			litType = Type::CHAR;
+			exprType = ExprType::primChar;
+			break;
+		case TokenType::TRUE:
+			bool_ = true;
+			litType = Type::BOOL;
+			exprType = ExprType::primBool;
+			break;
+		case TokenType::FALSE:
+			bool_ = false;
+			litType = Type::BOOL;
+			exprType = ExprType::primBool;
+			break;
+		default:
+			throw std::logic_error("Literal Node constructed from Token not representing a literal");
+			break;
+	}
+}
+
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Match Tree Formation
@@ -40,7 +77,16 @@ std::pair<compiler::ast::Node*, int> compiler::ast::Match::formTree(Tree& tree, 
 }
 
 std::pair<compiler::ast::Node*, int> compiler::ast::TokenMatch::formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
-	return { tree.add(std::make_unique<TokenNode>(token)), 0 };
+	switch (token->type) {
+		case TokenType::NUM_INT:
+		case TokenType::NUM_FLOAT:
+		case TokenType::CHAR:
+		case TokenType::TRUE:
+		case TokenType::FALSE:
+			return { tree.add(std::make_unique<LiteralNode>(token)), 0 };
+		default:
+			return { tree.add(std::make_unique<TokenNode>(token)), 0 };
+	}
 }
 
 std::pair<compiler::ast::Node*, int> compiler::ast::GroupMatch::formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
