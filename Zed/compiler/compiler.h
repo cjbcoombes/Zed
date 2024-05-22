@@ -30,6 +30,7 @@ namespace compiler {
 
 			// Errors
 			GEN_ERROR,
+			INVALID_TYPE_ARITH_BINOP,
 
 			// Abortive
 			GEN_ABORT,
@@ -64,6 +65,7 @@ namespace compiler {
 			"General warning",
 
 			"General error",
+			"Invalid (illegal or non-matching) types for arithmetic binop",
 
 			"General abortive error",
 			"Maximum token length exceeded",

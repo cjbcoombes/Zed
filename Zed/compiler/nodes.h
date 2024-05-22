@@ -9,10 +9,11 @@ namespace compiler {
 		// Currently not fleshed-out. Just primitives
 		struct ExprType {
 			enum class PrimType {
-				NONE, VOID, INT, FLOAT, BOOL, CHAR
+				NONE, ERR, VOID, INT, FLOAT, BOOL, CHAR
 			};
 
 			static const ExprType primNoType;
+			static const ExprType primErrType;
 			static const ExprType primVoid;
 			static const ExprType primInt;
 			static const ExprType primFloat;
@@ -21,6 +22,7 @@ namespace compiler {
 
 			PrimType type;
 
+			ExprType() : ExprType(ExprType::primNoType) {}
 			ExprType(PrimType type) : type(type) {}
 
 			void printSimple(std::ostream& stream);
@@ -98,8 +100,8 @@ namespace compiler {
 			Node* right;
 			Type opType;
 
-			ArithBinopNode(Type opType, Node* left, Node* right, int line, int column)
-				: Node(NodeType::ARITH_BINOP, line, column), opType(opType), left(left), right(right) {}
+			ArithBinopNode(Type opType, ExprType exprType, Node* left, Node* right, int line, int column)
+				: Node(NodeType::ARITH_BINOP, exprType, line, column), opType(opType), left(left), right(right) {}
 
 			virtual void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last);
 		};

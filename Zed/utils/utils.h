@@ -38,6 +38,7 @@
 #define IO_FMT_SYMB(x) IO_WHITE << x << IO_NORM
 #define IO_FMT_MULTISYMB(x) IO_GRAY << x << IO_NORM
 #define IO_FMT_KEYWORD(x) IO_MAGENTA << x << IO_NORM
+#define IO_FMT_ERR(x) IO_RED << x << IO_NORM
 
 #define IO_ERR IO_RED "[ERROR] "
 #define IO_WARN IO_YELLOW "[WARNING] "

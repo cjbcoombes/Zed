@@ -14,6 +14,9 @@ void compiler::ast::ExprType::printSimple(std::ostream& stream) {
 		case PrimType::NONE:
 			stream << "*";
 			break;
+		case PrimType::ERR:
+			stream << IO_FMT_ERR("err-type");
+			break;
 		case PrimType::VOID:
 			stream << IO_FMT_KEYWORD("void");
 			break;

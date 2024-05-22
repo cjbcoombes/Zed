@@ -6,6 +6,7 @@ namespace compiler {
 	class CompilerStatus;
 
 	namespace ast {
+		typedef std::pair<Node*, int> treeres_t;
 
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// Matches
@@ -29,7 +30,7 @@ namespace compiler {
 			Match(MatchType type, int line, int column) : type(type), line(line), column(column) {}
 			virtual ~Match() {}
 
-			virtual std::pair<Node*, int> formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
+			virtual treeres_t formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		// A Match of just a token
@@ -38,7 +39,7 @@ namespace compiler {
 
 			TokenMatch(Token* token) : Match(MatchType::TOKEN, token->line, token->column), token(token) {}
 
-			virtual std::pair<Node*, int> formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
+			virtual treeres_t formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		// A Match of a group of tokens
@@ -47,7 +48,7 @@ namespace compiler {
 
 			GroupMatch(MatchType type, int line, int column) : Match(type, line, column) {}
 
-			virtual std::pair<Node*, int> formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
+			virtual treeres_t formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		// A Match of a fixed-size group of tokens
@@ -56,7 +57,7 @@ namespace compiler {
 
 			FixedSizeMatch(MatchType type, int line, int column) : Match(type, line, column), matches() {}
 
-			virtual std::pair<Node*, int> formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
+			virtual treeres_t formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
 		};
 
 		// Collects matches in a way that avoids memory leaks

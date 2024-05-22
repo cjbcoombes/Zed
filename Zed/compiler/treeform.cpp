@@ -4,6 +4,7 @@
 // Types
 
 const compiler::ast::ExprType compiler::ast::ExprType::primNoType{ PrimType::NONE };
+const compiler::ast::ExprType compiler::ast::ExprType::primErrType{ PrimType::ERR };
 const compiler::ast::ExprType compiler::ast::ExprType::primVoid{ PrimType::VOID };
 const compiler::ast::ExprType compiler::ast::ExprType::primInt{ PrimType::INT };
 const compiler::ast::ExprType compiler::ast::ExprType::primFloat{ PrimType::FLOAT };
@@ -69,14 +70,14 @@ compiler::ast::LiteralNode::LiteralNode(Token* token) : Node(NodeType::LITERAL, 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Match Tree Formation
 
-std::pair<compiler::ast::Node*, int> compiler::ast::Match::formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
+compiler::ast::treeres_t compiler::ast::Match::formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
 	if (settings.flags.hasFlags(Flags::FLAG_DEBUG)) {
 		stream << IO_DEBUG "Missing treeform implementation" IO_NORM "\n";
 	}
 	return { tree.add(std::make_unique<UnimplNode>("Generic match", line, column)), 0 };
 }
 
-std::pair<compiler::ast::Node*, int> compiler::ast::TokenMatch::formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
+compiler::ast::treeres_t compiler::ast::TokenMatch::formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
 	switch (token->type) {
 		case TokenType::NUM_INT:
 		case TokenType::NUM_FLOAT:
@@ -89,10 +90,10 @@ std::pair<compiler::ast::Node*, int> compiler::ast::TokenMatch::formTree(Tree& t
 	}
 }
 
-std::pair<compiler::ast::Node*, int> compiler::ast::GroupMatch::formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
+compiler::ast::treeres_t compiler::ast::GroupMatch::formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
 	// The parent match may decide to do something different with the group.
 
-	std::pair<compiler::ast::Node*, int> tempRes;
+	compiler::ast::treeres_t tempRes;
 	BlockNode* tempBlockNode;
 
 	switch (type) {
@@ -122,43 +123,67 @@ std::pair<compiler::ast::Node*, int> compiler::ast::GroupMatch::formTree(Tree& t
 	}
 }
 
-std::pair<compiler::ast::Node*, int> compiler::ast::FixedSizeMatch::formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
-	std::pair<compiler::ast::Node*, int> tempRes1;
-	std::pair<compiler::ast::Node*, int> tempRes2;
+compiler::ast::treeres_t formArithBinop(compiler::ast::FixedSizeMatch& match,
+										compiler::ast::Tree& tree,
+										compiler::CompilerStatus& status,
+										compiler::CompilerSettings& settings,
+										std::ostream& stream) {
+	using namespace compiler::ast;
+	using namespace compiler;
+
+	treeres_t tempRes1;
+	treeres_t tempRes2;
+
+	if (match.matches.size() != 3 || match.matches[1]->type != MatchType::TOKEN) {
+		throw std::logic_error("Binary Arithmetic Match doesn't have exactly 3 children, where the second is a token");
+	}
+	tempRes1 = match.matches[0]->formTree(tree, status, settings, stream);
+	if (tempRes1.second) {
+		return { nullptr, tempRes1.second };
+	}
+	tempRes2 = match.matches[2]->formTree(tree, status, settings, stream);
+	if (tempRes2.second) {
+		return { nullptr, tempRes2.second };
+	}
+
+	ArithBinopNode::Type opType;
+	switch (dynamic_cast<TokenMatch*>(match.matches[1])->token->type) {
+		case TokenType::PLUS:
+			opType = ArithBinopNode::Type::ADD;
+			break;
+		case TokenType::DASH:
+			opType = ArithBinopNode::Type::SUB;
+			break;
+		case TokenType::STAR:
+			opType = ArithBinopNode::Type::MUL;
+			break;
+		case TokenType::SLASH:
+			opType = ArithBinopNode::Type::DIV;
+			break;
+		default:
+			throw std::logic_error("Binary Arithmetic Match has invalid arithmetic operation token");
+	}
+
+	ExprType exprType;
+	if (sameType(tempRes1.first->exprType, ExprType::primInt) && sameType(tempRes2.first->exprType, ExprType::primInt)) {
+		exprType = ExprType::primInt;
+	} else if (sameType(tempRes1.first->exprType, ExprType::primFloat) && sameType(tempRes2.first->exprType, ExprType::primFloat)) {
+		exprType = ExprType::primFloat;
+	} else {
+		exprType = ExprType::primErrType;
+		status.addIssue(CompilerIssue(CompilerIssue::Type::INVALID_TYPE_ARITH_BINOP, match.line, match.column));
+	}
+
+	return { tree.add(std::make_unique<ArithBinopNode>(opType, exprType, tempRes1.first, tempRes2.first, match.line, match.column)), 0 };
+}
+
+compiler::ast::treeres_t compiler::ast::FixedSizeMatch::formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
+	treeres_t tempRes1;
 
 	switch (type) {
 		case MatchType::ARITH_BINOP:
-			if (matches.size() != 3 || matches[1]->type != MatchType::TOKEN) {
-				throw std::logic_error("Binary Arithmetic Match doesn't have exactly 3 children, where the second is a token");
-			}
-			tempRes1 = matches[0]->formTree(tree, status, settings, stream);
-			if (tempRes1.second) {
-				return { nullptr, tempRes1.second };
-			}
-			tempRes2 = matches[2]->formTree(tree, status, settings, stream);
-			if (tempRes2.second) {
-				return { nullptr, tempRes2.second };
-			}
-			ArithBinopNode::Type opType;
-			switch (dynamic_cast<TokenMatch*>(matches[1])->token->type) {
-				case TokenType::PLUS:
-					opType = ArithBinopNode::Type::ADD;
-					break;
-				case TokenType::DASH:
-					opType = ArithBinopNode::Type::SUB;
-					break;
-				case TokenType::STAR:
-					opType = ArithBinopNode::Type::MUL;
-					break;
-				case TokenType::SLASH:
-					opType = ArithBinopNode::Type::DIV;
-					break;
-				default:
-					throw std::logic_error("Binary Arithmetic Match has invalid arithmetic operation token");
-			}
-
-			return { tree.add(std::make_unique<ArithBinopNode>(opType, tempRes1.first, tempRes2.first, line, column)), 0 };
-
+			return formArithBinop(*this, tree, status, settings, stream);
+			break;
 		default:
 			UnimplNode* unimplNode = tree.add(std::make_unique<UnimplNode>("fixed size match with unhandled type", line, column));
 			for (Match* match : matches) {
