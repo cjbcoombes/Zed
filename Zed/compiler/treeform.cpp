@@ -33,7 +33,7 @@ N* compiler::ast::Tree::make(Args&& ...args) {
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Node Constructors
 
-compiler::ast::LiteralNode::LiteralNode(Token* token) : Node(NodeType::LITERAL, token->line, token->column), int_(0) {
+compiler::ast::LiteralNode::LiteralNode(Token* token) : Node(NodeType::LITERAL, token->loc), int_(0) {
 	switch (token->type) {
 		case TokenType::NUM_INT:
 			int_ = token->int_;
@@ -74,7 +74,7 @@ compiler::ast::treeres_t compiler::ast::Match::formTree(Tree& tree, CompilerStat
 	if (settings.flags.hasFlags(Flags::FLAG_DEBUG)) {
 		stream << IO_DEBUG "Missing treeform implementation" IO_NORM "\n";
 	}
-	return { tree.add(std::make_unique<UnimplNode>("Generic match", line, column)), 0 };
+	return { tree.add(std::make_unique<UnimplNode>("Generic match", loc)), 0 };
 }
 
 compiler::ast::treeres_t compiler::ast::TokenMatch::formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
@@ -100,7 +100,7 @@ compiler::ast::treeres_t compiler::ast::GroupMatch::formTree(Tree& tree, Compile
 		case MatchType::ROOT_GROUP:
 		case MatchType::CURLY_GROUP:
 			// block
-			tempBlockNode = tree.add(std::make_unique<BlockNode>(line, column));
+			tempBlockNode = tree.add(std::make_unique<BlockNode>(loc));
 			for (Match* match : matches) {
 				tempRes = match->formTree(tree, status, settings, stream);
 				if (tempRes.second) {
@@ -110,12 +110,12 @@ compiler::ast::treeres_t compiler::ast::GroupMatch::formTree(Tree& tree, Compile
 			}
 			return { tempBlockNode, 0 };
 		case MatchType::SQUARE_GROUP:
-			return { tree.add(std::make_unique<UnimplNode>("Square group", line, column)), 0 };
+			return { tree.add(std::make_unique<UnimplNode>("Square group", loc)), 0 };
 		case MatchType::PAREN_GROUP:
 			if (matches.size() == 1) {
 				return matches.front()->formTree(tree, status, settings, stream);
 			} else {
-				return { tree.add(std::make_unique<UnimplNode>("Paren group with multiple internal matches", line, column)), 0 };
+				return { tree.add(std::make_unique<UnimplNode>("Paren group with multiple internal matches", loc)), 0 };
 			}
 			break;
 		default:
@@ -171,10 +171,10 @@ compiler::ast::treeres_t formArithBinop(compiler::ast::FixedSizeMatch& match,
 		exprType = ExprType::primFloat;
 	} else {
 		exprType = ExprType::primErrType;
-		status.addIssue(CompilerIssue(CompilerIssue::Type::INVALID_TYPE_ARITH_BINOP, match.line, match.column));
+		status.addIssue(CompilerIssue(CompilerIssue::Type::INVALID_TYPE_ARITH_BINOP, match.loc));
 	}
 
-	return { tree.add(std::make_unique<ArithBinopNode>(opType, exprType, tempRes1.first, tempRes2.first, match.line, match.column)), 0 };
+	return { tree.add(std::make_unique<ArithBinopNode>(opType, exprType, tempRes1.first, tempRes2.first, match.loc)), 0 };
 }
 
 compiler::ast::treeres_t compiler::ast::FixedSizeMatch::formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
@@ -185,7 +185,7 @@ compiler::ast::treeres_t compiler::ast::FixedSizeMatch::formTree(Tree& tree, Com
 			return formArithBinop(*this, tree, status, settings, stream);
 			break;
 		default:
-			UnimplNode* unimplNode = tree.add(std::make_unique<UnimplNode>("fixed size match with unhandled type", line, column));
+			UnimplNode* unimplNode = tree.add(std::make_unique<UnimplNode>("fixed size match with unhandled type", loc));
 			for (Match* match : matches) {
 				tempRes1 = match->formTree(tree, status, settings, stream);
 				if (tempRes1.second) {

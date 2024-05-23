@@ -88,14 +88,13 @@ namespace compiler {
 					  "Number of issue types does not match list of issue types");
 
 		const Type type;
-		const int line;
-		const int column;
+		const code_location loc;
 		std::string extra;
 
-		CompilerIssue(const Type& type, const int& line, const int& column) : type(type), line(line), column(column), extra("") {}
-		CompilerIssue(const Type& type, const int& line, const int& column, char* const& extra) : type(type), line(line), column(column), extra(extra) {}
-		CompilerIssue(const Type& type, const int& line, const int& column, const char* const& extra) : type(type), line(line), column(column), extra(extra) {}
-		CompilerIssue(const Type& type, const int& line, const int& column, const std::string& extra) : type(type), line(line), column(column), extra(extra) {}
+		CompilerIssue(const Type& type, const code_location loc) : type(type), loc(loc), extra("") {}
+		CompilerIssue(const Type& type, const code_location loc, char* const& extra) : type(type), loc(loc), extra(extra) {}
+		CompilerIssue(const Type& type, const code_location loc, const char* const& extra) : type(type), loc(loc), extra(extra) {}
+		CompilerIssue(const Type& type, const code_location loc, const std::string& extra) : type(type), loc(loc), extra(extra) {}
 
 		const char* what();
 		Level level();

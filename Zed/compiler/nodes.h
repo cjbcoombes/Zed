@@ -46,11 +46,10 @@ namespace compiler {
 		public:
 			NodeType type;
 			ExprType exprType;
-			int line;
-			int column;
+			code_location loc;
 
-			Node(NodeType type, int line, int column) : type(type), line(line), column(column), exprType(ExprType::primNoType) {}
-			Node(NodeType type, ExprType exprType, int line, int column) : type(type), line(line), column(column), exprType(exprType) {}
+			Node(NodeType type, code_location loc) : type(type), loc(loc), exprType(ExprType::primNoType) {}
+			Node(NodeType type, ExprType exprType, code_location loc) : type(type), loc(loc), exprType(exprType) {}
 
 			virtual void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last);
 			virtual void printSimple(TokenData& tokenData, std::ostream& stream);
@@ -63,8 +62,8 @@ namespace compiler {
 			std::string msg;
 			std::vector<Node*> nodes;
 
-			UnimplNode(const char* msg, int line, int column) : Node(NodeType::UNIMPL, line, column), msg(msg), nodes() {}
-			//UnimplNode(std::string msg, int line, int column) : Node(NodeType::UNIMPL, line, column), msg(msg) {}
+			UnimplNode(const char* msg, code_location loc) : Node(NodeType::UNIMPL, loc), msg(msg), nodes() {}
+			//UnimplNode(std::string msg, code_location loc) : Node(NodeType::UNIMPL, loc), msg(msg) {}
 
 			virtual void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last);
 		};
@@ -74,7 +73,7 @@ namespace compiler {
 		public:
 			std::vector<Node*> nodes;
 
-			BlockNode(int line, int column) : Node(NodeType::BLOCK, line, column) {}
+			BlockNode(code_location loc) : Node(NodeType::BLOCK, loc) {}
 
 			virtual void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last);
 		};
@@ -84,7 +83,7 @@ namespace compiler {
 		public:
 			Token* token;
 
-			TokenNode(Token* token) : Node(NodeType::TOKEN, token->line, token->column), token(token) {}
+			TokenNode(Token* token) : Node(NodeType::TOKEN, token->loc), token(token) {}
 
 			virtual void printSimple(TokenData& tokenData, std::ostream& stream);
 		};
@@ -100,8 +99,8 @@ namespace compiler {
 			Node* right;
 			Type opType;
 
-			ArithBinopNode(Type opType, ExprType exprType, Node* left, Node* right, int line, int column)
-				: Node(NodeType::ARITH_BINOP, exprType, line, column), opType(opType), left(left), right(right) {}
+			ArithBinopNode(Type opType, ExprType exprType, Node* left, Node* right, code_location loc)
+				: Node(NodeType::ARITH_BINOP, exprType, loc), opType(opType), left(left), right(right) {}
 
 			virtual void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last);
 		};

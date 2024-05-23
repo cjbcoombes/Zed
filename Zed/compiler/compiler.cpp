@@ -30,16 +30,16 @@ void compiler::CompilerIssue::print(TokenData& tokenData, std::ostream& stream) 
 	}
 
 	stream << starter;
-	if (line >= 0) {
-		stream << '@' << (line + 1) << ':' << (column + 1) << "  " << what() << '\n';
-		stream << starter << "     | " << std::setw(column) << "v" << '\n';
-		stream << starter << std::setw(5) << (line + 1) << "| ";
-		if (tokenData.lineStarts.size() > line + 1) {
-			stream << tokenData.content.substr(tokenData.lineStarts[line], tokenData.lineStarts[line + 1] - tokenData.lineStarts[line]);
+	if (loc.line >= 0) {
+		stream << '@' << (loc.line + 1) << ':' << (loc.column + 1) << "  " << what() << '\n';
+		stream << starter << "     | " << std::setw(loc.column) << "v" << '\n';
+		stream << starter << std::setw(5) << (loc.line + 1) << "| ";
+		if (tokenData.lineStarts.size() > loc.line + 1) {
+			stream << tokenData.content.substr(tokenData.lineStarts[loc.line], tokenData.lineStarts[loc.line + 1] - tokenData.lineStarts[loc.line]);
 		} else {
-			stream << tokenData.content.substr(tokenData.lineStarts[line]);
+			stream << tokenData.content.substr(tokenData.lineStarts[loc.line]);
 		}
-		stream << starter << "     | " << std::setw(column) << "^" << '\n';
+		stream << starter << "     | " << std::setw(loc.column) << "^" << '\n';
 		stream << IO_NORM;
 	} else {
 		stream << what() << IO_NORM "\n";

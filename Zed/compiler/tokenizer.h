@@ -146,12 +146,19 @@ namespace compiler {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Token Data Types
 
+	struct code_location {
+		int line;
+		int column;
+
+		code_location(int line, int column) : line(line), column(column) {}
+		code_location() : line(-1), column(-1) {}
+	};
+
 	// Represents a single token, once parsed
 	struct Token {
 		TokenType type;
 		// Line and column for helpful errors
-		const int line;
-		const int column;
+		const code_location loc;
 
 		// The token will have one and only one of these as data
 		union {
@@ -167,7 +174,7 @@ namespace compiler {
 			int strIndex;
 		};
 
-		Token(TokenType type, int line, int column) : type(type), line(line), column(column), strIndex(-1) {}
+		Token(TokenType type, code_location loc) : type(type), loc(loc), strIndex(-1) {}
 	};
 
 	// Holds a list of tokens and a list of strings
@@ -179,17 +186,17 @@ namespace compiler {
 		std::string content;
 		std::vector<int> lineStarts;
 
-		void putInt(int val, int line, int column);
-		void putFloat(float val, int line, int column);
-		void putChar(char val, int line, int column);
-		void putType(TokenType type, int line, int column);
-		void putStr(TokenType type, int line, int column, std::string str);
+		void putInt(int val, code_location loc);
+		void putFloat(float val, code_location loc);
+		void putChar(char val, code_location loc);
+		void putType(TokenType type, code_location loc);
+		void putStr(TokenType type, code_location loc, std::string str);
 
 	private:
 		// Adds a token and returns a pointer to that token
 		// IMPORTANT that the pointer does not get used after
 		// the tokens vector is modified. (That's why it's
 		// private)
-		Token* put(TokenType type, int line, int column);
+		Token* put(TokenType type, code_location loc);
 	};
 }

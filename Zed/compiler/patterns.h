@@ -24,10 +24,9 @@ namespace compiler {
 		// Parent Match
 		struct Match {
 			MatchType type;
-			int line;
-			int column;
+			code_location loc;
 
-			Match(MatchType type, int line, int column) : type(type), line(line), column(column) {}
+			Match(MatchType type, code_location loc) : type(type), loc(loc) {}
 			virtual ~Match() {}
 
 			virtual treeres_t formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
@@ -37,7 +36,7 @@ namespace compiler {
 		struct TokenMatch : Match {
 			Token* token;
 
-			TokenMatch(Token* token) : Match(MatchType::TOKEN, token->line, token->column), token(token) {}
+			TokenMatch(Token* token) : Match(MatchType::TOKEN, token->loc), token(token) {}
 
 			virtual treeres_t formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
 		};
@@ -46,7 +45,7 @@ namespace compiler {
 		struct GroupMatch : Match {
 			std::list<Match*> matches;
 
-			GroupMatch(MatchType type, int line, int column) : Match(type, line, column) {}
+			GroupMatch(MatchType type, code_location loc) : Match(type, loc) {}
 
 			virtual treeres_t formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
 		};
@@ -55,7 +54,7 @@ namespace compiler {
 		struct FixedSizeMatch : Match {
 			std::vector<Match*> matches;
 
-			FixedSizeMatch(MatchType type, int line, int column) : Match(type, line, column), matches() {}
+			FixedSizeMatch(MatchType type, code_location loc) : Match(type, loc), matches() {}
 
 			virtual treeres_t formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
 		};

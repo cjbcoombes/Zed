@@ -29,12 +29,12 @@ int compiler::ast::GroupingPattern::match(std::list<Match*>& matches, MatchData&
 	auto closeGroup = [&](MatchType groupType, CompilerIssue::Type errorType) -> int {
 		if (openings.empty()) {
 			Token* token = dynamic_cast<TokenMatch*>(*it)->token;
-			status.addIssue(CompilerIssue(errorType, token->line, token->column));
+			status.addIssue(CompilerIssue(errorType, token->loc));
 			return 1;
 		} else {
 			Token* token = dynamic_cast<TokenMatch*>(*openings.top().second)->token;
 			if (openings.top().first == groupType) {
-				GroupMatch* group = matchData.add(std::make_unique<GroupMatch>(groupType, token->line, token->column));
+				GroupMatch* group = matchData.add(std::make_unique<GroupMatch>(groupType, token->loc));
 
 				group->matches.splice(group->matches.begin(), matches, std::next(openings.top().second), it);
 				int out = applyPatterns(group->matches, matchData, status, settings, stream);
@@ -49,13 +49,13 @@ int compiler::ast::GroupingPattern::match(std::list<Match*>& matches, MatchData&
 			} else {
 				switch (openings.top().first) {
 					case MatchType::PAREN_GROUP:
-						status.addIssue(CompilerIssue(CompilerIssue::Type::UNMATCHED_PAREN, token->line, token->column));
+						status.addIssue(CompilerIssue(CompilerIssue::Type::UNMATCHED_PAREN, token->loc));
 						break;
 					case MatchType::SQUARE_GROUP:
-						status.addIssue(CompilerIssue(CompilerIssue::Type::UNMATCHED_SQUARE, token->line, token->column));
+						status.addIssue(CompilerIssue(CompilerIssue::Type::UNMATCHED_SQUARE, token->loc));
 						break;
 					case MatchType::CURLY_GROUP:
-						status.addIssue(CompilerIssue(CompilerIssue::Type::UNMATCHED_CURLY, token->line, token->column));
+						status.addIssue(CompilerIssue(CompilerIssue::Type::UNMATCHED_CURLY, token->loc));
 						break;
 					default:
 						throw std::logic_error("Group has unexpected MatchType");
@@ -105,13 +105,13 @@ int compiler::ast::GroupingPattern::match(std::list<Match*>& matches, MatchData&
 		Token* token = dynamic_cast<TokenMatch*>(*openings.top().second)->token;
 		switch (openings.top().first) {
 			case MatchType::PAREN_GROUP:
-				status.addIssue(CompilerIssue(CompilerIssue::Type::UNMATCHED_PAREN, token->line, token->column));
+				status.addIssue(CompilerIssue(CompilerIssue::Type::UNMATCHED_PAREN, token->loc));
 				break;
 			case MatchType::SQUARE_GROUP:
-				status.addIssue(CompilerIssue(CompilerIssue::Type::UNMATCHED_SQUARE, token->line, token->column));
+				status.addIssue(CompilerIssue(CompilerIssue::Type::UNMATCHED_SQUARE, token->loc));
 				break;
 			case MatchType::CURLY_GROUP:
-				status.addIssue(CompilerIssue(CompilerIssue::Type::UNMATCHED_CURLY, token->line, token->column));
+				status.addIssue(CompilerIssue(CompilerIssue::Type::UNMATCHED_CURLY, token->loc));
 				break;
 			default:
 				throw std::logic_error("Group has unexpected MatchType");
@@ -136,10 +136,9 @@ int compiler::ast::FixedSizePattern::match(std::list<Match*>& matches, MatchData
 		}
 
 		if (matched) {
-			FixedSizeMatch* match = matchData.add(std::make_unique<FixedSizeMatch>(matchType, -1, -1));
+			FixedSizeMatch* match = matchData.add(std::make_unique<FixedSizeMatch>(matchType, code_location()));
 			std::copy(start, ptr, std::back_inserter(match->matches));
-			match->line = match->matches[linecolsource]->line;
-			match->column = match->matches[linecolsource]->column;
+			match->loc = match->matches[linecolsource]->loc;
 
 			matches.insert(start, match);
 			start = matches.erase(start, ptr);
@@ -199,7 +198,7 @@ int compiler::ast::applyPatterns(std::list<Match*>& matches, MatchData& matchDat
 int compiler::ast::matchPatterns(TokenData& tokenData, ast::MatchData& matchData, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
 	using namespace compiler::ast;
 
-	GroupMatch* root = matchData.add(std::make_unique<GroupMatch>(MatchType::ROOT_GROUP, -1, -1));
+	GroupMatch* root = matchData.add(std::make_unique<GroupMatch>(MatchType::ROOT_GROUP, code_location()));
 	matchData.root = root;
 
 	for (Token& token : tokenData.tokens) {
