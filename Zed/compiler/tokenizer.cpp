@@ -121,20 +121,20 @@ void compiler::TokenData::putType(TokenType type, code_location loc) {
 	tokens.emplace_back(type, loc);
 }
 void compiler::TokenData::putStr(TokenType type, code_location loc, std::string str) {
-	int index = -1;
-	for (size_t i = 0; i < strList.size(); i++) {
-		if (strList[i] == str) {
-			index = i;
+	std::string* strPtr = nullptr;
+	for (auto i = strList.begin(); i != strList.end(); i++) {
+		if ((*i) == str) {
+			strPtr = &(*i);
 			break;
 		}
 	}
 
-	if (index == -1) {
-		index = strList.size();
+	if (strPtr == nullptr) {
 		strList.push_back(str);
+		strPtr = &strList.back();
 	}
 
-	put(type, loc)->strIndex = index;
+	put(type, loc)->str = strPtr;
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -451,19 +451,19 @@ void compiler::printTokens(TokenData& tokenData, std::ostream& stream) {
 	for (Token& t : tokenData.tokens) {
 		if (line != t.loc.line) stream << '\n';
 		line = t.loc.line;
-		printToken(t, tokenData, stream);
+		printToken(t, stream);
 		stream << ' ';
 	}
 	stream << '\n';
 }
 
-void compiler::printToken(Token& t, TokenData& tokenData, std::ostream& stream) {
+void compiler::printToken(Token& t, std::ostream& stream) {
 	int type = static_cast<int>(t.type);
 
 	if (t.type == TokenType::STRING) {
-		stream << IO_FMT_STRING(tokenData.strList[t.strIndex]);
+		stream << IO_FMT_STRING(*t.str);
 	} else if (t.type == TokenType::IDENTIFIER) {
-		stream << IO_FMT_ID(tokenData.strList[t.strIndex]);
+		stream << IO_FMT_ID(*t.str);
 	} else if (t.type == TokenType::NUM_INT) {
 		stream << IO_FMT_INT(t.int_);
 	} else if (t.type == TokenType::NUM_FLOAT) {

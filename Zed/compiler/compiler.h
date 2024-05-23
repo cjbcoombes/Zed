@@ -97,7 +97,7 @@ namespace compiler {
 		CompilerIssue(const Type& type, const code_location loc, const std::string& extra) : type(type), loc(loc), extra(extra) {}
 
 		const char* what();
-		Level level();
+		Level level() const;
 		void print(TokenData& tokenData, std::ostream& stream);
 	};
 
@@ -204,7 +204,7 @@ namespace compiler {
 	int tokenize(std::iostream& inputFile, TokenData& ouputData, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
 	// Prints tokens nicely
 	void printTokens(TokenData& tokenData, std::ostream& stream);
-	void printToken(Token& token, TokenData& tokenData, std::ostream& stream);
+	void printToken(Token& token, std::ostream& stream);
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// AST Functions

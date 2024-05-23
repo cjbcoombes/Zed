@@ -46,7 +46,7 @@ void compiler::CompilerIssue::print(TokenData& tokenData, std::ostream& stream) 
 	}
 }
 
-compiler::CompilerIssue::Level compiler::CompilerIssue::level() {
+compiler::CompilerIssue::Level compiler::CompilerIssue::level() const {
 	const int i = static_cast<int>(type);
 
 	if (i >= firstAbort) return Level::ABORT;

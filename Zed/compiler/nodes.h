@@ -38,7 +38,8 @@ namespace compiler {
 			TOKEN,
 			BLOCK,
 			ARITH_BINOP,
-			LITERAL
+			LITERAL,
+			MACRO
 		};
 
 		// Parent Node
@@ -125,6 +126,21 @@ namespace compiler {
 			LiteralNode(Token* token);
 
 			virtual void printSimple(TokenData& tokenData, std::ostream& stream);
+		};
+
+		// A Node for Macros
+		class MacroNode : public Node {
+		public:
+			enum class Type {
+				HELLO_WORLD,
+				PRINT_I
+			};
+
+			Type macroType;
+			Node* arg;
+
+			MacroNode(Type macroType, code_location loc) : Node(NodeType::MACRO, loc), macroType(macroType), arg(nullptr) {}
+			MacroNode(Type macroType, Node* arg, code_location loc) : Node(NodeType::MACRO, loc), macroType(macroType), arg(arg) {}
 		};
 
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~

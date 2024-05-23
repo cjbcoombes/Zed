@@ -170,18 +170,18 @@ namespace compiler {
 			//bytecode::types::bool_t bool_; // Might not be necessary
 			bytecode::types::char_t char_;
 
-			// The index of a string in the strList of a TokenData
-			int strIndex;
+			// A pointer to a string in the strList of a TokenData
+			std::string* str;
 		};
 
-		Token(TokenType type, code_location loc) : type(type), loc(loc), strIndex(-1) {}
+		Token(TokenType type, code_location loc) : type(type), loc(loc), str(nullptr) {}
 	};
 
 	// Holds a list of tokens and a list of strings
 	// that those tokens may refer to
 	class TokenData {
 	public:
-		std::vector<std::string> strList;
+		std::list<std::string> strList;
 		std::list<Token> tokens;
 		std::string content;
 		std::vector<int> lineStarts;

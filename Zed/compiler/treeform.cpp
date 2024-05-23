@@ -177,6 +177,46 @@ compiler::ast::treeres_t formArithBinop(compiler::ast::FixedSizeMatch& match,
 	return { tree.add(std::make_unique<ArithBinopNode>(opType, exprType, tempRes1.first, tempRes2.first, match.loc)), 0 };
 }
 
+compiler::ast::treeres_t formMacro(compiler::ast::FixedSizeMatch& match,
+								   compiler::ast::Tree& tree,
+								   compiler::CompilerStatus& status,
+								   compiler::CompilerSettings& settings,
+								   std::ostream& stream) {
+	using namespace compiler::ast;
+	using namespace compiler;
+
+	const int size = match.matches.size();
+	if ((size != 2 && size != 3) 
+		|| match.matches[1]->type != MatchType::TOKEN 
+		|| dynamic_cast<TokenMatch*>(match.matches[1])->token->type != TokenType::IDENTIFIER) {
+		throw std::logic_error("Macro Match doesn't have exactly two or three children, the second of which is an identifier");
+	}
+	
+	int expectedSize = -1;
+	MacroNode::Type type = MacroNode::Type::HELLO_WORLD;
+
+	std::string& str = *dynamic_cast<TokenMatch*>(match.matches[1])->token->str;
+	
+	// TODO: put these in arrays and automate instead of manually doing each
+	if (str == "printi") {
+		expectedSize = 3;
+		type = MacroNode::Type::PRINT_I;
+	}
+
+	if (str == "hello_world") {
+		expectedSize = 2;
+		type = MacroNode::Type::HELLO_WORLD;
+	}
+
+	if (expectedSize == -1) {
+		// TODO: change patterns to be more allowing, and make this a user error rather than a compiler error
+		throw std::logic_error("Macro Match doesn't match any known macro");
+	}
+
+	std::optional<MacroNode::Type> macroType = std::nullopt;
+
+}
+
 compiler::ast::treeres_t compiler::ast::FixedSizeMatch::formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
 	treeres_t tempRes1;
 

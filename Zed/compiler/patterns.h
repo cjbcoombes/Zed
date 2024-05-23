@@ -18,7 +18,8 @@ namespace compiler {
 			SQUARE_GROUP,
 			CURLY_GROUP,
 
-			ARITH_BINOP
+			ARITH_BINOP,
+			MACRO
 		};
 
 		// Parent Match

@@ -70,7 +70,7 @@ void compiler::ast::UnimplNode::print(TokenData& tokenData, std::ostream& stream
 
 void compiler::ast::TokenNode::printSimple(TokenData& tokenData, std::ostream& stream) {
 	stream << "Token ( ";
-	compiler::printToken(*token, tokenData, stream);
+	compiler::printToken(*token, stream);
 	stream << " )";
 }
 
