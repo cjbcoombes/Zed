@@ -3,13 +3,69 @@
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Compiler Exceptions
 
-const char* compiler::CompilerException::what() {
+const char* compiler::CompilerIssue::what() {
 	if (extra.length() == 0) {
-		return errorTypeStrings[static_cast<int>(eType)];
+		return typeStrings[static_cast<int>(type)];
 	} else {
 		extra.insert(0, " : ");
-		extra.insert(0, errorTypeStrings[static_cast<int>(eType)]);
+		extra.insert(0, typeStrings[static_cast<int>(type)]);
 		return extra.c_str();
+	}
+}
+
+void compiler::CompilerIssue::print(TokenData& tokenData, std::ostream& stream) {
+	const char* starter;
+	switch (level()) {
+		case Level::WARN:
+			starter = IO_WARN;
+			break;
+		case Level::ERROR:
+		case Level::ABORT:
+			starter = IO_ERR;
+			break;
+		case Level::INFO:
+		default:
+			starter = IO_INFO;
+			break;
+	}
+
+	stream << starter;
+	if (loc.line >= 0) {
+		stream << '@' << (loc.line + 1) << ':' << (loc.column + 1) << "  " << what() << '\n';
+		stream << starter << "     | " << std::setw(loc.column) << "v" << '\n';
+		stream << starter << std::setw(5) << (loc.line + 1) << "| ";
+		if (tokenData.lineStarts.size() > loc.line + 1) {
+			stream << tokenData.content.substr(tokenData.lineStarts[loc.line], tokenData.lineStarts[loc.line + 1] - tokenData.lineStarts[loc.line]);
+		} else {
+			stream << tokenData.content.substr(tokenData.lineStarts[loc.line]);
+		}
+		stream << starter << "     | " << std::setw(loc.column) << "^" << '\n';
+		stream << IO_NORM;
+	} else {
+		stream << what() << IO_NORM "\n";
+	}
+}
+
+compiler::CompilerIssue::Level compiler::CompilerIssue::level() const {
+	const int i = static_cast<int>(type);
+
+	if (i >= firstAbort) return Level::ABORT;
+	if (i >= firstError) return Level::ERROR;
+	if (i >= firstWarning) return Level::WARN;
+	return Level::INFO;
+	// if (i >= firstInfo) return Level::INFO;
+}
+
+void compiler::CompilerStatus::addIssue(CompilerIssue&& issue) {
+	if (issue.level() == CompilerIssue::Level::ABORT) {
+		abort = true;
+	}
+	issues.push_back(issue);
+}
+
+void compiler::CompilerStatus::print(TokenData& tokenData, std::ostream& stream) {
+	for (CompilerIssue& issue : issues) {
+		issue.print(tokenData, stream);
 	}
 }
 
@@ -39,8 +95,6 @@ int compiler::compile(const char* const& inputPath, const char* const& outputPat
 		int out = compile_(inputFile, outputFile, settings, std::cout);
 		cout << IO_MAIN "Compilation finished with code: " << out << IO_NORM IO_END;
 		return out;
-	} catch (CompilerException& e) {
-		cout << IO_ERR "Error during compilation at LINE " << e.line << ", COLUMN " << e.column << " : " << e.what() << IO_NORM IO_END;
 	} catch (std::exception& e) {
 		cout << IO_ERR "An unknown error ocurred during compilation. This error is most likely an issue with the c++ compiler code, not your code. Sorry. The provided error message is as follows:\n" << e.what() << IO_NORM IO_END;
 	}
@@ -53,33 +107,43 @@ int compiler::compile_(std::iostream& inputFile, std::iostream& outputFile, Comp
 	const bool isDebug = settings.flags.hasFlags(Flags::FLAG_DEBUG);
 	int out = 0;
 
+	CompilerStatus status;
+
 	TokenData tokenData;
 	stream << IO_MAIN "Tokenizing..." IO_NORM "\n";
-	out = tokenize(inputFile, tokenData, settings, stream);
-	if (isDebug) {
+	out = tokenize(inputFile, tokenData, status, settings, stream);
+	stream << IO_MAIN "Tokenization finished with code: " << out << IO_NORM "\n";
+	if (out) {
+		status.print(tokenData, stream);
+		return out;
+	} else if (isDebug) {
 		stream << IO_DEBUG "Tokenizer output\n" IO_DEBUG "---------------------------------------------" IO_NORM "\n";
 		printTokens(tokenData, stream);
 		stream << IO_DEBUG "---------------------------------------------" IO_NORM "\n";
 	}
-	stream << IO_MAIN "Tokenization finished with code: " << out << IO_NORM "\n";
-	if (out) return out;
 
-	ast::Tree astTree(tokenData);
 	stream << IO_MAIN "Creating AST..." IO_NORM "\n";
-	out = initAST(astTree, settings, stream);
-	if (!out) out = constructAST(astTree, settings, stream);
-	if (isDebug) {
+
+	ast::Tree tree;
+	out = makeAST(tree, tokenData, status, settings, stream);
+	stream << IO_MAIN "AST Construction finished with code: " << out << IO_NORM "\n";
+	if (out) {
+		status.print(tokenData, stream);
+		return out;
+	} else if (isDebug) {
 		stream << IO_DEBUG "AST output\n" IO_DEBUG "---------------------------------------------" IO_NORM "\n";
-		astTree.print(stream);
+		tree.print(tokenData, stream);
 		stream << IO_DEBUG "---------------------------------------------" IO_NORM "\n";
 	}
-	stream << IO_MAIN "AST Construction finished with code: " << out << IO_NORM "\n";
-	if (out) return out;
 
 	stream << IO_MAIN "Generating bytecode..." IO_NORM "\n";
-	out = generateBytecode(outputFile, astTree, settings, stream);
+	//out = generateBytecode(outputFile, astTree, settings, stream);
 	stream << IO_MAIN "Bytecode Generation finished with code: " << out << IO_NORM "\n";
-	if (out) return out;
+	if (out) {
+		status.print(tokenData, stream);
+		return out;
+	}
 
+	status.print(tokenData, stream);
 	return 0;
 }
