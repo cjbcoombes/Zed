@@ -30,6 +30,9 @@ namespace compiler {
 
 			// Errors
 			GEN_ERROR,
+			INVALID_MACRO,
+			// : with types
+			INVALID_TYPE_MACRO,
 			INVALID_TYPE_ARITH_BINOP,
 
 			// Abortive
@@ -65,6 +68,8 @@ namespace compiler {
 			"General warning",
 
 			"General error",
+			"Unknown macro name",
+			"Invalid type for macro argument",
 			"Invalid (illegal or non-matching) types for arithmetic binop",
 
 			"General abortive error",

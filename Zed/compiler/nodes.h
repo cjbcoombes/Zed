@@ -133,14 +133,27 @@ namespace compiler {
 		public:
 			enum class Type {
 				HELLO_WORLD,
-				PRINT_I
+				PRINT_I,
+
+				Count,
+				UNKNOWN
 			};
+
+			static constexpr int macroCount = static_cast<int>(Type::Count);
+			static constexpr const char* const macroStrings[] = {
+				"hello_world",
+				"printi"
+			};
+			static_assert(sizeof(macroStrings) / sizeof(const char*) == macroCount,
+						  "Number of macros does not match list of macros");
 
 			Type macroType;
 			Node* arg;
 
-			MacroNode(Type macroType, code_location loc) : Node(NodeType::MACRO, loc), macroType(macroType), arg(nullptr) {}
-			MacroNode(Type macroType, Node* arg, code_location loc) : Node(NodeType::MACRO, loc), macroType(macroType), arg(arg) {}
+			MacroNode(Type macroType, ExprType exprType, Node* arg, code_location loc) 
+				: Node(NodeType::MACRO, exprType, loc), macroType(macroType), arg(arg) {}
+
+			virtual void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last);
 		};
 
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~

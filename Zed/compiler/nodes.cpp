@@ -123,6 +123,19 @@ void compiler::ast::ArithBinopNode::print(TokenData& tokenData, std::ostream& st
 	right->print(tokenData, stream, indent + (last ? TREE_SPACE : TREE_PASS), true);
 }
 
+void compiler::ast::MacroNode::print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) {
+	stream << indent;
+	if (last) stream << TREE_BRANCH_END;
+	else stream << TREE_BRANCH_MID;
+	stream << "Arith Binop ( #";
+	stream << macroStrings[static_cast<int>(macroType)];
+	stream << " )";
+	printType(stream);
+	stream << '\n';
+
+	arg->print(tokenData, stream, indent + (last ? TREE_SPACE : TREE_PASS), true);
+}
+
 void compiler::ast::Tree::print(TokenData& tokenData, std::ostream& stream) {
 	if (root) root->print(tokenData, stream, "", true);
 }

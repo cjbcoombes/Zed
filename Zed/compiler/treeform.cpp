@@ -185,36 +185,45 @@ compiler::ast::treeres_t formMacro(compiler::ast::FixedSizeMatch& match,
 	using namespace compiler::ast;
 	using namespace compiler;
 
-	const int size = match.matches.size();
-	if ((size != 2 && size != 3) 
+	if (match.matches.size() != 3
 		|| match.matches[1]->type != MatchType::TOKEN 
 		|| dynamic_cast<TokenMatch*>(match.matches[1])->token->type != TokenType::IDENTIFIER) {
-		throw std::logic_error("Macro Match doesn't have exactly two or three children, the second of which is an identifier");
+		throw std::logic_error("Macro Match doesn't have exactly three children, the second of which is an identifier");
 	}
-	
-	int expectedSize = -1;
-	MacroNode::Type type = MacroNode::Type::HELLO_WORLD;
+
+	treeres_t res = match.matches[2]->formTree(tree, status, settings, stream);
+	if (res.second) {
+		return { nullptr, res.second };
+	}
 
 	std::string& str = *dynamic_cast<TokenMatch*>(match.matches[1])->token->str;
-	
-	// TODO: put these in arrays and automate instead of manually doing each
-	if (str == "printi") {
-		expectedSize = 3;
-		type = MacroNode::Type::PRINT_I;
+	int strIndex = lookupString(str.c_str(), MacroNode::macroStrings, MacroNode::macroCount);
+
+	if (strIndex == -1) {
+		status.addIssue(CompilerIssue(CompilerIssue::Type::INVALID_MACRO, match.matches[0]->loc, str));
+		return { tree.add(std::make_unique<MacroNode>(MacroNode::Type::UNKNOWN, ExprType::primErrType, res.first, match.matches[0]->loc)), 0};
 	}
 
-	if (str == "hello_world") {
-		expectedSize = 2;
-		type = MacroNode::Type::HELLO_WORLD;
+	MacroNode::Type type = static_cast<MacroNode::Type>(strIndex);
+	ExprType exprType = ExprType::primNoType;
+
+	switch (type) {
+		case MacroNode::Type::HELLO_WORLD:
+			// No type checking
+			break;
+		case MacroNode::Type::PRINT_I:
+			if (!sameType(res.first->exprType, ExprType::primInt)) {
+				status.addIssue(CompilerIssue(CompilerIssue::Type::INVALID_TYPE_MACRO, match.matches[2]->loc));
+				exprType = ExprType::primErrType;
+			} else {
+				exprType = ExprType::primInt;
+			}
+			break;
+		default:
+			throw std::logic_error("Macro has impossible type");
 	}
 
-	if (expectedSize == -1) {
-		// TODO: change patterns to be more allowing, and make this a user error rather than a compiler error
-		throw std::logic_error("Macro Match doesn't match any known macro");
-	}
-
-	std::optional<MacroNode::Type> macroType = std::nullopt;
-
+	return { tree.add(std::make_unique<MacroNode>(type, exprType, res.first, match.matches[0]->loc)), 0 };
 }
 
 compiler::ast::treeres_t compiler::ast::FixedSizeMatch::formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
@@ -223,6 +232,9 @@ compiler::ast::treeres_t compiler::ast::FixedSizeMatch::formTree(Tree& tree, Com
 	switch (type) {
 		case MatchType::ARITH_BINOP:
 			return formArithBinop(*this, tree, status, settings, stream);
+			break;
+		case MatchType::MACRO:
+			return formMacro(*this, tree, status, settings, stream);
 			break;
 		default:
 			UnimplNode* unimplNode = tree.add(std::make_unique<UnimplNode>("fixed size match with unhandled type", loc));

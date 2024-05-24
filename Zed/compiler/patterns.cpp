@@ -178,25 +178,12 @@ int compiler::ast::applyPatterns(std::list<Match*>& matches, MatchData& matchDat
 			return false;
 		};
 	};
-	pred_t predMacro = [](Match* m) -> bool {
-		if (m->type != MatchType::TOKEN) return false;
-		Token& t = *dynamic_cast<TokenMatch*>(m)->token;
-		if (t.type != TokenType::IDENTIFIER) return false;
-		return (*t.str) == "hello_world";
-	};
-	pred_t predArgMacro = [](Match* m) -> bool {
-		if (m->type != MatchType::TOKEN) return false;
-		Token& t = *dynamic_cast<TokenMatch*>(m)->token;
-		if (t.type != TokenType::IDENTIFIER) return false;
-		return (*t.str) == "printi";
-	};
 
 	const std::unique_ptr<Pattern> patterns[] = {
 		std::make_unique<GroupingPattern>(),
 		std::make_unique<FixedSizePattern, il_t>({ predTrue, predTokens({ TokenType::STAR, TokenType::SLASH }), predTrue }, MatchType::ARITH_BINOP, 1),
 		std::make_unique<FixedSizePattern, il_t>({ predTrue, predTokens({ TokenType::PLUS, TokenType::DASH }), predTrue }, MatchType::ARITH_BINOP, 1),
-		std::make_unique<FixedSizePattern, il_t>({ predToken(TokenType::HASH), predArgMacro, predTrue }, MatchType::MACRO, 0),
-		std::make_unique<FixedSizePattern, il_t>({ predToken(TokenType::HASH), predMacro }, MatchType::MACRO, 0)
+		std::make_unique<FixedSizePattern, il_t>({ predToken(TokenType::HASH), predToken(TokenType::IDENTIFIER), predTrue}, MatchType::MACRO, 0)
 	};
 
 	int out = 0;
