@@ -15,7 +15,7 @@ M* compiler::ast::MatchData::add(std::unique_ptr<M> match) {
 // Patterns
 
 int compiler::ast::Pattern::match(std::list<Match*>& matches, MatchData& matchData, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
-	if (settings.flags.hasFlags(Flags::FLAG_DEBUG)) {
+	if (settings.flags.hasFlags(Flags::FLAG_DEBUG | compiler::FLAG_DEBUG_AST)) {
 		stream << IO_DEBUG "Missing pattern match implementation" IO_NORM "\n";
 	}
 	return 0;

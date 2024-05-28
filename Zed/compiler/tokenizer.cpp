@@ -145,9 +145,6 @@ int compiler::tokenize(std::iostream& inputFile, TokenData& outputData, Compiler
 	inputFile.clear();
 	inputFile.seekg(0, std::ios::beg);
 
-	// Flags/settings
-	const bool isDebug = settings.flags.hasFlags(Flags::FLAG_DEBUG);
-
 	/*
 	Keep track of current type:
 	NONE, STRING, CHAR, NUMBER, IDENTIFIER, SYMBOLS, COMMENT, BLOCK_COMMENT

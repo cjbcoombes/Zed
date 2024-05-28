@@ -73,6 +73,9 @@
     <ClCompile Include="compiler\treeform.cpp">
       <Filter>Source Files\compiler</Filter>
     </ClCompile>
+    <ClCompile Include="main\argparse.cpp">
+      <Filter>Source Files\main</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="utils\utils.h">
@@ -116,6 +119,9 @@
     </ClInclude>
     <ClInclude Include="compiler\treeform.h">
       <Filter>Source Files\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="main\argparse.h">
+      <Filter>Source Files\main</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

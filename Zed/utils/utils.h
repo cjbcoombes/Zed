@@ -61,7 +61,9 @@ int lookupString(const char* const& match, const char* const stringArr[], const 
 // Holds flags set as bits
 struct Flags {
 	static constexpr int FLAG_DEBUG = 1;
-	static constexpr int FLAG_PROFILE = 2;
+	static constexpr int FLAG_PROFILE = FLAG_DEBUG << 1;
+
+	static constexpr int FLAG_FIRST_FREE = FLAG_PROFILE << 1;
 
 	int bits;
 

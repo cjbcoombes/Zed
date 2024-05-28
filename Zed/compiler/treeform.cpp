@@ -71,7 +71,7 @@ compiler::ast::LiteralNode::LiteralNode(Token* token) : Node(NodeType::LITERAL, 
 // Match Tree Formation
 
 compiler::ast::treeres_t compiler::ast::Match::formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
-	if (settings.flags.hasFlags(Flags::FLAG_DEBUG)) {
+	if (settings.flags.hasFlags(Flags::FLAG_DEBUG | compiler::FLAG_DEBUG_AST)) {
 		stream << IO_DEBUG "Missing treeform implementation" IO_NORM "\n";
 	}
 	return { tree.add(std::make_unique<UnimplNode>("Generic match", loc)), 0 };

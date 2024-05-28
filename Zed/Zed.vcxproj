@@ -28,6 +28,7 @@
     <ClCompile Include="compiler\tokenizer.cpp" />
     <ClCompile Include="compiler\treeform.cpp" />
     <ClCompile Include="disassembler\disassembler.cpp" />
+    <ClCompile Include="main\argparse.cpp" />
     <ClCompile Include="main\main.cpp" />
     <ClCompile Include="utils\bytecode.cpp" />
     <ClCompile Include="utils\utils.cpp" />
@@ -43,6 +44,7 @@
     <ClInclude Include="compiler\tokenizer.h" />
     <ClInclude Include="compiler\treeform.h" />
     <ClInclude Include="disassembler\disassembler.h" />
+    <ClInclude Include="main\argparse.h" />
     <ClInclude Include="main\main.h" />
     <ClInclude Include="utils\bytecode.h" />
     <ClInclude Include="utils\opcode.h" />

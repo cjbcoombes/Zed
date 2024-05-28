@@ -7,6 +7,10 @@ namespace compiler {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Compiler Settings
 
+	static constexpr int FLAG_DEBUG_TOKENIZER = Flags::FLAG_FIRST_FREE;
+	static constexpr int FLAG_DEBUG_AST = FLAG_DEBUG_TOKENIZER << 1;
+	static constexpr int FLAG_DEBUG_BYTECODE = FLAG_DEBUG_AST << 1;
+
 	struct CompilerSettings {
 		Flags flags;
 	};

@@ -26,7 +26,7 @@ Flags::Flags() : bits(0) {}
 Flags::Flags(const int& bits) : bits(bits) {}
 
 bool Flags::hasFlags(const int& flags) const {
-	return !(bits ^ flags);
+	return !(flags & (~bits));
 }
 
 void Flags::setFlags(const int& flags) {

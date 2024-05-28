@@ -116,7 +116,7 @@ int compiler::compile_(std::iostream& inputFile, std::iostream& outputFile, Comp
 	if (out) {
 		status.print(tokenData, stream);
 		return out;
-	} else if (isDebug) {
+	} else if (isDebug && settings.flags.hasFlags(FLAG_DEBUG_TOKENIZER)) {
 		stream << IO_DEBUG "Tokenizer output\n" IO_DEBUG "---------------------------------------------" IO_NORM "\n";
 		printTokens(tokenData, stream);
 		stream << IO_DEBUG "---------------------------------------------" IO_NORM "\n";
@@ -130,7 +130,7 @@ int compiler::compile_(std::iostream& inputFile, std::iostream& outputFile, Comp
 	if (out) {
 		status.print(tokenData, stream);
 		return out;
-	} else if (isDebug) {
+	} else if (isDebug && settings.flags.hasFlags(FLAG_DEBUG_AST)) {
 		stream << IO_DEBUG "AST output\n" IO_DEBUG "---------------------------------------------" IO_NORM "\n";
 		tree.print(tokenData, stream);
 		stream << IO_DEBUG "---------------------------------------------" IO_NORM "\n";
