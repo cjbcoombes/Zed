@@ -10,6 +10,9 @@
 #include <memory>
 #include <optional>
 #include <functional>
+#include <span>
+#include <array>
+#include <string_view>
 // #define NDEBUG to disable asserts
 #include <cassert>
 
@@ -53,29 +56,36 @@
 // String Array Utils
 
 // Finds the index of a string in a list of strings, or -1 if not found
-int lookupString(const char* const& match, const char* const stringArr[], const int& arrLen);
+//int lookupString(const char* const match, const char* const stringArr[], const int arrLen) noexcept;
+
+int lookupString(const char* const match, const std::span<const char* const>& strings) noexcept;
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Flags Struct
 
 // Holds flags set as bits
 struct Flags {
+private:
+	int bits;
+
+public:
 	static constexpr int FLAG_DEBUG = 1;
 	static constexpr int FLAG_PROFILE = FLAG_DEBUG << 1;
 
 	static constexpr int FLAG_FIRST_FREE = FLAG_PROFILE << 1;
 
-	int bits;
 
-	Flags();
-	Flags(const int& bitsIn);
+	Flags() noexcept;
+	Flags(const int bits) noexcept;
 
 	// Checks if flags are set
-	bool hasFlags(const int& flags) const;
+	bool hasFlags(const int flags) const noexcept;
+	bool hasFlags(const Flags& other) const noexcept;
 	// Sets flags
-	void setFlags(const int& flags);
+	void setFlags(const int flags) noexcept;
+	void setFlags(const Flags& other) noexcept;
 	// Unsets flags
-	void unsetFlags(const int& flags);
+	void unsetFlags(const int flags) noexcept;
 	// Toggles flags
-	void toggleFlags(const int& flags);
+	void toggleFlags(const int flags) noexcept;
 };

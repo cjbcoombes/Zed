@@ -197,7 +197,7 @@ compiler::ast::treeres_t formMacro(compiler::ast::FixedSizeMatch& match,
 	}
 
 	std::string& str = *dynamic_cast<TokenMatch*>(match.matches[1])->token->str;
-	int strIndex = lookupString(str.c_str(), MacroNode::macroStrings, MacroNode::macroCount);
+	int strIndex = lookupString(str.c_str(), MacroNode::macroSpan);
 
 	if (strIndex == -1) {
 		status.addIssue(CompilerIssue(CompilerIssue::Type::INVALID_MACRO, match.matches[0]->loc, str));

@@ -136,6 +136,7 @@ namespace compiler {
 		"bool",
 		"char"
 	};
+	constexpr std::span<const char* const> keywordSpan(keywordStrings, keywordCount);
 	static_assert(sizeof(keywordStrings) / sizeof(const char*) == keywordCount,
 				  "Number of keywords does not match list of keywords");
 

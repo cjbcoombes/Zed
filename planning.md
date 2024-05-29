@@ -15,6 +15,7 @@
 - Formalize the grammar of the language somewhat
 - No more `Constructor(varIn) : var(varIn)` just `var` instead of `varIn`
 - Use safe pointers, and const
+- Pass small things (int, float, \*, etc.) by value to avoid reference dereferencing
 
 ##### Formatting?
 - enums with strings should have `Enum`, `enumCount`, and `enumStrings` defined

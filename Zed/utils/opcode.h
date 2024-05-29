@@ -205,6 +205,9 @@ namespace bytecode {
 		"globalb",
 		"globalstr"
 	};
+	constexpr std::span<const char* const> opcodeSpan(opcodeStrings, opcodeCount);
+	static_assert(sizeof(opcodeStrings) / sizeof(const char*) == opcodeCount,
+				  "Number of opcodes does not match list of opcodes");
 
 	constexpr int OPCODE_MAX_ARGS = 3;
 	enum class OpcodeArgType {

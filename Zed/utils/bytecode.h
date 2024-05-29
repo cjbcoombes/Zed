@@ -85,6 +85,9 @@ namespace bytecode {
 		"PP",
 		"FZ"
 	};
+	constexpr std::span<const char* const> regSpan(regStrings, namedRegCount);
+	static_assert(sizeof(regStrings) / sizeof(const char*) == namedRegCount,
+				  "Number of register strings does not match list of register strings");
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Program

@@ -368,7 +368,7 @@ int compiler::tokenize(std::iostream& inputFile, TokenData& outputData, Compiler
 			case GroupType::ID:
 				if (end || !isIdChar(c)) {
 					currGroup[currGroupLen] = '\0';
-					keyword = lookupString(currGroup, keywordStrings, keywordCount);
+					keyword = lookupString(currGroup, keywordSpan);
 					if (keyword == -1) {
 						outputData.putStr(TokenType::IDENTIFIER, startLoc, std::string(currGroup));
 					} else {

@@ -3,21 +3,36 @@
 namespace argparse {
 	const std::string DEFAULT = "";
 
+	struct Command;
+	typedef std::vector<Command> Argset;
+
+	Argset argParse(const std::span<const char*>& args);
+
 	struct Option {
-		std::string name;
+		friend Argset argparse::argParse(const std::span<const char*>& args);
+
+	private:
+		const std::string name;
 		std::vector<std::string> args;
 
-		Option(const std::string& name) : name(name), args() {}
+	public:
+		Option(const std::string& name);
+
+		const std::vector<std::string>& getArgs() const noexcept;
+		const std::string& getName() const noexcept;
 	};
 
 	struct Command {
-		std::string name;
+		friend Argset argparse::argParse(const std::span<const char*>& args);
+
+	private:
+		const std::string name;
 		std::vector<Option> options;
 
-		Command(const std::string& name) : name(name), options() {}
+	public:
+		Command(const std::string& name);
+
+		const std::vector<argparse::Option>& getOptions() const noexcept;
+		const std::string& getName() const noexcept;
 	};
-
-	typedef std::vector<Command> Argset;
-
-	Argset argParse(int argc, const char* args[]);
 }

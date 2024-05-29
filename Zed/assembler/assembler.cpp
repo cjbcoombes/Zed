@@ -214,7 +214,7 @@ int assembler::assemble_(std::iostream& inputFile, std::iostream& outputFile, As
 					labels[stdstr].isDef = true;
 					ASM_DEBUG("Label Location: " << byteCounter);
 				} else {
-					opcode = lookupString(str, opcodeStrings, opcodeCount);
+					opcode = lookupString(str, opcodeSpan);
 					if (opcode == INVALID) { // opcode == 255, meaning stringMatchAt returned -1
 						throw AssemblerException(AssemblerException::ErrorType::INVALID_OPCODE_PARSE, line, column);
 					}
@@ -343,7 +343,7 @@ bytecode::types::reg_t assembler::parseWordReg(char* const& str, const int& strl
 	AssemblerException ex(AssemblerException::ErrorType::INVALID_WORD_REG_PARSE, line, column);
 	if (strlen < 2) throw ex;
 
-	int match = lookupString(str, regStrings, namedRegCount);
+	int match = lookupString(str, regSpan);
 
 	if (match >= 0) {
 		if (match == reg::PP || match == reg::BP || match == reg::RP) return match;
@@ -368,7 +368,7 @@ bytecode::types::reg_t assembler::parseByteReg(char* const& str, const int& strl
 	AssemblerException ex(AssemblerException::ErrorType::INVALID_BYTE_REG_PARSE, line, column);
 	if (strlen < 2) throw ex;
 
-	int match = lookupString(str, regStrings, namedRegCount);
+	int match = lookupString(str, regSpan);
 
 	if (match >= 0) {
 		if (match == reg::FZ) return match;

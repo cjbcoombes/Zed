@@ -10,7 +10,7 @@
 // Main
 
 // The main function
-int main(int argc, const char* args[]);
+int main(const int argc, const char* args[]);
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Help Menus

@@ -3,50 +3,49 @@
 #define CHECK_ARGS(str) if (argc - i < 1) {cout << IO_ERR "Not enough arguments for " str IO_NORM IO_END;return 1;}
 #define ERR(str) std::cout << IO_ERR str IO_NORM IO_END; return 1
 
-int commandDefault(argparse::Command& c, Flags & globalFlags) {
-	for (argparse::Option& o : c.options) {
-		if (o.name == "-h" || o.name == "--help") {
+static int commandDefault(const argparse::Command& c, Flags& globalFlags) {
+	for (const argparse::Option& o : c.getOptions()) {
+		if (o.getName() == "-h" || o.getName() == "--help") {
 			std::cout << mainHelp;
 			return 0;
-		} else if (o.name == "-v" || o.name == "--version") {
+		} else if (o.getName() == "-v" || o.getName() == "--version") {
 			std::cout << version;
 			return 0;
-		} else if (o.name == "-d" || o.name == "--debug") {
+		} else if (o.getName() == "-d" || o.getName() == "--debug") {
 			globalFlags.setFlags(Flags::FLAG_DEBUG);
 		}
 	}
 	return 0;
 }
 
-int commandExecute(argparse::Command& c, Flags& globalFlags) {
+static int commandExecute(const argparse::Command& c, const Flags& globalFlags) {
 	executor::ExecutorSettings settings;
-	settings.flags.setFlags(globalFlags.bits);
+	settings.flags.setFlags(globalFlags);
 
-	std::string* inputPath = nullptr;
+	const std::string* inputPath = nullptr;
 
-	char* dummy = nullptr;
 	char res = 'X';
 
-	for (argparse::Option& o : c.options) {
-		if (o.name == argparse::DEFAULT) {
-			if (o.args.size() > 0) inputPath = &o.args[0];
-		} else if (o.name == "-h" || o.name == "--help") {
+	for (const argparse::Option& o : c.getOptions()) {
+		if (o.getName() == argparse::DEFAULT) {
+			if (o.getArgs().size() > 0) inputPath = &o.getArgs().front();
+		} else if (o.getName() == "-h" || o.getName() == "--help") {
 			std::cout << executeHelp;
 			return 0;
-		} else if (o.name == "-d" || o.name == "--debug") {
+		} else if (o.getName() == "-d" || o.getName() == "--debug") {
 			settings.flags.setFlags(Flags::FLAG_DEBUG);
-		} else if (o.name == "-i" || o.name == "--in") {
-			if (o.args.size() > 0) {
-				inputPath = &o.args[0];
+		} else if (o.getName() == "-i" || o.getName() == "--in") {
+			if (o.getArgs().size() > 0) {
+				inputPath = &o.getArgs().front();
 			} else {
 				ERR("Option --in is missing an argument");
 			}
-		} else if (o.name == "-s" || o.name == "--stacksize") {
-			if (o.args.size() < 1) {
+		} else if (o.getName() == "-s" || o.getName() == "--stacksize") {
+			if (o.getArgs().size() < 1) {
 				ERR("Option --stacksize is missing an argument");
 			}
 			try {
-				settings.stackSize = std::stoul(o.args[0]);
+				settings.stackSize = std::stoul(o.getArgs().front());
 				if (settings.stackSize < 256 || settings.stackSize > 512000000) {
 					if (settings.stackSize < 256) {
 						std::cout << "Are you sure you want your stack size to be " << settings.stackSize << " bytes? (That's really small)\n";
@@ -79,31 +78,31 @@ int commandExecute(argparse::Command& c, Flags& globalFlags) {
 	return executor::exec(inputPath->c_str(), settings);
 }
 
-int commandAssemble(argparse::Command& c, Flags& globalFlags) {
+static int commandAssemble(const argparse::Command& c, const Flags& globalFlags) {
 	assembler::AssemblerSettings settings;
-	settings.flags.setFlags(globalFlags.bits);
+	settings.flags.setFlags(globalFlags);
 
-	std::string* inputPath = nullptr;
-	std::string* outputPath = nullptr;
+	const std::string* inputPath = nullptr;
+	const std::string* outputPath = nullptr;
 
-	for (argparse::Option& o : c.options) {
-		if (o.name == argparse::DEFAULT) {
-			if (o.args.size() > 0) inputPath = &o.args[0];
-			if (o.args.size() > 1) outputPath = &o.args[1];
-		} else if (o.name == "-h" || o.name == "--help") {
+	for (const argparse::Option& o : c.getOptions()) {
+		if (o.getName() == argparse::DEFAULT) {
+			if (o.getArgs().size() > 0) inputPath = &o.getArgs().front();
+			if (o.getArgs().size() > 1) outputPath = &o.getArgs().at(1);
+		} else if (o.getName() == "-h" || o.getName() == "--help") {
 			std::cout << assembleHelp;
 			return 0;
-		} else if (o.name == "-d" || o.name == "--debug") {
+		} else if (o.getName() == "-d" || o.getName() == "--debug") {
 			settings.flags.setFlags(Flags::FLAG_DEBUG);
-		} else if (o.name == "-i" || o.name == "--in") {
-			if (o.args.size() > 0) {
-				inputPath = &o.args[0];
+		} else if (o.getName() == "-i" || o.getName() == "--in") {
+			if (o.getArgs().size() > 0) {
+				inputPath = &o.getArgs().front();
 			} else {
 				ERR("Option --in is missing an argument");
 			}
-		} else if (o.name == "-o" || o.name == "--out") {
-			if (o.args.size() > 0) {
-				outputPath = &o.args[0];
+		} else if (o.getName() == "-o" || o.getName() == "--out") {
+			if (o.getArgs().size() > 0) {
+				outputPath = &o.getArgs().front();
 			} else {
 				ERR("Option --out is missing an argument");
 			}
@@ -117,31 +116,31 @@ int commandAssemble(argparse::Command& c, Flags& globalFlags) {
 	return assembler::assemble(inputPath->c_str(), outputPath->c_str(), settings);
 }
 
-int commandDisassemble(argparse::Command& c, Flags& globalFlags) {
+static int commandDisassemble(const argparse::Command& c, const Flags& globalFlags) {
 	disassembler::DisassemblerSettings settings;
-	settings.flags.setFlags(globalFlags.bits);
+	settings.flags.setFlags(globalFlags);
 
-	std::string* inputPath = nullptr;
-	std::string* outputPath = nullptr;
+	const std::string* inputPath = nullptr;
+	const std::string* outputPath = nullptr;
 
-	for (argparse::Option& o : c.options) {
-		if (o.name == argparse::DEFAULT) {
-			if (o.args.size() > 0) inputPath = &o.args[0];
-			if (o.args.size() > 1) outputPath = &o.args[1];
-		} else if (o.name == "-h" || o.name == "--help") {
+	for (const argparse::Option& o : c.getOptions()) {
+		if (o.getName() == argparse::DEFAULT) {
+			if (o.getArgs().size() > 0) inputPath = &o.getArgs().front();
+			if (o.getArgs().size() > 1) outputPath = &o.getArgs().at(1);
+		} else if (o.getName() == "-h" || o.getName() == "--help") {
 			std::cout << disassembleHelp;
 			return 0;
-		} else if (o.name == "-d" || o.name == "--debug") {
+		} else if (o.getName() == "-d" || o.getName() == "--debug") {
 			settings.flags.setFlags(Flags::FLAG_DEBUG);
-		} else if (o.name == "-i" || o.name == "--in") {
-			if (o.args.size() > 0) {
-				inputPath = &o.args[0];
+		} else if (o.getName() == "-i" || o.getName() == "--in") {
+			if (o.getArgs().size() > 0) {
+				inputPath = &o.getArgs().front();
 			} else {
 				ERR("Option --in is missing an argument");
 			}
-		} else if (o.name == "-o" || o.name == "--out") {
-			if (o.args.size() > 0) {
-				outputPath = &o.args[0];
+		} else if (o.getName() == "-o" || o.getName() == "--out") {
+			if (o.getArgs().size() > 0) {
+				outputPath = &o.getArgs().front();
 			} else {
 				ERR("Option --out is missing an argument");
 			}
@@ -155,27 +154,27 @@ int commandDisassemble(argparse::Command& c, Flags& globalFlags) {
 	return disassembler::disassemble(inputPath->c_str(), outputPath->c_str(), settings);
 }
 
-int commandCompile(argparse::Command& c, Flags& globalFlags) {
+static int commandCompile(const argparse::Command& c, const Flags& globalFlags) {
 	compiler::CompilerSettings settings;
-	settings.flags.setFlags(globalFlags.bits);
+	settings.flags.setFlags(globalFlags);
 	bool debugSpecified = false;
 
-	std::string* inputPath = nullptr;
-	std::string* outputPath = nullptr;
+	const std::string* inputPath = nullptr;
+	const std::string* outputPath = nullptr;
 
-	for (argparse::Option& o : c.options) {
-		if (o.name == argparse::DEFAULT) {
-			if (o.args.size() > 0) inputPath = &o.args[0];
-			if (o.args.size() > 1) outputPath = &o.args[1];
-		} else if (o.name == "-h" || o.name == "--help") {
+	for (const argparse::Option& o : c.getOptions()) {
+		if (o.getName() == argparse::DEFAULT) {
+			if (o.getArgs().size() > 0) inputPath = &o.getArgs().front();
+			if (o.getArgs().size() > 1) outputPath = &o.getArgs().at(1);
+		} else if (o.getName() == "-h" || o.getName() == "--help") {
 			std::cout << compileHelp;
 			return 0;
-		} else if (o.name == "-d" || o.name == "--debug") {
+		} else if (o.getName() == "-d" || o.getName() == "--debug") {
 			settings.flags.setFlags(Flags::FLAG_DEBUG);
 
-			if (o.args.size() > 0) {
+			if (o.getArgs().size() > 0) {
 				debugSpecified = true;
-				for (char c : o.args[0]) {
+				for (const char c : o.getArgs().front()) {
 					if (c == 't') {
 						settings.flags.setFlags(compiler::FLAG_DEBUG_TOKENIZER);
 					} else if (c == 'a') {
@@ -185,15 +184,15 @@ int commandCompile(argparse::Command& c, Flags& globalFlags) {
 					}
 				}
 			}
-		} else if (o.name == "-i" || o.name == "--in") {
-			if (o.args.size() > 0) {
-				inputPath = &o.args[0];
+		} else if (o.getName() == "-i" || o.getName() == "--in") {
+			if (o.getArgs().size() > 0) {
+				inputPath = &o.getArgs().front();
 			} else {
 				ERR("Option --in is missing an argument");
 			}
-		} else if (o.name == "-o" || o.name == "--out") {
-			if (o.args.size() > 0) {
-				outputPath = &o.args[0];
+		} else if (o.getName() == "-o" || o.getName() == "--out") {
+			if (o.getArgs().size() > 0) {
+				outputPath = &o.getArgs().front();
 			} else {
 				ERR("Option --out is missing an argument");
 			}
@@ -211,29 +210,31 @@ int commandCompile(argparse::Command& c, Flags& globalFlags) {
 	return compiler::compile(inputPath->c_str(), outputPath->c_str(), settings);
 }
 
-int main(int argc, const char* args[]) {
+int main(const int argc, const char* argv[]) {
 	using namespace std;
+
 
 	cout << IO_NORM;
 
 	int out = 0;
 
-	argparse::Argset argset = argparse::argParse(argc, args);
+	const std::span<const char*> args(argv, argc);
+	argparse::Argset argset = argparse::argParse(args);
 	Flags globalFlags;
 
-	for (argparse::Command& c : argset) {
-		if (c.name == argparse::DEFAULT) {
+	for (const argparse::Command& c : argset) {
+		if (c.getName() == argparse::DEFAULT) {
 			out = commandDefault(c, globalFlags);
-		} else if (c.name == "/execute" || c.name == "/e") {
+		} else if (c.getName() == "/execute" || c.getName() == "/e") {
 			out = commandExecute(c, globalFlags);
-		} else if (c.name == "/assemble" || c.name == "/a") {
+		} else if (c.getName() == "/assemble" || c.getName() == "/a") {
 			out = commandAssemble(c, globalFlags);
-		} else if (c.name == "/disassemble" || c.name == "/d") {
+		} else if (c.getName() == "/disassemble" || c.getName() == "/d") {
 			out = commandDisassemble(c, globalFlags);
-		} else if (c.name == "/compile" || c.name == "/c") {
+		} else if (c.getName() == "/compile" || c.getName() == "/c") {
 			out = commandCompile(c, globalFlags);
 		} else {
-			cout << IO_WARN "Unknown command: " << c.name << " " IO_NORM "\n";
+			cout << IO_WARN "Unknown command: " << c.getName() << " " IO_NORM "\n";
 		}
 		if (out) return out;
 	}

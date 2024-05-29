@@ -144,6 +144,7 @@ namespace compiler {
 				"hello_world",
 				"printi"
 			};
+			static constexpr std::span<const char* const> macroSpan{ macroStrings, macroCount };
 			static_assert(sizeof(macroStrings) / sizeof(const char*) == macroCount,
 						  "Number of macros does not match list of macros");
 

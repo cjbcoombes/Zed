@@ -3,17 +3,14 @@
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // String Array Utils
 
-int lookupString(const char* const& match, const char* const stringArr[], const int& arrLen) {
+int lookupString(const char* const match, const std::span<const char* const>& strings) noexcept {
 	int i = 0;
-	int j = 0;
 
-	for (; i < arrLen; i++) {
-		j = 0;
-		while (true) {
-			if (stringArr[i][j] != match[j]) break;
-			if (match[j] == '\0') return i;
-			j++;
+	for (const char* const str : strings) {
+		if (!strcmp(match, str)) {
+			return i;
 		}
+		i++;
 	}
 
 	return -1;
@@ -22,21 +19,29 @@ int lookupString(const char* const& match, const char* const stringArr[], const 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Flags Struct
 
-Flags::Flags() : bits(0) {}
-Flags::Flags(const int& bits) : bits(bits) {}
+Flags::Flags() noexcept : bits(0) {}
+Flags::Flags(const int bits) noexcept : bits(bits) {}
 
-bool Flags::hasFlags(const int& flags) const {
+bool Flags::hasFlags(const int flags) const noexcept {
 	return !(flags & (~bits));
 }
 
-void Flags::setFlags(const int& flags) {
+bool Flags::hasFlags(const Flags& other) const noexcept {
+	return hasFlags(other.bits);
+}
+
+void Flags::setFlags(const int flags) noexcept  {
 	bits |= flags;
 }
 
-void Flags::unsetFlags(const int& flags) {
+void Flags::setFlags(const Flags& other) noexcept {
+	setFlags(other.bits);
+}
+
+void Flags::unsetFlags(const int flags) noexcept {
 	bits &= ~flags;
 }
 
-void Flags::toggleFlags(const int& flags) {
+void Flags::toggleFlags(const int flags) noexcept {
 	bits ^= flags;
 }
