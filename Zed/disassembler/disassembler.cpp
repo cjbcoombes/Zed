@@ -56,14 +56,14 @@ int disassembler::disassemble_(std::iostream& inputFile, std::iostream& outputFi
 
 	Program program(inputFile);
 	program.goto_(bytecode::FIRST_INSTR_ADDR_LOCATION);
-	program.goto_(*reinterpret_cast<types::word_t*>(program.ip));
+	program.goto_(*reinterpret_cast<types::word_t*>(program.pos()));
 
 	opcode_t opcode = 0;
 	reg_t rid1 = 0;
 	word_t word = 0;
 	byte_t byte = 0;
 
-	while (program.ip < program.end) {
+	while (program.inBounds()) {
 		program.read<opcode_t>(&opcode);
 		if (opcode >= Opcode::ValidCount) {
 			throw DisassemblerException(DisassemblerException::ErrorType::INVALID_OPCODE);

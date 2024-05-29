@@ -94,25 +94,29 @@ namespace bytecode {
 
 	// A .eze program loaded into memory
 	class Program {
+	private:
 		static constexpr int FILLER_SIZE = 24;
-
-	public:
+		std::unique_ptr<char[]> owner;
 		char* start;
 		char* ip;
 		char* end;
 
-		Program(std::iostream& program);
-		~Program();
+	public:
 
-		void goto_(types::word_t loc);
+		Program(std::iostream& program);
+
+		char* pos() const noexcept;
+		char* begin() const noexcept;
+		int offset() const noexcept;
+		bool inBounds() const noexcept;
+
+		void goto_(types::word_t loc) noexcept;
 
 		template<typename T>
-		void read(T* val);
-
-		// template void read<types::word_t>(word_t* val);
+		void read(T* val) noexcept;
 	};
-	template void Program::read<types::reg_t>(types::reg_t* val);
-	template void Program::read<types::opcode_t>(types::opcode_t* val);
-	template void Program::read<types::word_t>(types::word_t* val);
-	template void Program::read<types::byte_t>(types::byte_t* val);
+	template void Program::read<types::reg_t>(types::reg_t* val) noexcept;
+	template void Program::read<types::opcode_t>(types::opcode_t* val) noexcept;
+	template void Program::read<types::word_t>(types::word_t* val) noexcept;
+	template void Program::read<types::byte_t>(types::byte_t* val) noexcept;
 }

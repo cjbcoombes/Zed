@@ -3,32 +3,31 @@
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Executor Exceptions
 
-const char* executor::ExecutorException::what() {
-	if (extra.length() == 0) {
-		return errorTypeStrings[static_cast<int>(eType)];
-	} else {
-		extra.insert(0, " : ");
-		extra.insert(0, errorTypeStrings[static_cast<int>(eType)]);
-		return extra.c_str();
-	}
+executor::ExecutorSettings::ExecutorSettings() noexcept : stackSize(0x1000) {}
+
+executor::ExecutorException::ExecutorException(const ErrorType eType, const int loc) 
+	: std::runtime_error(errorTypeStrings[static_cast<int>(eType)]), eType(eType), loc(loc) {}
+executor::ExecutorException::ExecutorException(const ErrorType eType, const int loc, const char* const extra)
+	: std::runtime_error(std::string(errorTypeStrings[static_cast<int>(eType)]) + " : " + extra), eType(eType), loc(loc) {}
+//executor::ExecutorException::ExecutorException(const ErrorType eType, const int loc, const std::string& extra) : eType(eType), loc(loc), extra(extra) {}
+
+int executor::ExecutorException::getLoc() const noexcept {
+	return loc;
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // The Stack
 
-executor::Stack::Stack(const int& size) {
-	start = new char[size];
-	end = start + size;
-}
+executor::Stack::Stack(const int size) : owner(std::make_unique<char[]>(size)) {}
 
-executor::Stack::~Stack() {
-	delete[] start;
+char* executor::Stack::begin() noexcept {
+	return owner.get();
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Executor Functions
 
-int executor::exec(const char* const& path, ExecutorSettings& settings) {
+int executor::exec(const char* const path, const ExecutorSettings& settings) {
 	using namespace executor;
 	using std::cout;
 
@@ -38,35 +37,37 @@ int executor::exec(const char* const& path, ExecutorSettings& settings) {
 	file.open(path, std::ios::in | std::ios::binary);
 
 	try {
-		int out = executor::exec_(file, settings, std::cout, std::cin);
+		const int out = executor::exec_(file, settings, std::cout, std::cin);
 		cout << IO_MAIN "Execution finished with code: " << out << IO_NORM IO_END;
 		return out;
-	} catch (ExecutorException& e) {
-		cout << IO_ERR "Error during execution at BYTE" << e.loc << " : " << e.what() << IO_NORM IO_END;
-	} catch (std::exception& e) {
+	} catch (const ExecutorException& e) {
+		cout << IO_ERR "Error during execution at BYTE" << e.getLoc() << " : " << e.what() << IO_NORM IO_END;
+	} catch (const std::exception& e) {
 		cout << IO_ERR "An unknown error ocurred during execution. This error is most likely an issue with the c++ executor code, not your code. Sorry. The provided error message is as follows:\n" << e.what() << IO_NORM IO_END;
 	}
 
 	return 1;
 }
 #define AS_WORD(x) reinterpret_cast<word_t*>(x)
-int executor::exec_(std::iostream& file, ExecutorSettings& settings, std::ostream& outstream, std::istream& instream) {
+int executor::exec_(std::iostream& file, const ExecutorSettings& settings, std::ostream& outstream, std::istream& instream) {
 	using namespace bytecode::types;
 	using namespace bytecode::Opcode;
 	using namespace bytecode;
 
+	const bool checkMem = settings.flags.hasFlags(Flags::FLAG_DEBUG | FLAG_CHECK_MEM);
+	std::list<char*> memAllocs;
 
 	Program program(file);
 	Stack stack(settings.stackSize);
-	WordVal wordReg[reg::Count];
-	ByteVal byteReg[reg::Count];
-	wordReg[reg::BP].word = reinterpret_cast<word_t>(stack.start);
-	wordReg[reg::RP].word = reinterpret_cast<word_t>(stack.start);
-	wordReg[reg::PP].word = reinterpret_cast<word_t>(program.start);
+	WordVal wordReg[reg::Count]{};
+	ByteVal byteReg[reg::Count]{};
+	wordReg[reg::BP].word = reinterpret_cast<word_t>(stack.begin());
+	wordReg[reg::RP].word = reinterpret_cast<word_t>(stack.begin());
+	wordReg[reg::PP].word = reinterpret_cast<word_t>(program.begin());
 	byteReg[reg::FZ].bool_ = 0;
 
 	program.goto_(FIRST_INSTR_ADDR_LOCATION);
-	program.goto_(*AS_WORD(program.ip));
+	program.goto_(*AS_WORD(program.pos()));
 
 	// Dummy values
 	opcode_t opcode = 0;
@@ -79,20 +80,24 @@ int executor::exec_(std::iostream& file, ExecutorSettings& settings, std::ostrea
 	char_t char_ = 0;
 	float_t float_ = 0;
 	char rlchar = 0;
+	char* charptr = nullptr;
 
-	// stupid workaround for stupid stupidness
+#ifdef _DEBUG
+	// allow the opcode string to show up in the debugger
 	const char* strThingForDebugging;
+#endif
 
-	while (program.ip < program.end) {
+	while (program.inBounds()) {
 		program.read<opcode_t>(&opcode);
+	#ifdef _DEBUG
 		strThingForDebugging = opcodeStrings[opcode];
+	#endif
 		switch (opcode) {
 			case NOP:
 				break;
 
 			case HALT:
 				goto end;
-				return 0;
 
 			case BREAK:
 				while (instream.get() != '\n');
@@ -102,15 +107,23 @@ int executor::exec_(std::iostream& file, ExecutorSettings& settings, std::ostrea
 				program.read<reg_t>(&rid1);
 				program.read<reg_t>(&rid2);
 				try {
-					wordReg[rid1].word = reinterpret_cast<word_t>(new char[wordReg[rid2].word]);
-				} catch (std::bad_alloc& e) {
-					throw ExecutorException(ExecutorException::ErrorType::BAD_ALLOC, program.ip - program.start, e.what());
+					charptr = new char[wordReg[rid2].word];
+					wordReg[rid1].word = reinterpret_cast<word_t>(charptr);
+					if (checkMem) {
+						memAllocs.push_back(charptr);
+					}
+				} catch (const std::bad_alloc& e) {
+					throw ExecutorException(ExecutorException::ErrorType::BAD_ALLOC, program.offset(), e.what());
 				}
 				break;
 
 			case FREE:
 				program.read<reg_t>(&rid1);
-				delete[] reinterpret_cast<char*>(wordReg[rid1].word);
+				charptr = reinterpret_cast<char*>(wordReg[rid1].word);
+				if (checkMem) {
+					memAllocs.remove(charptr);
+				}
+				delete[] charptr;
 				break;
 
 			case R_MOV_W:
@@ -171,20 +184,16 @@ int executor::exec_(std::iostream& file, ExecutorSettings& settings, std::ostrea
 				break;
 
 			case JMP_Z:
-				if (byteReg[reg::FZ].bool_) {
-					program.ip += sizeof(word_t);
-				} else {
-					program.read<word_t>(&word);
+				program.read<word_t>(&word);
+				if (byteReg[reg::FZ].bool_ == 0) {
 					program.goto_(word);
 				}
 				break;
 
 			case JMP_NZ:
-				if (byteReg[reg::FZ].bool_) {
-					program.read<word_t>(&word);
+				program.read<word_t>(&word);
+				if (byteReg[reg::FZ].bool_ != 0) {
 					program.goto_(word);
-				} else {
-					program.ip += sizeof(word_t);
 				}
 				break;
 
@@ -194,20 +203,16 @@ int executor::exec_(std::iostream& file, ExecutorSettings& settings, std::ostrea
 				break;
 
 			case R_JMP_Z:
+				program.read<reg_t>(&rid1);
 				if (byteReg[reg::FZ].bool_ == 0) {
-					program.ip += sizeof(reg_t);
-				} else {
-					program.read<reg_t>(&rid1);
 					program.goto_(wordReg[rid1].word);
 				}
 				break;
 
 			case R_JMP_NZ:
-				if (byteReg[reg::FZ].bool_ == 0) {
-					program.read<reg_t>(&rid1);
+				program.read<reg_t>(&rid1);
+				if (byteReg[reg::FZ].bool_ != 0) {
 					program.goto_(wordReg[rid1].word);
-				} else {
-					program.ip += sizeof(reg_t);
 				}
 				break;
 
@@ -293,7 +298,7 @@ int executor::exec_(std::iostream& file, ExecutorSettings& settings, std::ostrea
 				program.read<reg_t>(&rid1);
 				program.read<reg_t>(&rid2);
 				program.read<reg_t>(&rid3);
-				if (wordReg[rid3].int_ == 0) throw ExecutorException(ExecutorException::ErrorType::DIVIDE_BY_ZERO, program.ip - program.start);
+				if (wordReg[rid3].int_ == 0) throw ExecutorException(ExecutorException::ErrorType::DIVIDE_BY_ZERO, program.offset());
 				wordReg[rid1].int_ = wordReg[rid2].int_ / wordReg[rid3].int_;
 				byteReg[reg::FZ].bool_ = wordReg[rid1].int_ == 0 ? 0 : 1;
 				break;
@@ -302,7 +307,7 @@ int executor::exec_(std::iostream& file, ExecutorSettings& settings, std::ostrea
 				program.read<reg_t>(&rid1);
 				program.read<reg_t>(&rid2);
 				program.read<reg_t>(&rid3);
-				if (wordReg[rid3].int_ == 0) throw ExecutorException(ExecutorException::ErrorType::DIVIDE_BY_ZERO, program.ip - program.start);
+				if (wordReg[rid3].int_ == 0) throw ExecutorException(ExecutorException::ErrorType::DIVIDE_BY_ZERO, program.offset());
 				wordReg[rid1].int_ = wordReg[rid2].int_ % wordReg[rid3].int_;
 				byteReg[reg::FZ].bool_ = wordReg[rid1].int_ == 0 ? 0 : 1;
 				break;
@@ -401,7 +406,7 @@ int executor::exec_(std::iostream& file, ExecutorSettings& settings, std::ostrea
 				program.read<reg_t>(&rid1);
 				program.read<reg_t>(&rid2);
 				program.read<reg_t>(&rid3);
-				if (byteReg[rid3].char_ == 0) throw ExecutorException(ExecutorException::ErrorType::DIVIDE_BY_ZERO, program.ip - program.start);
+				if (byteReg[rid3].char_ == 0) throw ExecutorException(ExecutorException::ErrorType::DIVIDE_BY_ZERO, program.offset());
 				byteReg[rid1].char_ = byteReg[rid2].char_ / byteReg[rid3].char_;
 				byteReg[reg::FZ].bool_ = byteReg[rid1].char_ == 0 ? 0 : 1;
 				break;
@@ -410,7 +415,7 @@ int executor::exec_(std::iostream& file, ExecutorSettings& settings, std::ostrea
 				program.read<reg_t>(&rid1);
 				program.read<reg_t>(&rid2);
 				program.read<reg_t>(&rid3);
-				if (byteReg[rid3].char_ == 0) throw ExecutorException(ExecutorException::ErrorType::DIVIDE_BY_ZERO, program.ip - program.start);
+				if (byteReg[rid3].char_ == 0) throw ExecutorException(ExecutorException::ErrorType::DIVIDE_BY_ZERO, program.offset());
 				byteReg[rid1].char_ = byteReg[rid2].char_ % byteReg[rid3].char_;
 				byteReg[reg::FZ].bool_ = byteReg[rid1].char_ == 0 ? 0 : 1;
 				break;
@@ -497,7 +502,7 @@ int executor::exec_(std::iostream& file, ExecutorSettings& settings, std::ostrea
 				program.read<reg_t>(&rid1);
 				program.read<reg_t>(&rid2);
 				program.read<reg_t>(&rid3);
-				if (wordReg[rid3].float_ == 0) throw ExecutorException(ExecutorException::ErrorType::DIVIDE_BY_ZERO, program.ip - program.start);
+				if (wordReg[rid3].float_ == 0) throw ExecutorException(ExecutorException::ErrorType::DIVIDE_BY_ZERO, program.offset());
 				wordReg[rid1].float_ = wordReg[rid2].float_ / wordReg[rid3].float_;
 				byteReg[reg::FZ].bool_ = wordReg[rid1].float_ == 0 ? 0 : 1;
 				break;
@@ -506,7 +511,7 @@ int executor::exec_(std::iostream& file, ExecutorSettings& settings, std::ostrea
 				program.read<reg_t>(&rid1);
 				program.read<reg_t>(&rid2);
 				program.read<reg_t>(&rid3);
-				if (wordReg[rid3].float_ == 0) throw ExecutorException(ExecutorException::ErrorType::DIVIDE_BY_ZERO, program.ip - program.start);
+				if (wordReg[rid3].float_ == 0) throw ExecutorException(ExecutorException::ErrorType::DIVIDE_BY_ZERO, program.offset());
 				wordReg[rid1].float_ = wordReg[rid2].float_ * modf(wordReg[rid2].float_ / wordReg[rid3].float_, &float_);
 				byteReg[reg::FZ].bool_ = wordReg[rid1].float_ == 0 ? 0 : 1;
 				break;
@@ -566,13 +571,19 @@ int executor::exec_(std::iostream& file, ExecutorSettings& settings, std::ostrea
 				break;
 
 			default:
-				throw ExecutorException(ExecutorException::ErrorType::UNKNOWN_OPCODE, program.ip - program.start);
+				throw ExecutorException(ExecutorException::ErrorType::UNKNOWN_OPCODE, program.offset());
 				break;
 		}
 	}
 
 end:;
-	// TODO: automatic memory cleanup
+	if (checkMem && !memAllocs.empty()) {
+		outstream << IO_WARN "Found " << memAllocs.size() << " unfreed memory allocations" IO_NORM "\n";
+		for (const char* const ptr : memAllocs) {
+			delete[] ptr;
+		}
+	}
+
 	outstream << IO_END;
 
 	return 0;

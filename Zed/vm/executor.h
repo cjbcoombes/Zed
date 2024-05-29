@@ -6,20 +6,22 @@ namespace executor {
 	// Constants?
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// Assembler Settings
+	// Executor Settings
+
+	static constexpr int FLAG_CHECK_MEM = Flags::FLAG_FIRST_FREE;
 
 	// Holds settings info about the assembly process
 	struct ExecutorSettings {
 		Flags flags;
 		unsigned int stackSize;
 
-		ExecutorSettings() : stackSize(0x1000) {}
+		ExecutorSettings() noexcept;
 	};
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Executor Exceptions
 
-	class ExecutorException : public std::exception {
+	class ExecutorException : public std::runtime_error {
 	public:
 		enum class ErrorType {
 			UNKNOWN_OPCODE,
@@ -27,23 +29,23 @@ namespace executor {
 			BAD_ALLOC
 		};
 
+	private:
+		const ErrorType eType;
+		const int loc;
+		std::string extra;
+
+	public:
 		static constexpr const char* const errorTypeStrings[] = {
 			"Unknown opcode",
 			"Division (or modulo) by zero",
 			"Dynamic memory allocation error"
 		};
 
-		const ErrorType eType;
-		const int loc;
-		std::string extra;
+		ExecutorException(const ErrorType eType, const int loc);
+		ExecutorException(const ErrorType eType, const int loc, const char* const extra);
+		//ExecutorException(const ErrorType eType, const int loc, const std::string& extra);
 
-		ExecutorException(const ErrorType& eType, const int& loc) : eType(eType), loc(loc), extra("") {}
-		ExecutorException(const ErrorType& eType, const int& loc, char* const& extra) : eType(eType), loc(loc), extra(extra) {}
-		ExecutorException(const ErrorType& eType, const int& loc, const char* const& extra) : eType(eType), loc(loc), extra(extra) {}
-		ExecutorException(const ErrorType& eType, const int& loc, const std::string& extra) : eType(eType), loc(loc), extra(extra) {}
-
-
-		virtual const char* what();
+		int getLoc() const noexcept;
 	};
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -51,18 +53,18 @@ namespace executor {
 
 	// Acts as the stack memory for the program execution
 	class Stack {
+	private:
+		std::unique_ptr<char[]> owner;
+
 	public:
-		char* start;
-		char* end;
+		Stack(const int size);
 
-		Stack(const int& size);
-
-		~Stack();
+		char* begin() noexcept;
 	};
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Executor Functions
 
-	int exec(const char* const& path, ExecutorSettings& settings);
-	int exec_(std::iostream& file, ExecutorSettings& settings, std::ostream& outstream, std::istream& instream);
+	int exec(const char* const path, const ExecutorSettings& settings);
+	int exec_(std::iostream& file, const ExecutorSettings& settings, std::ostream& outstream, std::istream& instream);
 }

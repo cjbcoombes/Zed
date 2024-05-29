@@ -1,2 +1,10 @@
-movw W0 5
+movw W0, 0x100
+alloc W1, W0
+alloc W1, W0
+alloc W1, W0
+alloc W2, W0
+alloc W2, W0
+
 rprnti W0
+free W1
+free W2

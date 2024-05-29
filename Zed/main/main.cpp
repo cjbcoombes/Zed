@@ -68,6 +68,8 @@ static int commandExecute(const argparse::Command& c, const Flags& globalFlags) 
 			} catch (const std::out_of_range&) {
 				ERR("Invalid stack size");
 			}
+		} else if (o.getName() == "-m" || o.getName() == "--memcheck") {
+			settings.flags.setFlags(executor::FLAG_CHECK_MEM);
 		}
 	}
 

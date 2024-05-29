@@ -12,11 +12,11 @@
     },
     {
       "Id": "5ea19085-abb7-4508-aea9-ad185af8827b",
-      "Command": "/a \".\\Lang\\AssemblyExamples\\guessing_game.azm\" \".\\Lang\\AssemblyExamples\\guessing_game.eze\""
+      "Command": "/a \".\\Lang\\AssemblyExamples\\example1.azm\" \".\\Lang\\AssemblyExamples\\example1.eze\""
     },
     {
       "Id": "62513ae1-c161-4b27-b6b3-cf887e644ed1",
-      "Command": "/e \".\\Lang\\AssemblyExamples\\guessing_game.eze\""
+      "Command": "/e \".\\Lang\\AssemblyExamples\\example1.eze\" -m"
     },
     {
       "Id": "3a08cef5-7b06-4436-81ca-e35c68416aa1",
@@ -40,7 +40,7 @@
     },
     {
       "Id": "9c14c963-72cb-46fd-b90f-f7925c606295",
-      "Command": "/e \".\\Lang\\CompilerExamples\\example1.eze\""
+      "Command": "/e \".\\Lang\\CompilerExamples\\example1.eze\" -m"
     }
   ]
 }
