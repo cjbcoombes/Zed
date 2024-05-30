@@ -103,7 +103,7 @@ namespace bytecode {
 
 	public:
 
-		Program(std::iostream& program);
+		explicit Program(std::iostream& program);
 
 		char* pos() const noexcept;
 		char* begin() const noexcept;

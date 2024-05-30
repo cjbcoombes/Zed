@@ -3,20 +3,19 @@
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Assembler Exceptions
 
-const char* assembler::AssemblerException::what() {
-	if (extra.length() == 0) {
-		return errorTypeStrings[static_cast<int>(eType)];
-	} else {
-		extra.insert(0, " : ");
-		extra.insert(0, errorTypeStrings[static_cast<int>(eType)]);
-		return extra.c_str();
-	}
-}
+assembler::AssemblerException::AssemblerException(const ErrorType eType, const int line, const int column)
+	: std::runtime_error(errorTypeStrings[static_cast<int>(eType)]), eType(eType), line(line), column(column) {}
+
+assembler::AssemblerException::AssemblerException(const ErrorType eType, const int line, const int column, const char* extra)
+	: std::runtime_error(std::string(errorTypeStrings[static_cast<int>(eType)]) + " : " + extra), eType(eType), line(line), column(column) {}
+
+assembler::AssemblerException::AssemblerException(const ErrorType eType, const int line, const int column, const std::string& extra)
+	: std::runtime_error(std::string(errorTypeStrings[static_cast<int>(eType)]) + " : " + extra), eType(eType), line(line), column(column) {}
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Assembler Functions
 
-int assembler::assemble(const char* const& inputPath, const char* const& outputPath, AssemblerSettings& settings) {
+int assembler::assemble(const char* const inputPath, const char* const outputPath, const AssemblerSettings& settings) {
 	using namespace assembler;
 	using std::cout;
 
@@ -43,7 +42,7 @@ int assembler::assemble(const char* const& inputPath, const char* const& outputP
 	} catch (AssemblerException& e) {
 		cout << IO_ERR "Error during assembly at LINE " << e.line << ", COLUMN " << e.column << " : " << e.what() << IO_NORM IO_END;
 	} catch (std::exception& e) {
-		cout << IO_ERR "An unknown error ocurred during assembly. This error is most likely an issue with the c++ assembler code, not your code. Sorry. The provided error message is as follows:\n" << e.what() << IO_NORM IO_END;
+		cout << IO_ERR "An unknown error occurred during assembly. This error is most likely an issue with the c++ assembler code, not your code. Sorry. The provided error message is as follows:\n" << e.what() << IO_NORM IO_END;
 	}
 
 	return 1;
@@ -53,7 +52,8 @@ int assembler::assemble(const char* const& inputPath, const char* const& outputP
 #define ASM_DEBUG(thing) if (isDebug) stream << IO_DEBUG << thing << IO_NORM "\n"
 #define ASM_WRITERAW(thing, sz) outputFile.write(thing, sz); byteCounter += sz
 #define ASM_WRITE(thing, type) outputFile.write(TO_CH_PT(thing), sizeof(type)); byteCounter += sizeof(type)
-int assembler::assemble_(std::iostream& inputFile, std::iostream& outputFile, AssemblerSettings& settings, std::ostream& stream) {
+
+int assembler::assemble_(std::iostream& inputFile, std::iostream& outputFile, const AssemblerSettings& settings, std::ostream& stream) {
 
 	using namespace assembler;
 	using namespace bytecode;
@@ -94,22 +94,20 @@ int assembler::assemble_(std::iostream& inputFile, std::iostream& outputFile, As
 			const int line;
 			const int column;
 
-			Ref(std::streampos pos, int line, int column) : pos(pos), line(line), column(column) {}
+			Ref(const std::streampos& pos, const int line, const int column) : pos(pos), line(line), column(column) {}
 		};
-		word_t val;
+		std::optional<word_t> val;
 		std::vector<Ref> refs;
-		bool isDef;
 
-		Label() : val(0), isDef(false) {}
-		Label(word_t val) : val(val), isDef(true) {}
+		Label() : val(std::nullopt) {}
+		explicit Label(const word_t val) : val(val) {}
 	};
 	std::unordered_map<std::string, Label> labels;
 	std::string startstr = "@__START__";
-	labels[startstr].isDef = true;
-	labels[startstr].val = bytecode::GLOBAL_TABLE_LOCATION; // TODO : set this later, to point after global data
-	labels[startstr].refs.push_back(Label::Ref(outputFileBeg + static_cast<std::streamoff>(bytecode::FIRST_INSTR_ADDR_LOCATION), -1, -1));
-	word_t labelPlaceholder = 0xbcbcbcbc;
-	word_t labelErr = 0xecececec;
+	labels[startstr].val = bytecode::GLOBAL_TABLE_LOCATION; // This gets set later, to point after global data
+	labels[startstr].refs.emplace_back(outputFileBeg + static_cast<std::streamoff>(bytecode::FIRST_INSTR_ADDR_LOCATION), -1, -1);
+	word_t labelPlaceholder = 0xbcbcbcbci32;
+	word_t labelErr = 0xececececi32;
 
 	// Lonely stdstr
 	std::string stdstr;
@@ -202,7 +200,6 @@ int assembler::assemble_(std::iostream& inputFile, std::iostream& outputFile, As
 		if (c == ' ' || c == ',' || c == '\n' || c == '\t' || end) {
 			if (strlen == 0) continue;
 			str[strlen] = '\0';
-			// if (opcode == NOP) ASM_DEBUG(""); TODO : What did this used to do?
 			ASM_DEBUG((opcode == NOP ? ":: " : "|  ") << str);
 
 			// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -211,13 +208,14 @@ int assembler::assemble_(std::iostream& inputFile, std::iostream& outputFile, As
 				if (str[0] == '@') {
 					stdstr = str;
 					labels[stdstr].val = byteCounter;
-					labels[stdstr].isDef = true;
 					ASM_DEBUG("Label Location: " << byteCounter);
 				} else {
-					opcode = lookupString(str, opcodeSpan);
-					if (opcode == INVALID) { // opcode == 255, meaning stringMatchAt returned -1
+					const int v = lookupString(str, opcodeSpan);
+					if (v < 0 || v > 255) { // opcode == 255, meaning stringMatchAt returned -1
 						throw AssemblerException(AssemblerException::ErrorType::INVALID_OPCODE_PARSE, line, column);
 					}
+
+					opcode = v;
 
 					if (isSettingGlobals && opcode < Opcode::FirstGlobal) {
 						isSettingGlobals = false;
@@ -257,10 +255,9 @@ int assembler::assemble_(std::iostream& inputFile, std::iostream& outputFile, As
 					case 3: // ARG_WORD
 						if (str[0] == '@' || str[0] == '%') {
 							stdstr = str;
-							labels[stdstr].refs.push_back(Label::Ref(outputFile.tellp(), line, column));
+							labels[stdstr].refs.emplace_back(outputFile.tellp(), line, column);
 							ASM_WRITE(labelPlaceholder, word_t);
 						} else {
-							// TODO : printed wrong line/column?
 							word = parseWord(str, strlen, line, column);
 							ASM_WRITE(word, word_t);
 						}
@@ -275,7 +272,6 @@ int assembler::assemble_(std::iostream& inputFile, std::iostream& outputFile, As
 						if (str[0] == '%') {
 							stdstr = str;
 							labels[stdstr].val = byteCounter;
-							labels[stdstr].isDef = true;
 							ASM_DEBUG("Var Location: " << byteCounter);
 						} else {
 							throw AssemblerException(AssemblerException::ErrorType::INVALID_VAR_PARSE, line, column);
@@ -313,17 +309,17 @@ int assembler::assemble_(std::iostream& inputFile, std::iostream& outputFile, As
 	ASM_WRITE(opcode, opcode_t);
 	*/
 
-	for (const std::pair<std::string, Label>& pair : labels) {
-		if (pair.second.isDef) {
-			for (const Label::Ref& ref : pair.second.refs) {
+	for (const auto& [labelname, label] : labels) {
+		if (label.val.has_value()) {
+			for (const Label::Ref& ref : label.refs) {
 				outputFile.seekp(ref.pos);
-				outputFile.write(reinterpret_cast<char*>(const_cast<word_t*>(&pair.second.val)), sizeof(word_t));
+				outputFile.write(reinterpret_cast<char*>(const_cast<word_t*>(&label.val.value())), sizeof(word_t));
 			}
 		} else {
-			if (pair.first[0] == '@') {
-				throw AssemblerException(AssemblerException::ErrorType::UNDEFINED_LABEL, pair.second.refs[0].line, pair.second.refs[0].column, pair.first);
+			if (labelname[0] == '@') {
+				throw AssemblerException(AssemblerException::ErrorType::UNDEFINED_LABEL, label.refs[0].line, label.refs[0].column, labelname);
 			} else {// pair.first[0] == '%'
-				throw AssemblerException(AssemblerException::ErrorType::UNDEFINED_VAR, pair.second.refs[0].line, pair.second.refs[0].column, pair.first);
+				throw AssemblerException(AssemblerException::ErrorType::UNDEFINED_VAR, label.refs[0].line, label.refs[0].column, labelname);
 			}
 		}
 	}
@@ -336,7 +332,7 @@ int assembler::assemble_(std::iostream& inputFile, std::iostream& outputFile, As
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Parsing Helper Functions
 
-bytecode::types::reg_t assembler::parseWordReg(char* const& str, const int& strlen, const int& line, const int& column) {
+bytecode::types::reg_t assembler::parseWordReg(const char* const str, const int strlen, const int line, const int column) {
 	using namespace assembler;
 	using namespace bytecode;
 
@@ -349,7 +345,7 @@ bytecode::types::reg_t assembler::parseWordReg(char* const& str, const int& strl
 		if (match == reg::PP || match == reg::BP || match == reg::RP) return match;
 		else throw ex;
 	} else if (str[0] == 'W') {
-		types::reg_t out = parseReg(str + 1, strlen - 1, line, column, AssemblerException::ErrorType::INVALID_WORD_REG_PARSE);
+		const types::reg_t out = parseReg(str + 1, strlen - 1, line, column, AssemblerException::ErrorType::INVALID_WORD_REG_PARSE);
 
 		if (out >= NUM_WORD_REGISTERS || out < 0) {
 			throw ex;
@@ -361,7 +357,7 @@ bytecode::types::reg_t assembler::parseWordReg(char* const& str, const int& strl
 	throw ex;
 }
 
-bytecode::types::reg_t assembler::parseByteReg(char* const& str, const int& strlen, const int& line, const int& column) {
+bytecode::types::reg_t assembler::parseByteReg(const char* const str, const int strlen, const int line, const int column) {
 	using namespace assembler;
 	using namespace bytecode;
 
@@ -374,7 +370,7 @@ bytecode::types::reg_t assembler::parseByteReg(char* const& str, const int& strl
 		if (match == reg::FZ) return match;
 		else throw ex;
 	} else if (str[0] == 'B') {
-		types::reg_t out = parseReg(str + 1, strlen - 1, line, column, AssemblerException::ErrorType::INVALID_BYTE_REG_PARSE);
+		const types::reg_t out = parseReg(str + 1, strlen - 1, line, column, AssemblerException::ErrorType::INVALID_BYTE_REG_PARSE);
 
 		if (out >= NUM_WORD_REGISTERS || out < 0) {
 			throw ex;
@@ -386,7 +382,7 @@ bytecode::types::reg_t assembler::parseByteReg(char* const& str, const int& strl
 	throw ex;
 }
 
-bytecode::types::word_t assembler::parseWord(const char* str, int strlen, const int& line, const int& column) {
+bytecode::types::word_t assembler::parseWord(const char* str, int strlen, const int line, const int column) {
 	using bytecode::types::word_t;
 
 	AssemblerException ex(AssemblerException::ErrorType::INVALID_WORD_PARSE, line, column);
@@ -456,7 +452,7 @@ bytecode::types::word_t assembler::parseWord(const char* str, int strlen, const 
 
 
 	float floatOut = 0;
-	float floatBase = 1 / static_cast<float>(base);
+	const float floatBase = 1 / static_cast<float>(base);
 	float place = floatBase;
 
 	if (isFloat) {
@@ -490,7 +486,7 @@ bytecode::types::word_t assembler::parseWord(const char* str, int strlen, const 
 	return out * mul;
 }
 
-bytecode::types::byte_t assembler::parseByte(const char* str, int strlen, const int& line, const int& column) {
+bytecode::types::byte_t assembler::parseByte(const char* str, int strlen, const int line, const int column) {
 	using bytecode::types::byte_t;
 
 	AssemblerException ex(AssemblerException::ErrorType::INVALID_BYTE_PARSE, line, column);
@@ -527,7 +523,6 @@ bytecode::types::byte_t assembler::parseByte(const char* str, int strlen, const 
 	}
 
 	byte_t out = 0;
-	bool isFloat = false;
 	char c;
 	while (strlen > 0) {
 		c = *str;
@@ -558,7 +553,7 @@ bytecode::types::byte_t assembler::parseByte(const char* str, int strlen, const 
 	return out * mul;
 }
 
-bytecode::types::reg_t assembler::parseReg(const char* str, int strlen, const int& line, const int& column, AssemblerException::ErrorType eType) {
+bytecode::types::reg_t assembler::parseReg(const char* str, int strlen, const int line, const int column, const AssemblerException::ErrorType eType) {
 	using bytecode::types::reg_t;
 
 	AssemblerException ex(eType, line, column);
@@ -592,7 +587,6 @@ bytecode::types::reg_t assembler::parseReg(const char* str, int strlen, const in
 	}
 
 	reg_t out = 0;
-	bool isFloat = false;
 	char c;
 	while (strlen > 0) {
 		c = *str;

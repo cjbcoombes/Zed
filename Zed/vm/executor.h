@@ -29,18 +29,17 @@ namespace executor {
 			BAD_ALLOC
 		};
 
-	private:
-		const ErrorType eType;
-		const int loc;
-		std::string extra;
-
-	public:
 		static constexpr const char* const errorTypeStrings[] = {
 			"Unknown opcode",
 			"Division (or modulo) by zero",
 			"Dynamic memory allocation error"
 		};
 
+	private:
+		const ErrorType eType;
+		const int loc;
+
+	public:
 		ExecutorException(const ErrorType eType, const int loc);
 		ExecutorException(const ErrorType eType, const int loc, const char* const extra);
 		//ExecutorException(const ErrorType eType, const int loc, const std::string& extra);
@@ -54,12 +53,12 @@ namespace executor {
 	// Acts as the stack memory for the program execution
 	class Stack {
 	private:
-		std::unique_ptr<char[]> owner;
+		const std::unique_ptr<char[]> owner;
 
 	public:
-		Stack(const int size);
+		explicit Stack(const int size);
 
-		char* begin() noexcept;
+		char* begin() const noexcept;
 	};
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~

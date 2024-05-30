@@ -76,7 +76,7 @@ public:
 
 
 	Flags() noexcept;
-	Flags(const int bits) noexcept;
+	explicit Flags(const int bits) noexcept;
 
 	// Checks if flags are set
 	bool hasFlags(const int flags) const noexcept;

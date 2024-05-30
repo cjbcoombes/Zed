@@ -1,9 +1,12 @@
 #include "executor.h"
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Executor Exceptions
+// Executor Settings
 
 executor::ExecutorSettings::ExecutorSettings() noexcept : stackSize(0x1000) {}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Executor Exceptions
 
 executor::ExecutorException::ExecutorException(const ErrorType eType, const int loc) 
 	: std::runtime_error(errorTypeStrings[static_cast<int>(eType)]), eType(eType), loc(loc) {}
@@ -20,7 +23,7 @@ int executor::ExecutorException::getLoc() const noexcept {
 
 executor::Stack::Stack(const int size) : owner(std::make_unique<char[]>(size)) {}
 
-char* executor::Stack::begin() noexcept {
+char* executor::Stack::begin() const noexcept {
 	return owner.get();
 }
 

@@ -21,7 +21,7 @@ namespace assembler {
 	// Assembler Exceptions
 
 	// An error raised by the assembler
-	class AssemblerException : public std::exception {
+	class AssemblerException : public std::runtime_error {
 	public:
 		enum class ErrorType {
 			STRING_TOO_LONG,
@@ -56,29 +56,25 @@ namespace assembler {
 		const ErrorType eType;
 		const int line;
 		const int column;
-		std::string extra;
 
-		AssemblerException(const ErrorType& eType, const int& line, const int& column) : eType(eType), line(line), column(column), extra("") {}
-		AssemblerException(const ErrorType& eType, const int& line, const int& column, char* const& extra) : eType(eType), line(line), column(column), extra(extra) {}
-		AssemblerException(const ErrorType& eType, const int& line, const int& column, const char* const& extra) : eType(eType), line(line), column(column), extra(extra) {}
-		AssemblerException(const ErrorType& eType, const int& line, const int& column, const std::string& extra) : eType(eType), line(line), column(column), extra(extra) {}
-
-		virtual const char* what();
+		AssemblerException(const ErrorType eType, const int line, const int column);
+		AssemblerException(const ErrorType eType, const int line, const int column, const char* extra);
+		AssemblerException(const ErrorType eType, const int line, const int column, const std::string& extra);
 	};
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Assembler Functions
 
 	// Assembles from an input file to an output file
-	int assemble(const char* const& inputPath, const char* const& outputPath, AssemblerSettings& settings);
-	int assemble_(std::iostream& inputFile, std::iostream& outputFile, AssemblerSettings& settings, std::ostream& stream);
+	int assemble(const char* const inputPath, const char* const outputPath, const AssemblerSettings& settings);
+	int assemble_(std::iostream& inputFile, std::iostream& outputFile, const AssemblerSettings& settings, std::ostream& stream);
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Parsing Helper Functions
 
-	bytecode::types::reg_t parseWordReg(char* const& str, const int& strlen, const int& line, const int& column);
-	bytecode::types::reg_t parseByteReg(char* const& str, const int& strlen, const int& line, const int& column);
-	bytecode::types::byte_t parseByte(const char* str, int strlen, const int& line, const int& column);
-	bytecode::types::word_t parseWord(const char* str, int strlen, const int& line, const int& column);
-	bytecode::types::reg_t parseReg(const char* str, int strlen, const int& line, const int& column, AssemblerException::ErrorType eType);
+	bytecode::types::reg_t parseWordReg(const char* const str, const int strlen, const int line, const int column);
+	bytecode::types::reg_t parseByteReg(const char* const str, const int strlen, const int line, const int column);
+	bytecode::types::byte_t parseByte(const char* str, int strlen, const int line, const int column);
+	bytecode::types::word_t parseWord(const char* str, int strlen, const int line, const int column);
+	bytecode::types::reg_t parseReg(const char* str, int strlen, const int line, const int column, const AssemblerException::ErrorType eType);
 }
