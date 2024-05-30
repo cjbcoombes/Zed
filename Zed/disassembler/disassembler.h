@@ -1,6 +1,6 @@
 #pragma once
-#include "..\utils\utils.h"
-#include "..\utils\bytecode.h"
+#include "../utils/utils.h"
+#include "../utils/bytecode.h"
 
 namespace disassembler {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~

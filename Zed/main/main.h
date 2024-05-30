@@ -1,9 +1,9 @@
 #pragma once
-#include "..\utils\utils.h"
-#include "..\assembler\assembler.h"
-#include "..\disassembler\disassembler.h"
-#include "..\vm\executor.h"
-#include "..\compiler\compiler.h"
+#include "../utils/utils.h"
+#include "../assembler/assembler.h"
+#include "../disassembler/disassembler.h"
+#include "../vm/executor.h"
+#include "../compiler/compiler.h"
 #include "argparse.h"
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
