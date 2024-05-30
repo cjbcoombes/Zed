@@ -3,20 +3,19 @@
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Disassembler Exceptions
 
-const char* disassembler::DisassemblerException::what() {
-	if (extra.length() == 0) {
-		return errorTypeStrings[static_cast<int>(eType)];
-	} else {
-		extra.insert(0, " : ");
-		extra.insert(0, errorTypeStrings[static_cast<int>(eType)]);
-		return extra.c_str();
-	}
-}
+disassembler::DisassemblerException::DisassemblerException(const ErrorType eType)
+	: std::runtime_error(errorTypeStrings[static_cast<int>(eType)]), eType(eType) {}
+
+disassembler::DisassemblerException::DisassemblerException(const ErrorType eType, const char* extra)
+	: std::runtime_error(std::string(errorTypeStrings[static_cast<int>(eType)]) + " : " + extra), eType(eType) {}
+
+disassembler::DisassemblerException::DisassemblerException(const ErrorType eType, const std::string& extra)
+	: std::runtime_error(std::string(errorTypeStrings[static_cast<int>(eType)]) + " : " + extra), eType(eType) {}
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Disassembler Functions
 
-int disassembler::disassemble(const char* const& inputPath, const char* const& outputPath, DisassemblerSettings& settings) {
+int disassembler::disassemble(const char* const inputPath, const char* const outputPath, const DisassemblerSettings& settings) {
 	using namespace disassembler;
 	using std::cout;
 
@@ -43,13 +42,13 @@ int disassembler::disassemble(const char* const& inputPath, const char* const& o
 	} catch (DisassemblerException& e) {
 		cout << IO_ERR "Error during disassembly : " << e.what() << IO_NORM IO_END;
 	} catch (std::exception& e) {
-		cout << IO_ERR "An unknown error ocurred during disassembly. This error is most likely an issue with the c++ disassembler code, not your code. Sorry. The provided error message is as follows:\n" << e.what() << IO_NORM IO_END;
+		cout << IO_ERR "An unknown error occurred during disassembly. This error is most likely an issue with the c++ disassembler code, not your code. Sorry. The provided error message is as follows:\n" << e.what() << IO_NORM IO_END;
 	}
 
 	return 1;
 }
 
-int disassembler::disassemble_(std::iostream& inputFile, std::iostream& outputFile, DisassemblerSettings& settings, std::ostream& stream) {
+int disassembler::disassemble_(std::iostream& inputFile, std::iostream& outputFile, const DisassemblerSettings& settings, std::ostream& stream) {
 	using namespace bytecode::types;
 	using namespace bytecode::Opcode;
 	using namespace bytecode;

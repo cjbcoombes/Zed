@@ -18,7 +18,7 @@ namespace disassembler {
 	// Disassembler Exceptions
 
 	// An error raised by the disassembler
-	class DisassemblerException : public std::exception {
+	class DisassemblerException : public std::runtime_error {
 	public:
 		enum class ErrorType {
 			INVALID_OPCODE,
@@ -35,20 +35,17 @@ namespace disassembler {
 		};
 
 		const ErrorType eType;
-		std::string extra;
 
-		DisassemblerException(const ErrorType& eType) : eType(eType), extra("") {}
-		DisassemblerException(const ErrorType& eType, char* const& extra) : eType(eType), extra(extra) {}
-		DisassemblerException(const ErrorType& eType, const char* const& extra) : eType(eType), extra(extra) {}
-		DisassemblerException(const ErrorType& eType, const std::string& extra) : eType(eType), extra(extra) {}
-
-		virtual const char* what();
+		DisassemblerException(const ErrorType eType);
+		DisassemblerException(const ErrorType eType, char* const extra);
+		DisassemblerException(const ErrorType eType, const char* const extra);
+		DisassemblerException(const ErrorType eType, const std::string& extra);
 	};
 	
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Disassembler Functions
 
 	// Disassembles from an input file to an output file
-	int disassemble(const char* const& inputPath, const char* const& outputPath, DisassemblerSettings& settings);
-	int disassemble_(std::iostream& inputFile, std::iostream& outputFile, DisassemblerSettings& settings, std::ostream& stream);
+	int disassemble(const char* const inputPath, const char* const outputPath, const DisassemblerSettings& settings);
+	int disassemble_(std::iostream& inputFile, std::iostream& outputFile, const DisassemblerSettings& settings, std::ostream& stream);
 }
