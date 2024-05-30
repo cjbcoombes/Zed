@@ -210,10 +210,10 @@ namespace compiler {
 	// Tokenizer Functions
 
 	// Turns a file into a list of tokens
-	int tokenize(std::iostream& inputFile, TokenData& ouputData, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
+	int tokenize(std::iostream& inputFile, TokenData& outputData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream);
 	// Prints tokens nicely
-	void printTokens(TokenData& tokenData, std::ostream& stream);
-	void printToken(Token& token, std::ostream& stream);
+	void printTokens(const TokenData& tokenData, std::ostream& stream);
+	void printToken(const Token& token, std::ostream& stream);
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// AST Functions

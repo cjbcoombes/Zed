@@ -11,6 +11,7 @@
 #include <optional>
 #include <functional>
 #include <span>
+#include <sstream>
 #include <array>
 #include <string_view>
 // #define NDEBUG to disable asserts

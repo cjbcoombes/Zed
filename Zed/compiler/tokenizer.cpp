@@ -3,25 +3,27 @@
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Tokenizer Helper Functions
 
-bool compiler::isIdChar(char c) {
+static bool isIdChar(const char c) {
 	return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || ('0' <= c && c <= '9') || c == '_';
 }
 
-bool compiler::isSymbolChar(char c) {
-	for (const char& symb : symbolChars) {
+static bool isSymbolChar(const char c) {
+	for (const char& symb : compiler::symbolChars) {
 		if (symb == c) return true;
 	}
 	return false;
 }
 
-bool compiler::isTypeToken(TokenType type) {
+static bool isTypeToken(const compiler::TokenType type) {
+	using namespace compiler;
+
 	return type == TokenType::TYPE_BOOL
 		|| type == TokenType::TYPE_CHAR
 		|| type == TokenType::TYPE_FLOAT
 		|| type == TokenType::TYPE_INT;
 }
 
-int parseInt(char str[], int strlen, int base) {
+static int parseInt(char str[], const int strlen, const int base) {
 	int out = 0;
 	for (int i = 0; i < strlen; i++) {
 		out *= base;
@@ -36,7 +38,7 @@ int parseInt(char str[], int strlen, int base) {
 	return out;
 }
 
-float parseFloat(char str[], int strlen, float base) {
+static float parseFloat(char str[], const int strlen, const float base) {
 	float out = 0;
 	int i = 0;
 	while (i < strlen && str[i] != '.') {
@@ -66,7 +68,7 @@ float parseFloat(char str[], int strlen, float base) {
 	return out;
 }
 
-void putSymbols(const char* str, int slen, compiler::code_location loc, compiler::TokenData& outputData) {
+static void putSymbols(const char* const str, const int slen, const compiler::code_location& loc, compiler::TokenData& outputData) {
 	using namespace compiler;
 	if (slen == 0) return;
 	if (slen == 1) {
@@ -104,25 +106,25 @@ void putSymbols(const char* str, int slen, compiler::code_location loc, compiler
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // TokenData
 
-compiler::Token* compiler::TokenData::put(TokenType type, code_location loc) {
+compiler::Token* compiler::TokenData::put(const TokenType type, const code_location& loc) {
 	tokens.emplace_back(type, loc);
 	return &tokens.back();
 }
-void compiler::TokenData::putInt(int val, code_location loc) {
+void compiler::TokenData::putInt(const int val, const code_location& loc) {
 	put(TokenType::NUM_INT, loc)->int_ = val;
 }
-void compiler::TokenData::putFloat(float val, code_location loc) {
+void compiler::TokenData::putFloat(const float val, const code_location& loc) {
 	put(TokenType::NUM_FLOAT, loc)->float_ = val;
 }
-void compiler::TokenData::putChar(char val, code_location loc) {
+void compiler::TokenData::putChar(const char val, const code_location& loc) {
 	put(TokenType::CHAR, loc)->char_ = val;
 }
-void compiler::TokenData::putType(TokenType type, code_location loc) {
+void compiler::TokenData::putType(const TokenType type, const code_location& loc) {
 	tokens.emplace_back(type, loc);
 }
-void compiler::TokenData::putStr(TokenType type, code_location loc, std::string str) {
+void compiler::TokenData::putStr(const TokenType type, const code_location& loc, const std::string& str) {
 	std::string* strPtr = nullptr;
-	for (auto i = strList.begin(); i != strList.end(); i++) {
+	for (auto i = strList.begin(); i != strList.end(); ++i) {
 		if ((*i) == str) {
 			strPtr = &(*i);
 			break;
@@ -135,6 +137,18 @@ void compiler::TokenData::putStr(TokenType type, code_location loc, std::string 
 	}
 
 	put(type, loc)->str = strPtr;
+}
+
+void compiler::TokenData::newLine(const int location) {
+	lineStarts.push_back(location);
+}
+
+void compiler::TokenData::newChar(const char c) {
+	content << c;
+}
+
+const std::list<compiler::Token>& compiler::TokenData::getTokens() const noexcept {
+	return tokens;
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -212,7 +226,7 @@ int compiler::tokenize(std::iostream& inputFile, TokenData& outputData, Compiler
 	int column = 0;
 	code_location loc(0, 0);
 	int i = 0;
-	outputData.lineStarts.push_back(0);
+	outputData.newLine(0);
 	// Starting line and column for the current token
 	int startLine = 0;
 	int startColumn = 0;
@@ -229,10 +243,10 @@ int compiler::tokenize(std::iostream& inputFile, TokenData& outputData, Compiler
 	while (!end) {
 		inputFile.get(c);
 		end = inputFile.eof();
-		outputData.content += end ? '\n' : c;
+		outputData.newChar(end ? '\n' : c);
 		i++;
 		if (c == '\n' || end) {
-			outputData.lineStarts.push_back(i);
+			outputData.newLine(i);
 			loc.line++;
 			loc.column = 0;
 		} else {
@@ -442,10 +456,10 @@ int compiler::tokenize(std::iostream& inputFile, TokenData& outputData, Compiler
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Printing Functions
 
-void compiler::printTokens(TokenData& tokenData, std::ostream& stream) {
+void compiler::printTokens(const TokenData& tokenData, std::ostream& stream) {
 	int line = 0;
 	stream << IO_NORM;
-	for (Token& t : tokenData.tokens) {
+	for (const Token& t : tokenData.getTokens()) {
 		if (line != t.loc.line) stream << '\n';
 		line = t.loc.line;
 		printToken(t, stream);
@@ -454,8 +468,8 @@ void compiler::printTokens(TokenData& tokenData, std::ostream& stream) {
 	stream << '\n';
 }
 
-void compiler::printToken(Token& t, std::ostream& stream) {
-	int type = static_cast<int>(t.type);
+void compiler::printToken(const Token& t, std::ostream& stream) {
+	const int type = static_cast<int>(t.type);
 
 	if (t.type == TokenType::STRING) {
 		stream << IO_FMT_STRING(*t.str);

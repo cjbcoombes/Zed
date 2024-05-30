@@ -4,7 +4,7 @@
 namespace compiler {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Tokenizer Constants?
-	constexpr const int MAX_TOKEN_STR_LEN = 1024;
+	constexpr int MAX_TOKEN_STR_LEN = 1024;
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Token Type Info
@@ -140,10 +140,6 @@ namespace compiler {
 	static_assert(sizeof(keywordStrings) / sizeof(const char*) == keywordCount,
 				  "Number of keywords does not match list of keywords");
 
-	bool isIdChar(char c);
-	bool isSymbolChar(char c);
-	bool isTypeToken(TokenType type);
-
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Token Data Types
 
@@ -151,7 +147,7 @@ namespace compiler {
 		int line;
 		int column;
 
-		code_location(int line, int column) : line(line), column(column) {}
+		code_location(const int line, const int column) : line(line), column(column) {}
 		code_location() : line(-1), column(-1) {}
 	};
 
@@ -175,29 +171,30 @@ namespace compiler {
 			std::string* str;
 		};
 
-		Token(TokenType type, code_location loc) : type(type), loc(loc), str(nullptr) {}
+		Token(const TokenType type, const code_location loc) : type(type), loc(loc), str(nullptr) {}
 	};
 
 	// Holds a list of tokens and a list of strings
 	// that those tokens may refer to
 	class TokenData {
-	public:
+	private:
 		std::list<std::string> strList;
 		std::list<Token> tokens;
-		std::string content;
+		std::stringstream content;
 		std::vector<int> lineStarts;
 
-		void putInt(int val, code_location loc);
-		void putFloat(float val, code_location loc);
-		void putChar(char val, code_location loc);
-		void putType(TokenType type, code_location loc);
-		void putStr(TokenType type, code_location loc, std::string str);
+		Token* put(const TokenType type, const code_location& loc);
 
-	private:
-		// Adds a token and returns a pointer to that token
-		// IMPORTANT that the pointer does not get used after
-		// the tokens vector is modified. (That's why it's
-		// private)
-		Token* put(TokenType type, code_location loc);
+	public:
+		void putInt(const int val, const code_location& loc);
+		void putFloat(const float val, const code_location& loc);
+		void putChar(const char val, const code_location& loc);
+		void putType(const TokenType type, const code_location& loc);
+		void putStr(const TokenType type, const code_location& loc, const std::string& str);
+
+		void newLine(const int location);
+		void newChar(const char c);
+
+		const std::list<Token>& getTokens() const noexcept;
 	};
 }
