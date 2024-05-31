@@ -6,8 +6,10 @@ namespace argparse {
 	struct Command;
 	typedef std::vector<Command> Argset;
 
+	// Parses args into a list of commands
 	Argset argParse(const std::span<const char*>& args);
 
+	// An option is like "--name arg1 arg2 ..."
 	struct Option {
 		friend Argset argparse::argParse(const std::span<const char*>& args);
 
@@ -22,6 +24,7 @@ namespace argparse {
 		const std::string& getName() const noexcept;
 	};
 
+	// A command is like "/name arg1 --option optarg1 ..."
 	struct Command {
 		friend Argset argparse::argParse(const std::span<const char*>& args);
 

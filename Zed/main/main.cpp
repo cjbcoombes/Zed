@@ -28,24 +28,27 @@ static int commandExecute(const argparse::Command& c, const Flags& globalFlags) 
 
 	for (const argparse::Option& o : c.getOptions()) {
 		if (o.getName() == argparse::DEFAULT) {
-			if (o.getArgs().size() > 0) inputPath = &o.getArgs().front();
+			if (!o.getArgs().empty()) inputPath = &o.getArgs().front();
 		} else if (o.getName() == "-h" || o.getName() == "--help") {
 			std::cout << executeHelp;
 			return 0;
 		} else if (o.getName() == "-d" || o.getName() == "--debug") {
 			settings.flags.setFlags(Flags::FLAG_DEBUG);
 		} else if (o.getName() == "-i" || o.getName() == "--in") {
-			if (o.getArgs().size() > 0) {
+			if (!o.getArgs().empty()) {
 				inputPath = &o.getArgs().front();
 			} else {
 				ERR("Option --in is missing an argument");
 			}
 		} else if (o.getName() == "-s" || o.getName() == "--stacksize") {
-			if (o.getArgs().size() < 1) {
+			if (o.getArgs().empty()) {
 				ERR("Option --stacksize is missing an argument");
 			}
 			try {
-				settings.stackSize = std::stoul(o.getArgs().front());
+				settings.stackSize = std::stol(o.getArgs().front());
+				if (settings.stackSize <= 0) {
+					ERR("Invalid stack size");
+				}
 				if (settings.stackSize < 256 || settings.stackSize > 512000000) {
 					if (settings.stackSize < 256) {
 						std::cout << "Are you sure you want your stack size to be " << settings.stackSize << " bytes? (That's really small)\n";

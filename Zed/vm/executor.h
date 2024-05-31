@@ -10,10 +10,10 @@ namespace executor {
 
 	static constexpr int FLAG_CHECK_MEM = Flags::FLAG_FIRST_FREE;
 
-	// Holds settings info about the assembly process
+	// Holds settings info about the execution process
 	struct ExecutorSettings {
 		Flags flags;
-		unsigned int stackSize;
+		int stackSize;
 
 		ExecutorSettings() noexcept;
 	};
@@ -21,6 +21,7 @@ namespace executor {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Executor Exceptions
 
+	// An exception from the executor
 	class ExecutorException : public std::runtime_error {
 	public:
 		enum class ErrorType {
@@ -64,6 +65,7 @@ namespace executor {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Executor Functions
 
+	// Execute a .eze file with given settings
 	int exec(const char* const path, const ExecutorSettings& settings);
 	int exec_(std::iostream& file, const ExecutorSettings& settings, std::ostream& outstream, std::istream& instream);
 }

@@ -57,8 +57,6 @@
 // String Array Utils
 
 // Finds the index of a string in a list of strings, or -1 if not found
-//int lookupString(const char* const match, const char* const stringArr[], const int arrLen) noexcept;
-
 int lookupString(const char* const match, const std::span<const char* const>& strings) noexcept;
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -67,12 +65,13 @@ int lookupString(const char* const match, const std::span<const char* const>& st
 // Holds flags set as bits
 struct Flags {
 private:
-	int bits;
+	int64_t bits;
 
 public:
 	static constexpr int FLAG_DEBUG = 1;
 	static constexpr int FLAG_PROFILE = FLAG_DEBUG << 1;
 
+	// The first non-reserved flag, that individual settings objects can use
 	static constexpr int FLAG_FIRST_FREE = FLAG_PROFILE << 1;
 
 

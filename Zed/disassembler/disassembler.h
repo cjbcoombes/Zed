@@ -36,8 +36,7 @@ namespace disassembler {
 
 		const ErrorType eType;
 
-		DisassemblerException(const ErrorType eType);
-		DisassemblerException(const ErrorType eType, char* const extra);
+		explicit DisassemblerException(const ErrorType eType);
 		DisassemblerException(const ErrorType eType, const char* const extra);
 		DisassemblerException(const ErrorType eType, const std::string& extra);
 	};

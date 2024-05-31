@@ -17,7 +17,7 @@ argparse::Argset argparse::argParse(const std::span<const char*>& args) {
 
 	for (const char* arg : args) {
 		std::string&& str(arg);
-		if (str.size() != 0) {
+		if (!str.empty()) {
 			strs.push_back(std::move(str));
 		}
 	}
@@ -26,7 +26,7 @@ argparse::Argset argparse::argParse(const std::span<const char*>& args) {
 	const auto end = strs.cend();
 
 	// skip exe file name, such as "zed.exe"
-	if (carg != end) carg++;
+	if (carg != end) ++carg;
 
 	Argset argset;
 	argset.emplace_back(DEFAULT);
@@ -42,7 +42,7 @@ argparse::Argset argparse::argParse(const std::span<const char*>& args) {
 			argset.back().options.back().args.emplace_back(*carg);
 		}
 
-		carg++;
+		++carg;
 	}
 
 	return argset;

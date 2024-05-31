@@ -46,7 +46,7 @@ int executor::exec(const char* const path, const ExecutorSettings& settings) {
 	} catch (const ExecutorException& e) {
 		cout << IO_ERR "Error during execution at BYTE" << e.getLoc() << " : " << e.what() << IO_NORM IO_END;
 	} catch (const std::exception& e) {
-		cout << IO_ERR "An unknown error ocurred during execution. This error is most likely an issue with the c++ executor code, not your code. Sorry. The provided error message is as follows:\n" << e.what() << IO_NORM IO_END;
+		cout << IO_ERR "An unknown error occurred during execution. This error is most likely an issue with the c++ executor code, not your code. Sorry. The provided error message is as follows:\n" << e.what() << IO_NORM IO_END;
 	}
 
 	return 1;
@@ -57,13 +57,18 @@ int executor::exec_(std::iostream& file, const ExecutorSettings& settings, std::
 	using namespace bytecode::Opcode;
 	using namespace bytecode;
 
+	// Checks that all allocated memory gets deallocated
 	const bool checkMem = settings.flags.hasFlags(Flags::FLAG_DEBUG | FLAG_CHECK_MEM);
 	std::list<char*> memAllocs;
 
 	Program program(file);
 	Stack stack(settings.stackSize);
+
+	// Registers
 	WordVal wordReg[reg::Count]{};
 	ByteVal byteReg[reg::Count]{};
+
+	// Special registers
 	wordReg[reg::BP].word = reinterpret_cast<word_t>(stack.begin());
 	wordReg[reg::RP].word = reinterpret_cast<word_t>(stack.begin());
 	wordReg[reg::PP].word = reinterpret_cast<word_t>(program.begin());
@@ -81,7 +86,7 @@ int executor::exec_(std::iostream& file, const ExecutorSettings& settings, std::
 	byte_t byte = 0;
 	int_t int_ = 0;
 	char_t char_ = 0;
-	float_t float_ = 0;
+	types::float_t float_ = 0;
 	char rlchar = 0;
 	char* charptr = nullptr;
 
@@ -324,7 +329,7 @@ int executor::exec_(std::iostream& file, const ExecutorSettings& settings, std::
 			case I_TO_F:
 				program.read<reg_t>(&rid1);
 				program.read<reg_t>(&rid2);
-				wordReg[rid1].float_ = static_cast<float_t>(wordReg[rid2].int_);
+				wordReg[rid1].float_ = static_cast<types::float_t>(wordReg[rid2].int_);
 				break;
 
 			case C_FLAG:
@@ -432,7 +437,7 @@ int executor::exec_(std::iostream& file, const ExecutorSettings& settings, std::
 			case C_TO_F:
 				program.read<reg_t>(&rid1);
 				program.read<reg_t>(&rid2);
-				wordReg[rid1].float_ = static_cast<float_t>(byteReg[rid2].char_);
+				wordReg[rid1].float_ = static_cast<types::float_t>(byteReg[rid2].char_);
 				break;
 
 			case F_FLAG:
@@ -580,6 +585,7 @@ int executor::exec_(std::iostream& file, const ExecutorSettings& settings, std::
 	}
 
 end:;
+	// Warn and deallocate things that weren't already deallocated
 	if (checkMem && !memAllocs.empty()) {
 		outstream << IO_WARN "Found " << memAllocs.size() << " unfreed memory allocations" IO_NORM "\n";
 		for (const char* const ptr : memAllocs) {
