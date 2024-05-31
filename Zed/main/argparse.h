@@ -14,14 +14,14 @@ namespace argparse {
 		friend Argset argparse::argParse(const std::span<const char*>& args);
 
 	private:
-		const std::string name;
+		std::string name;
 		std::vector<std::string> args;
 
 	public:
 		explicit Option(const std::string& name);
 
-		const std::vector<std::string>& getArgs() const noexcept;
-		const std::string& getName() const noexcept;
+		[[nodiscard]] const std::vector<std::string>& getArgs() const noexcept;
+		[[nodiscard]] const std::string& getName() const noexcept;
 	};
 
 	// A command is like "/name arg1 --option optarg1 ..."
@@ -29,13 +29,13 @@ namespace argparse {
 		friend Argset argparse::argParse(const std::span<const char*>& args);
 
 	private:
-		const std::string name;
+		std::string name;
 		std::vector<Option> options;
 
 	public:
 		explicit Command(const std::string& name);
 
-		const std::vector<argparse::Option>& getOptions() const noexcept;
-		const std::string& getName() const noexcept;
+		[[nodiscard]] const std::vector<argparse::Option>& getOptions() const noexcept;
+		[[nodiscard]] const std::string& getName() const noexcept;
 	};
 }

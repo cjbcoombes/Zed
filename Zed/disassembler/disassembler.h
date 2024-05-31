@@ -34,7 +34,7 @@ namespace disassembler {
 			"Invalid byte register"
 		};
 
-		const ErrorType eType;
+		ErrorType eType;
 
 		explicit DisassemblerException(const ErrorType eType);
 		DisassemblerException(const ErrorType eType, const char* const extra);

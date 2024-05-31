@@ -105,10 +105,10 @@ namespace bytecode {
 
 		explicit Program(std::iostream& program);
 
-		char* pos() const noexcept;
-		char* begin() const noexcept;
-		int offset() const noexcept;
-		bool inBounds() const noexcept;
+		[[nodiscard]] char* pos() const noexcept;
+		[[nodiscard]] char* begin() const noexcept;
+		[[nodiscard]] int offset() const noexcept;
+		[[nodiscard]] bool inBounds() const noexcept;
 
 		void goto_(types::word_t loc) noexcept;
 

@@ -37,15 +37,15 @@ namespace executor {
 		};
 
 	private:
-		const ErrorType eType;
-		const int loc;
+		ErrorType eType;
+		int loc;
 
 	public:
 		ExecutorException(const ErrorType eType, const int loc);
 		ExecutorException(const ErrorType eType, const int loc, const char* const extra);
 		//ExecutorException(const ErrorType eType, const int loc, const std::string& extra);
 
-		int getLoc() const noexcept;
+		[[nodiscard]] int getLoc() const noexcept;
 	};
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -59,7 +59,7 @@ namespace executor {
 	public:
 		explicit Stack(const int size);
 
-		char* begin() const noexcept;
+		[[nodiscard]] char* begin() const noexcept;
 	};
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~

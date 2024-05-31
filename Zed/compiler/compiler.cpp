@@ -1,20 +1,22 @@
 #include "compiler.h"
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Compiler Exceptions
+// Compiler Issues
 
-const char* compiler::CompilerIssue::what() {
+compiler::CompilerIssue::CompilerIssue(const Type& type, const code_location loc) : type(type), loc(loc), extra() {}
+compiler::CompilerIssue::CompilerIssue(const Type& type, const code_location loc, const char* const& extra) : type(type), loc(loc), extra(extra) {}
+compiler::CompilerIssue::CompilerIssue(const Type& type, const code_location loc, const std::string& extra) : type(type), loc(loc), extra(extra) {}
+
+std::string compiler::CompilerIssue::what() const {
 	if (extra.length() == 0) {
 		return typeStrings[static_cast<int>(type)];
 	} else {
-		extra.insert(0, " : ");
-		extra.insert(0, typeStrings[static_cast<int>(type)]);
-		return extra.c_str();
+		return typeStrings[static_cast<int>(type)] + (" : " + extra);
 	}
 }
 
-void compiler::CompilerIssue::print(TokenData& tokenData, std::ostream& stream) {
-	const char* starter;
+void compiler::CompilerIssue::print(const TokenData& tokenData, std::ostream& stream) const {
+	const char* starter = IO_INFO;
 	switch (level()) {
 		case Level::WARN:
 			starter = IO_WARN;
@@ -24,8 +26,7 @@ void compiler::CompilerIssue::print(TokenData& tokenData, std::ostream& stream) 
 			starter = IO_ERR;
 			break;
 		case Level::INFO:
-		default:
-			starter = IO_INFO;
+			// starter = IO_INFO; // it's already IO_INFO
 			break;
 	}
 
@@ -34,11 +35,7 @@ void compiler::CompilerIssue::print(TokenData& tokenData, std::ostream& stream) 
 		stream << '@' << (loc.line + 1) << ':' << (loc.column + 1) << "  " << what() << '\n';
 		stream << starter << "     | " << std::setw(loc.column) << "v" << '\n';
 		stream << starter << std::setw(5) << (loc.line + 1) << "| ";
-		if (tokenData.lineStarts.size() > loc.line + 1) {
-			stream << tokenData.content.substr(tokenData.lineStarts[loc.line], tokenData.lineStarts[loc.line + 1] - tokenData.lineStarts[loc.line]);
-		} else {
-			stream << tokenData.content.substr(tokenData.lineStarts[loc.line]);
-		}
+		stream << tokenData.getLine(loc.line);
 		stream << starter << "     | " << std::setw(loc.column) << "^" << '\n';
 		stream << IO_NORM;
 	} else {
@@ -56,15 +53,10 @@ compiler::CompilerIssue::Level compiler::CompilerIssue::level() const {
 	// if (i >= firstInfo) return Level::INFO;
 }
 
-void compiler::CompilerStatus::addIssue(CompilerIssue&& issue) {
-	if (issue.level() == CompilerIssue::Level::ABORT) {
-		abort = true;
-	}
-	issues.push_back(issue);
-}
+compiler::CompilerStatus::CompilerStatus() : issues(), abort(false) {}
 
-void compiler::CompilerStatus::print(TokenData& tokenData, std::ostream& stream) {
-	for (CompilerIssue& issue : issues) {
+void compiler::CompilerStatus::print(const TokenData& tokenData, std::ostream& stream) const {
+	for (const CompilerIssue& issue : issues) {
 		issue.print(tokenData, stream);
 	}
 }

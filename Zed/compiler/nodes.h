@@ -65,7 +65,7 @@ namespace compiler::ast {
 		UnimplNode(const char* msg, code_location loc) : Node(NodeType::UNIMPL, loc), msg(msg), nodes() {}
 		//UnimplNode(std::string msg, code_location loc) : Node(NodeType::UNIMPL, loc), msg(msg) {}
 
-		virtual void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last);
+		void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) override;
 	};
 
 	// A Node for a block (just a group of other Nodes)
@@ -75,17 +75,17 @@ namespace compiler::ast {
 
 		BlockNode(code_location loc) : Node(NodeType::BLOCK, loc) {}
 
-		virtual void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last);
+		void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) override;
 	};
 
 	// A Node for a token
 	class TokenNode : public Node {
 	public:
-		Token* token;
+		const Token* token;
 
-		TokenNode(Token* token) : Node(NodeType::TOKEN, token->loc), token(token) {}
+		TokenNode(const Token* const token) : Node(NodeType::TOKEN, token->loc), token(token) {}
 
-		virtual void printSimple(TokenData& tokenData, std::ostream& stream);
+		void printSimple(TokenData& tokenData, std::ostream& stream) override;
 	};
 
 	// A Node for a binary arithmetic operaton
@@ -102,7 +102,7 @@ namespace compiler::ast {
 		ArithBinopNode(Type opType, ExprType exprType, Node* left, Node* right, code_location loc)
 			: Node(NodeType::ARITH_BINOP, exprType, loc), opType(opType), left(left), right(right) {}
 
-		virtual void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last);
+		void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) override;
 	};
 
 	// A Node for literal values
@@ -122,9 +122,9 @@ namespace compiler::ast {
 
 		Type litType;
 
-		LiteralNode(Token* token);
+		LiteralNode(const Token* token);
 
-		virtual void printSimple(TokenData& tokenData, std::ostream& stream);
+		void printSimple(TokenData& tokenData, std::ostream& stream) override;
 	};
 
 	// A Node for Macros
@@ -153,7 +153,7 @@ namespace compiler::ast {
 		MacroNode(Type macroType, ExprType exprType, Node* arg, code_location loc) 
 			: Node(NodeType::MACRO, exprType, loc), macroType(macroType), arg(arg) {}
 
-		virtual void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last);
+		void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) override;
 	};
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -170,7 +170,7 @@ namespace compiler::ast {
 		N* add(std::unique_ptr<N> node);
 
 		template<class N, class... Args>
-		N* make(Args&&... args);
+		N* addNode(Args&&... args);
 
 		void print(TokenData& tokenData, std::ostream& stream);
 	};

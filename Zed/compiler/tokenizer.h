@@ -155,7 +155,7 @@ namespace compiler {
 	struct Token {
 		TokenType type;
 		// Line and column for helpful errors
-		const code_location loc;
+		code_location loc;
 
 		// The token will have one and only one of these as data
 		union {
@@ -193,8 +193,13 @@ namespace compiler {
 		void putStr(const TokenType type, const code_location& loc, const std::string& str);
 
 		void newLine(const int location);
+		[[nodiscard]] std::string_view getLine(const int line) const;
 		void newChar(const char c);
 
-		const std::list<Token>& getTokens() const noexcept;
+		[[nodiscard]] const std::list<Token>& getTokens() const noexcept;
+
+		TokenData() = default;
+		TokenData(const TokenData&) = delete;
+		TokenData& operator=(const TokenData&) = delete;
 	};
 }

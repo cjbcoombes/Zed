@@ -25,15 +25,15 @@ N* compiler::ast::Tree::add(std::unique_ptr<N> node) {
 	return temp;
 }
 
-template<class N, class ...Args>
-N* compiler::ast::Tree::make(Args&& ...args) {
+template<class N, class... Args>
+N* compiler::ast::Tree::addNode(Args&&... args) {
 	return add<N>(std::make_unique<N>(std::forward<Args>(args)...));
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Node Constructors
 
-compiler::ast::LiteralNode::LiteralNode(Token* token) : Node(NodeType::LITERAL, token->loc), int_(0) {
+compiler::ast::LiteralNode::LiteralNode(const Token* token) : Node(NodeType::LITERAL, token->loc), int_(0) {
 	switch (token->type) {
 		case TokenType::NUM_INT:
 			int_ = token->int_;
@@ -70,14 +70,14 @@ compiler::ast::LiteralNode::LiteralNode(Token* token) : Node(NodeType::LITERAL, 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Match Tree Formation
 
-compiler::ast::treeres_t compiler::ast::Match::formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
+compiler::ast::treeres_t compiler::ast::Match::formTree(Tree& tree, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) const {
 	if (settings.flags.hasFlags(Flags::FLAG_DEBUG | compiler::FLAG_DEBUG_AST)) {
 		stream << IO_DEBUG "Missing treeform implementation" IO_NORM "\n";
 	}
 	return { tree.add(std::make_unique<UnimplNode>("Generic match", loc)), 0 };
 }
 
-compiler::ast::treeres_t compiler::ast::TokenMatch::formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
+compiler::ast::treeres_t compiler::ast::TokenMatch::formTree(Tree& tree, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) const {
 	switch (token->type) {
 		case TokenType::NUM_INT:
 		case TokenType::NUM_FLOAT:
@@ -90,7 +90,7 @@ compiler::ast::treeres_t compiler::ast::TokenMatch::formTree(Tree& tree, Compile
 	}
 }
 
-compiler::ast::treeres_t compiler::ast::GroupMatch::formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
+compiler::ast::treeres_t compiler::ast::GroupMatch::formTree(Tree& tree, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) const {
 	// The parent match may decide to do something different with the group.
 
 	compiler::ast::treeres_t tempRes;
@@ -101,7 +101,7 @@ compiler::ast::treeres_t compiler::ast::GroupMatch::formTree(Tree& tree, Compile
 		case MatchType::CURLY_GROUP:
 			// block
 			tempBlockNode = tree.add(std::make_unique<BlockNode>(loc));
-			for (Match* match : matches) {
+			for (const Match* match : matches) {
 				tempRes = match->formTree(tree, status, settings, stream);
 				if (tempRes.second) {
 					return { nullptr, tempRes.second };
@@ -123,31 +123,28 @@ compiler::ast::treeres_t compiler::ast::GroupMatch::formTree(Tree& tree, Compile
 	}
 }
 
-compiler::ast::treeres_t formArithBinop(compiler::ast::FixedSizeMatch& match,
-										compiler::ast::Tree& tree,
-										compiler::CompilerStatus& status,
-										compiler::CompilerSettings& settings,
-										std::ostream& stream) {
+static compiler::ast::treeres_t formArithBinop(const compiler::ast::FixedSizeMatch& match,
+											   compiler::ast::Tree& tree,
+											   compiler::CompilerStatus& status,
+											   const compiler::CompilerSettings& settings,
+											   std::ostream& stream) {
 	using namespace compiler::ast;
 	using namespace compiler;
-
-	treeres_t tempRes1;
-	treeres_t tempRes2;
 
 	if (match.matches.size() != 3 || match.matches[1]->type != MatchType::TOKEN) {
 		throw std::logic_error("Binary Arithmetic Match doesn't have exactly 3 children, where the second is a token");
 	}
-	tempRes1 = match.matches[0]->formTree(tree, status, settings, stream);
+	treeres_t tempRes1 = match.matches[0]->formTree(tree, status, settings, stream);
 	if (tempRes1.second) {
 		return { nullptr, tempRes1.second };
 	}
-	tempRes2 = match.matches[2]->formTree(tree, status, settings, stream);
+	treeres_t tempRes2 = match.matches[2]->formTree(tree, status, settings, stream);
 	if (tempRes2.second) {
 		return { nullptr, tempRes2.second };
 	}
 
 	ArithBinopNode::Type opType;
-	switch (dynamic_cast<TokenMatch*>(match.matches[1])->token->type) {
+	switch (dynamic_cast<const TokenMatch*>(match.matches[1])->token->type) {
 		case TokenType::PLUS:
 			opType = ArithBinopNode::Type::ADD;
 			break;
@@ -171,23 +168,23 @@ compiler::ast::treeres_t formArithBinop(compiler::ast::FixedSizeMatch& match,
 		exprType = ExprType::primFloat;
 	} else {
 		exprType = ExprType::primErrType;
-		status.addIssue(CompilerIssue(CompilerIssue::Type::INVALID_TYPE_ARITH_BINOP, match.loc));
+		status.addIssue(CompilerIssue::Type::INVALID_TYPE_ARITH_BINOP, match.loc);
 	}
 
 	return { tree.add(std::make_unique<ArithBinopNode>(opType, exprType, tempRes1.first, tempRes2.first, match.loc)), 0 };
 }
 
-compiler::ast::treeres_t formMacro(compiler::ast::FixedSizeMatch& match,
-								   compiler::ast::Tree& tree,
-								   compiler::CompilerStatus& status,
-								   compiler::CompilerSettings& settings,
-								   std::ostream& stream) {
+static compiler::ast::treeres_t formMacro(const compiler::ast::FixedSizeMatch& match,
+										  compiler::ast::Tree& tree,
+										  compiler::CompilerStatus& status,
+										  const compiler::CompilerSettings& settings,
+										  std::ostream& stream) {
 	using namespace compiler::ast;
 	using namespace compiler;
 
 	if (match.matches.size() != 3
-		|| match.matches[1]->type != MatchType::TOKEN 
-		|| dynamic_cast<TokenMatch*>(match.matches[1])->token->type != TokenType::IDENTIFIER) {
+		|| match.matches[1]->type != MatchType::TOKEN
+		|| dynamic_cast<const TokenMatch*>(match.matches[1])->token->type != TokenType::IDENTIFIER) {
 		throw std::logic_error("Macro Match doesn't have exactly three children, the second of which is an identifier");
 	}
 
@@ -196,12 +193,12 @@ compiler::ast::treeres_t formMacro(compiler::ast::FixedSizeMatch& match,
 		return { nullptr, res.second };
 	}
 
-	std::string& str = *dynamic_cast<TokenMatch*>(match.matches[1])->token->str;
+	const std::string& str = *dynamic_cast<const TokenMatch*>(match.matches[1])->token->str;
 	int strIndex = lookupString(str.c_str(), MacroNode::macroSpan);
 
 	if (strIndex == -1) {
-		status.addIssue(CompilerIssue(CompilerIssue::Type::INVALID_MACRO, match.matches[0]->loc, str));
-		return { tree.add(std::make_unique<MacroNode>(MacroNode::Type::UNKNOWN, ExprType::primErrType, res.first, match.matches[0]->loc)), 0};
+		status.addIssue(CompilerIssue::Type::INVALID_MACRO, match.matches[0]->loc, str);
+		return { tree.add(std::make_unique<MacroNode>(MacroNode::Type::UNKNOWN, ExprType::primErrType, res.first, match.matches[0]->loc)), 0 };
 	}
 
 	MacroNode::Type type = static_cast<MacroNode::Type>(strIndex);
@@ -213,7 +210,7 @@ compiler::ast::treeres_t formMacro(compiler::ast::FixedSizeMatch& match,
 			break;
 		case MacroNode::Type::PRINT_I:
 			if (!sameType(res.first->exprType, ExprType::primInt)) {
-				status.addIssue(CompilerIssue(CompilerIssue::Type::INVALID_TYPE_MACRO, match.matches[2]->loc));
+				status.addIssue(CompilerIssue::Type::INVALID_TYPE_MACRO, match.matches[2]->loc);
 				exprType = ExprType::primErrType;
 			} else {
 				exprType = ExprType::primInt;
@@ -226,7 +223,7 @@ compiler::ast::treeres_t formMacro(compiler::ast::FixedSizeMatch& match,
 	return { tree.add(std::make_unique<MacroNode>(type, exprType, res.first, match.matches[0]->loc)), 0 };
 }
 
-compiler::ast::treeres_t compiler::ast::FixedSizeMatch::formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
+compiler::ast::treeres_t compiler::ast::FixedSizeMatch::formTree(Tree& tree, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) const {
 	treeres_t tempRes1;
 
 	switch (type) {
@@ -238,7 +235,7 @@ compiler::ast::treeres_t compiler::ast::FixedSizeMatch::formTree(Tree& tree, Com
 			break;
 		default:
 			UnimplNode* unimplNode = tree.add(std::make_unique<UnimplNode>("fixed size match with unhandled type", loc));
-			for (Match* match : matches) {
+			for (const Match* match : matches) {
 				tempRes1 = match->formTree(tree, status, settings, stream);
 				if (tempRes1.second) {
 					return { nullptr, tempRes1.second };
@@ -249,7 +246,7 @@ compiler::ast::treeres_t compiler::ast::FixedSizeMatch::formTree(Tree& tree, Com
 	}
 }
 
-int compiler::ast::formTree(ast::Tree& tree, ast::MatchData& matchData, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream) {
+int compiler::ast::formTree(ast::Tree& tree, const ast::MatchData& matchData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) {
 	auto res = matchData.root->formTree(tree, status, settings, stream);
 	tree.root = res.first;
 

@@ -11,10 +11,12 @@ namespace compiler {
 	static constexpr int FLAG_DEBUG_AST = FLAG_DEBUG_TOKENIZER << 1;
 	static constexpr int FLAG_DEBUG_BYTECODE = FLAG_DEBUG_AST << 1;
 
+	// Holds settings info about the compilation process
 	struct CompilerSettings {
 		Flags flags;
 	};
 
+	// Describes an issue (info, warning, error, etc.) raised during compilation
 	struct CompilerIssue {
 		enum class Level {
 			INFO,
@@ -96,108 +98,39 @@ namespace compiler {
 		static_assert(sizeof(typeStrings) / sizeof(const char*) == typeCount,
 					  "Number of issue types does not match list of issue types");
 
-		const Type type;
-		const code_location loc;
+		Type type;
+		code_location loc;
 		std::string extra;
 
-		CompilerIssue(const Type& type, const code_location loc) : type(type), loc(loc), extra("") {}
-		CompilerIssue(const Type& type, const code_location loc, char* const& extra) : type(type), loc(loc), extra(extra) {}
-		CompilerIssue(const Type& type, const code_location loc, const char* const& extra) : type(type), loc(loc), extra(extra) {}
-		CompilerIssue(const Type& type, const code_location loc, const std::string& extra) : type(type), loc(loc), extra(extra) {}
+		CompilerIssue(const Type& type, const code_location loc);
+		CompilerIssue(const Type& type, const code_location loc, const char* const& extra);
+		CompilerIssue(const Type& type, const code_location loc, const std::string& extra);
 
-		const char* what();
-		Level level() const;
-		void print(TokenData& tokenData, std::ostream& stream);
+		[[nodiscard]] std::string what() const;
+		[[nodiscard]] Level level() const;
+		void print(const TokenData& tokenData, std::ostream& stream) const;
 	};
 
+	// The compiler status, which collects compiler issues throughout compilation
 	class CompilerStatus {
 	public:
 		std::list<CompilerIssue> issues;
 		bool abort;
 
-		CompilerStatus() : issues(), abort(false) {}
+		CompilerStatus();
+		CompilerStatus(const CompilerStatus&) = delete;
+		CompilerStatus& operator=(const CompilerStatus&) = delete;
 
-		void addIssue(CompilerIssue&& issue);
-		void print(TokenData& tokenData, std::ostream& stream);
+		template<class... Args>
+		void addIssue(Args&&... args) {
+			issues.emplace_back(std::forward<Args&&>(args)...);
+			if (issues.back().level() == CompilerIssue::Level::ABORT) {
+				abort = true;
+			}
+		}
+
+		void print(const TokenData& tokenData, std::ostream& stream) const;
 	};
-
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// Compiler Exceptions
-
-	// An error raised by the compiler
-	/*
-	class CompilerException : public std::exception {
-	public:
-		enum class ErrorType {
-			UNKNOWN,
-			STRING_TOO_LONG,
-			INVALID_CHAR,
-			UNCLOSED_STRING,
-			UNCLOSED_CHAR,
-
-			INVALID_CLOSING_PAREN,
-			INVALID_CLOSING_SQUARE,
-			INVALID_CLOSING_CURLY,
-			INVALID_CLOSING_ANGLE,
-
-			UNMATCHED_PAREN,
-			UNMATCHED_SQUARE,
-			UNMATCHED_CURLY,
-			UNMATCHED_ANGLE,
-
-			INVALID_TYPE_TOKEN,
-			INVALID_MACRO,
-			DUPLICATE_SYMBOL,
-
-			BAD_TYPE,
-			MISMATCH_TYPE,
-			BAD_FORM,
-			BAD_TYPE_ADD,
-			BAD_TYPE_SUB,
-			BAD_TYPE_MUL,
-			BAD_TYPE_DIV,
-			BAD_TYPE_MACRO,
-
-			OUT_OF_REGISTERS,
-
-			Count
-		};
-
-		static constexpr int errorTypeCount = static_cast<int>(ErrorType::Count);
-		static constexpr const char* const errorTypeStrings[] = {
-			"I don't really know how this happened but it shouldn't have",
-			"A string or identifier name is too long",
-			"A char must have length 1",
-			"Unclosed string",
-			"Unclosed char",
-
-			"Invalid closing parenthesis",
-			"Invalid closing square bracket",
-			"Invalid closing curly bracket",
-			"Invalid closing angle bracket",
-
-			"Unmatched parenthesis",
-			"Unmatched square bracket",
-			"Unmatched curly bracket",
-			"Unmatched angle bracket",
-
-			"Invalid token in typespec",
-			"Invalid macro (after #)",
-			"Duplicate symbol",
-
-			"Bad type",
-			"Mismatched types",
-			"Bad form",
-			"Cannot add value of type (TODO: more info)",
-			"Cannot subtract value of type (TODO: more info)",
-			"Cannot multiply value of type (TODO: more info)",
-			"Cannot divide value of type (TODO: more info)",
-			"Cannot apply macro to type (TODO: more info)",
-
-			"Ran out of registers"
-		};
-	};
-	*/
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Compiler Functions

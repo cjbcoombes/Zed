@@ -27,49 +27,54 @@ namespace compiler {
 			MatchType type;
 			code_location loc;
 
-			Match(MatchType type, code_location loc) : type(type), loc(loc) {}
-			virtual ~Match() {}
+			Match(const MatchType type, const code_location loc);
+			virtual ~Match() = default;
 
-			virtual treeres_t formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
+			[[nodiscard]] virtual treeres_t formTree(Tree& tree, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) const;
 		};
 
 		// A Match of just a token
 		struct TokenMatch : Match {
-			Token* token;
+			const Token* token;
 
-			TokenMatch(Token* token) : Match(MatchType::TOKEN, token->loc), token(token) {}
+			explicit TokenMatch(const Token* const token);
 
-			virtual treeres_t formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
+			[[nodiscard]] treeres_t formTree(Tree& tree, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) const override;
 		};
 
 		// A Match of a group of tokens
 		struct GroupMatch : Match {
-			std::list<Match*> matches;
+			std::list<const Match*> matches;
 
-			GroupMatch(MatchType type, code_location loc) : Match(type, loc) {}
+			GroupMatch(const MatchType type, const code_location loc);
 
-			virtual treeres_t formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
+			[[nodiscard]] treeres_t formTree(Tree& tree, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) const override;
 		};
 
 		// A Match of a fixed-size group of tokens
 		struct FixedSizeMatch : Match {
-			std::vector<Match*> matches;
+			std::vector<const Match*> matches;
 
-			FixedSizeMatch(MatchType type, code_location loc) : Match(type, loc), matches() {}
+			FixedSizeMatch(const MatchType type, const code_location loc);
 
-			virtual treeres_t formTree(Tree& tree, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
+			[[nodiscard]] treeres_t formTree(Tree& tree, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) const override;
 		};
 
 		// Collects matches in a way that avoids memory leaks
 		class MatchData {
-		public:
-			std::list<std::unique_ptr<Match>> matches;
-			Match* root;
+			std::list<std::unique_ptr<const Match>> matches;
+			GroupMatch* root;
 
-			MatchData() : matches(), root(nullptr) {}
+		public:
+			explicit MatchData(const TokenData& tokenData);
 
 			template<class M>
 			M* add(std::unique_ptr<M> match);
+
+			template<class M, class... Args>
+			M* addMatch(Args&&... args);
+
+			[[nodiscard]] GroupMatch* getRoot() const noexcept;
 		};
 
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -78,34 +83,36 @@ namespace compiler {
 		// Parent Pattern
 		class Pattern {
 		public:
-			virtual int match(std::list<Match*>& matches, MatchData& matchData, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
+			virtual ~Pattern() = default;
+
+			virtual int match(std::list<const Match*>& matches, MatchData& matchData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream);
 		};
 
 		// A Pattern for paren/square/curly groups
 		class GroupingPattern : public Pattern {
 		public:
-			virtual int match(std::list<Match*>& matches, MatchData& matchData, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
+			int match(std::list<const Match*>& matches, MatchData& matchData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) override;
 		};
 
+
+		// TODO: finish refactors for this class (privacy, const, no copying?)
 		// A general Pattern for fixed-size matches
 		class FixedSizePattern : public Pattern {
 		public:
-			typedef std::function<bool(Match*)> pred_t;
+			typedef std::function<bool(const Match*)> pred_t;
 			typedef std::initializer_list<pred_t>&& il_t;
 
 			std::vector<pred_t> predicates;
 			MatchType matchType;
 			int linecolsource;
 
-			FixedSizePattern(std::vector<pred_t> predicates, MatchType matchType, int linecolsource)
-				: predicates(predicates), matchType(matchType), linecolsource(linecolsource) {}
 			FixedSizePattern(std::initializer_list<pred_t>&& predicates, MatchType matchType, int linecolsource)
 				: predicates(predicates), matchType(matchType), linecolsource(linecolsource) {}
 
-			virtual int match(std::list<Match*>& matches, MatchData& matchData, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
+			int match(std::list<const Match*>& matches, MatchData& matchData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) override;
 		};
 
 		// Applies the patterns to reduce a list of matches
-		int applyPatterns(std::list<Match*>& matches, MatchData& matchData, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
+		int applyPatterns(std::list<const Match*>& matches, MatchData& matchData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream);
 	}
 }

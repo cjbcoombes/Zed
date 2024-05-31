@@ -90,9 +90,9 @@ int assembler::assemble_(std::iostream& inputFile, std::iostream& outputFile, co
 	// Labels and Vars
 	struct Label {
 		struct Ref {
-			const std::streampos pos;
-			const int line;
-			const int column;
+			std::streampos pos;
+			int line;
+			int column;
 
 			Ref(const std::streampos& pos, const int line, const int column) : pos(pos), line(line), column(column) {}
 		};

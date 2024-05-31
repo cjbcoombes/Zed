@@ -53,9 +53,9 @@ namespace assembler {
 			"Cannot attempt to set global variable after normal program opcodes"
 		};
 
-		const ErrorType eType;
-		const int line;
-		const int column;
+		ErrorType eType;
+		int line;
+		int column;
 
 		AssemblerException(const ErrorType eType, const int line, const int column);
 		AssemblerException(const ErrorType eType, const int line, const int column, const char* extra);
