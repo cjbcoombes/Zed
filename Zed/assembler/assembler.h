@@ -1,6 +1,6 @@
 #pragma once
-#include "../utils/utils.h"
-#include "../utils/bytecode.h"
+#include "../utils/flags.h"
+#include <stdexcept>
 
 namespace assembler {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -68,13 +68,4 @@ namespace assembler {
 	// Assembles from an input file to an output file
 	int assemble(const char* const inputPath, const char* const outputPath, const AssemblerSettings& settings);
 	int assemble_(std::iostream& inputFile, std::iostream& outputFile, const AssemblerSettings& settings, std::ostream& stream);
-
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// Parsing Helper Functions
-
-	bytecode::types::reg_t parseWordReg(const char* const str, const int strlen, const int line, const int column);
-	bytecode::types::reg_t parseByteReg(const char* const str, const int strlen, const int line, const int column);
-	bytecode::types::byte_t parseByte(const char* str, int strlen, const int line, const int column);
-	bytecode::types::word_t parseWord(const char* str, int strlen, const int line, const int column);
-	bytecode::types::reg_t parseReg(const char* str, int strlen, const int line, const int column, const AssemblerException::ErrorType eType);
 }

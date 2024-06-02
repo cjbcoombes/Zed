@@ -47,8 +47,11 @@
     <ClInclude Include="main\argparse.h" />
     <ClInclude Include="main\main.h" />
     <ClInclude Include="utils\bytecode.h" />
+    <ClInclude Include="utils\code_location.h" />
+    <ClInclude Include="utils\flags.h" />
+    <ClInclude Include="utils\io_utils.h" />
     <ClInclude Include="utils\opcode.h" />
-    <ClInclude Include="utils\utils.h" />
+    <ClInclude Include="utils\string_lookup.h" />
     <ClInclude Include="vm\executor.h" />
   </ItemGroup>
   <ItemGroup>

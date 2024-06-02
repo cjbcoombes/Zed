@@ -1,3 +1,6 @@
+#pragma once
+#include <span>
+
 namespace bytecode {
 	// An enum of all opcodes, as well as arrays of their string representations and what arguments they take
 	namespace Opcode {

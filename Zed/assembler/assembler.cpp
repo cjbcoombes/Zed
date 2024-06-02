@@ -1,4 +1,11 @@
 #include "assembler.h"
+#include "../utils/bytecode.h"
+#include "../utils/io_utils.h"
+#include "../utils/string_lookup.h"
+#include <fstream>
+#include <optional>
+#include <vector>
+#include <unordered_map>
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Assembler Exceptions
@@ -11,6 +18,297 @@ assembler::AssemblerException::AssemblerException(const ErrorType eType, const i
 
 assembler::AssemblerException::AssemblerException(const ErrorType eType, const int line, const int column, const std::string& extra)
 	: std::runtime_error(std::string(errorTypeStrings[static_cast<int>(eType)]) + " : " + extra), eType(eType), line(line), column(column) {}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Parsing Helper Functions
+
+static bytecode::types::reg_t parseReg(const char* str, int strlen, const int line, const int column, const assembler::AssemblerException::ErrorType eType) {
+	using namespace assembler;
+	using bytecode::types::reg_t;
+
+	AssemblerException ex(eType, line, column);
+
+	reg_t base = 10;
+
+	if (str[0] == '-') {
+		throw ex;
+	}
+
+	if (strlen > 2 && str[0] == '0') {
+		char t = str[1];
+		if ((t < '0' || t > '9') && t != '.') {
+			str += 2;
+			strlen -= 2;
+			switch (t) {
+				case 'x':
+					base = 16;
+					break;
+
+				case 'b':
+					base = 2;
+					break;
+
+				case 'd':break;
+
+				default:
+					throw ex;
+			}
+		}
+	}
+
+	reg_t out = 0;
+	char c;
+	while (strlen > 0) {
+		c = *str;
+
+		if (c == '.') {
+			throw ex;
+		}
+
+		out *= base;
+
+		if ('0' <= c && c <= '9') {
+			if (c - '0' >= base) throw ex;
+			out += c - '0';
+		} else if ('A' <= c && c <= 'Z') {
+			if (c - 'A' + 10 >= base) throw ex;
+			out += c - 'A' + 10;
+		} else if ('a' <= c && c <= 'z') {
+			if (c - 'a' + 10 >= base) throw ex;
+			out += c - 'a' + 10;
+		} else {
+			throw ex;
+		}
+
+		strlen--;
+		str++;
+	}
+
+	return out;
+}
+
+static bytecode::types::reg_t parseWordReg(const char* const str, const int strlen, const int line, const int column) {
+	using namespace assembler;
+	using namespace bytecode;
+
+	AssemblerException ex(AssemblerException::ErrorType::INVALID_WORD_REG_PARSE, line, column);
+	if (strlen < 2) throw ex;
+
+	int match = lookupString(str, regSpan);
+
+	if (match >= 0) {
+		if (match == reg::PP || match == reg::BP || match == reg::RP) return match;
+		else throw ex;
+	} else if (str[0] == 'W') {
+		const types::reg_t out = parseReg(str + 1, strlen - 1, line, column, AssemblerException::ErrorType::INVALID_WORD_REG_PARSE);
+
+		if (out >= NUM_WORD_REGISTERS || out < 0) {
+			throw ex;
+		}
+
+		return out + reg::W0;
+	}
+
+	throw ex;
+}
+
+static bytecode::types::reg_t parseByteReg(const char* const str, const int strlen, const int line, const int column) {
+	using namespace assembler;
+	using namespace bytecode;
+
+	AssemblerException ex(AssemblerException::ErrorType::INVALID_BYTE_REG_PARSE, line, column);
+	if (strlen < 2) throw ex;
+
+	int match = lookupString(str, regSpan);
+
+	if (match >= 0) {
+		if (match == reg::FZ) return match;
+		else throw ex;
+	} else if (str[0] == 'B') {
+		const types::reg_t out = parseReg(str + 1, strlen - 1, line, column, AssemblerException::ErrorType::INVALID_BYTE_REG_PARSE);
+
+		if (out >= NUM_WORD_REGISTERS || out < 0) {
+			throw ex;
+		}
+
+		return out + reg::B0;
+	}
+
+	throw ex;
+}
+
+static bytecode::types::word_t parseWord(const char* str, int strlen, const int line, const int column) {
+	using namespace assembler;
+	using bytecode::types::word_t;
+
+	AssemblerException ex(AssemblerException::ErrorType::INVALID_WORD_PARSE, line, column);
+
+	word_t base = 10;
+	word_t mul = 1;
+
+	if (str[0] == '-') {
+		str++;
+		strlen--;
+		mul = -1;
+	}
+
+	if (strlen > 2 && str[0] == '0') {
+		char t = str[1];
+		if ((t < '0' || t > '9') && t != '.') {
+			str += 2;
+			strlen -= 2;
+			switch (t) {
+				case 'x':
+					base = 16;
+					break;
+
+				case 'b':
+					base = 2;
+					break;
+
+				case 'd':break;
+
+				default:
+					throw ex;
+			}
+		}
+	}
+
+	word_t out = 0;
+	bool isFloat = false;
+	char c;
+	while (strlen > 0) {
+		c = *str;
+
+		if (c == '.') {
+			isFloat = true;
+			strlen--;
+			str++;
+			break;
+		}
+
+		out *= base;
+
+		if ('0' <= c && c <= '9') {
+			if (c - '0' >= base) throw ex;
+			out += c - '0';
+		} else if ('A' <= c && c <= 'Z') {
+			if (c - 'A' + 10 >= base) throw ex;
+			out += c - 'A' + 10;
+		} else if ('a' <= c && c <= 'z') {
+			if (c - 'a' + 10 >= base) throw ex;
+			out += c - 'a' + 10;
+		} else {
+			throw ex;
+		}
+
+		strlen--;
+		str++;
+	}
+
+
+	float floatOut = 0;
+	const float floatBase = 1 / static_cast<float>(base);
+	float place = floatBase;
+
+	if (isFloat) {
+		while (strlen > 0) {
+			c = *str;
+
+			if ('0' <= c && c <= '9') {
+				if (c - '0' >= base) throw ex;
+				floatOut += (c - '0') * place;
+			} else if ('A' <= c && c <= 'Z') {
+				if (c - 'A' + 10 >= base) throw ex;
+				floatOut += (c - 'A' + 10) * place;
+			} else if ('a' <= c && c <= 'z') {
+				if (c - 'a' + 10 >= base) throw ex;
+				floatOut += (c - 'a' + 10) * place;
+			} else {
+				throw ex;
+			}
+
+			place *= floatBase;
+
+			strlen--;
+			str++;
+		}
+
+		floatOut += static_cast<float>(out);
+		floatOut *= mul;
+		return *reinterpret_cast<word_t*>(&floatOut);
+	}
+
+	return out * mul;
+}
+
+static bytecode::types::byte_t parseByte(const char* str, int strlen, const int line, const int column) {
+	using namespace assembler;
+	using bytecode::types::byte_t;
+
+	AssemblerException ex(AssemblerException::ErrorType::INVALID_BYTE_PARSE, line, column);
+
+	byte_t base = 10;
+	byte_t mul = 1;
+
+	if (str[0] == '-') {
+		str++;
+		strlen--;
+		mul = -1;
+	}
+
+	if (strlen > 2 && str[0] == '0') {
+		char t = str[1];
+		if ((t < '0' || t > '9') && t != '.') {
+			str += 2;
+			strlen -= 2;
+			switch (t) {
+				case 'x':
+					base = 16;
+					break;
+
+				case 'b':
+					base = 2;
+					break;
+
+				case 'd':break;
+
+				default:
+					throw ex;
+			}
+		}
+	}
+
+	byte_t out = 0;
+	char c;
+	while (strlen > 0) {
+		c = *str;
+
+		if (c == '.') {
+			throw ex;
+		}
+
+		out *= base;
+
+		if ('0' <= c && c <= '9') {
+			if (c - '0' >= base) throw ex;
+			out += c - '0';
+		} else if ('A' <= c && c <= 'Z') {
+			if (c - 'A' + 10 >= base) throw ex;
+			out += c - 'A' + 10;
+		} else if ('a' <= c && c <= 'z') {
+			if (c - 'a' + 10 >= base) throw ex;
+			out += c - 'a' + 10;
+		} else {
+			throw ex;
+		}
+
+		strlen--;
+		str++;
+	}
+
+	return out * mul;
+}
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Assembler Functions
@@ -327,292 +625,4 @@ int assembler::assemble_(std::iostream& inputFile, std::iostream& outputFile, co
 	ASM_DEBUG(IO_END);
 
 	return 0;
-}
-
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Parsing Helper Functions
-
-bytecode::types::reg_t assembler::parseWordReg(const char* const str, const int strlen, const int line, const int column) {
-	using namespace assembler;
-	using namespace bytecode;
-
-	AssemblerException ex(AssemblerException::ErrorType::INVALID_WORD_REG_PARSE, line, column);
-	if (strlen < 2) throw ex;
-
-	int match = lookupString(str, regSpan);
-
-	if (match >= 0) {
-		if (match == reg::PP || match == reg::BP || match == reg::RP) return match;
-		else throw ex;
-	} else if (str[0] == 'W') {
-		const types::reg_t out = parseReg(str + 1, strlen - 1, line, column, AssemblerException::ErrorType::INVALID_WORD_REG_PARSE);
-
-		if (out >= NUM_WORD_REGISTERS || out < 0) {
-			throw ex;
-		}
-
-		return out + reg::W0;
-	}
-
-	throw ex;
-}
-
-bytecode::types::reg_t assembler::parseByteReg(const char* const str, const int strlen, const int line, const int column) {
-	using namespace assembler;
-	using namespace bytecode;
-
-	AssemblerException ex(AssemblerException::ErrorType::INVALID_BYTE_REG_PARSE, line, column);
-	if (strlen < 2) throw ex;
-
-	int match = lookupString(str, regSpan);
-
-	if (match >= 0) {
-		if (match == reg::FZ) return match;
-		else throw ex;
-	} else if (str[0] == 'B') {
-		const types::reg_t out = parseReg(str + 1, strlen - 1, line, column, AssemblerException::ErrorType::INVALID_BYTE_REG_PARSE);
-
-		if (out >= NUM_WORD_REGISTERS || out < 0) {
-			throw ex;
-		}
-
-		return out + reg::B0;
-	}
-
-	throw ex;
-}
-
-bytecode::types::word_t assembler::parseWord(const char* str, int strlen, const int line, const int column) {
-	using bytecode::types::word_t;
-
-	AssemblerException ex(AssemblerException::ErrorType::INVALID_WORD_PARSE, line, column);
-
-	word_t base = 10;
-	word_t mul = 1;
-
-	if (str[0] == '-') {
-		str++;
-		strlen--;
-		mul = -1;
-	}
-
-	if (strlen > 2 && str[0] == '0') {
-		char t = str[1];
-		if ((t < '0' || t > '9') && t != '.') {
-			str += 2;
-			strlen -= 2;
-			switch (t) {
-				case 'x':
-					base = 16;
-					break;
-
-				case 'b':
-					base = 2;
-					break;
-
-				case 'd':break;
-
-				default:
-					throw ex;
-			}
-		}
-	}
-
-	word_t out = 0;
-	bool isFloat = false;
-	char c;
-	while (strlen > 0) {
-		c = *str;
-
-		if (c == '.') {
-			isFloat = true;
-			strlen--;
-			str++;
-			break;
-		}
-
-		out *= base;
-
-		if ('0' <= c && c <= '9') {
-			if (c - '0' >= base) throw ex;
-			out += c - '0';
-		} else if ('A' <= c && c <= 'Z') {
-			if (c - 'A' + 10 >= base) throw ex;
-			out += c - 'A' + 10;
-		} else if ('a' <= c && c <= 'z') {
-			if (c - 'a' + 10 >= base) throw ex;
-			out += c - 'a' + 10;
-		} else {
-			throw ex;
-		}
-
-		strlen--;
-		str++;
-	}
-
-
-	float floatOut = 0;
-	const float floatBase = 1 / static_cast<float>(base);
-	float place = floatBase;
-
-	if (isFloat) {
-		while (strlen > 0) {
-			c = *str;
-
-			if ('0' <= c && c <= '9') {
-				if (c - '0' >= base) throw ex;
-				floatOut += (c - '0') * place;
-			} else if ('A' <= c && c <= 'Z') {
-				if (c - 'A' + 10 >= base) throw ex;
-				floatOut += (c - 'A' + 10) * place;
-			} else if ('a' <= c && c <= 'z') {
-				if (c - 'a' + 10 >= base) throw ex;
-				floatOut += (c - 'a' + 10) * place;
-			} else {
-				throw ex;
-			}
-
-			place *= floatBase;
-
-			strlen--;
-			str++;
-		}
-
-		floatOut += static_cast<float>(out);
-		floatOut *= mul;
-		return *reinterpret_cast<word_t*>(&floatOut);
-	}
-
-	return out * mul;
-}
-
-bytecode::types::byte_t assembler::parseByte(const char* str, int strlen, const int line, const int column) {
-	using bytecode::types::byte_t;
-
-	AssemblerException ex(AssemblerException::ErrorType::INVALID_BYTE_PARSE, line, column);
-
-	byte_t base = 10;
-	byte_t mul = 1;
-
-	if (str[0] == '-') {
-		str++;
-		strlen--;
-		mul = -1;
-	}
-
-	if (strlen > 2 && str[0] == '0') {
-		char t = str[1];
-		if ((t < '0' || t > '9') && t != '.') {
-			str += 2;
-			strlen -= 2;
-			switch (t) {
-				case 'x':
-					base = 16;
-					break;
-
-				case 'b':
-					base = 2;
-					break;
-
-				case 'd':break;
-
-				default:
-					throw ex;
-			}
-		}
-	}
-
-	byte_t out = 0;
-	char c;
-	while (strlen > 0) {
-		c = *str;
-
-		if (c == '.') {
-			throw ex;
-		}
-
-		out *= base;
-
-		if ('0' <= c && c <= '9') {
-			if (c - '0' >= base) throw ex;
-			out += c - '0';
-		} else if ('A' <= c && c <= 'Z') {
-			if (c - 'A' + 10 >= base) throw ex;
-			out += c - 'A' + 10;
-		} else if ('a' <= c && c <= 'z') {
-			if (c - 'a' + 10 >= base) throw ex;
-			out += c - 'a' + 10;
-		} else {
-			throw ex;
-		}
-
-		strlen--;
-		str++;
-	}
-
-	return out * mul;
-}
-
-bytecode::types::reg_t assembler::parseReg(const char* str, int strlen, const int line, const int column, const AssemblerException::ErrorType eType) {
-	using bytecode::types::reg_t;
-
-	AssemblerException ex(eType, line, column);
-
-	reg_t base = 10;
-
-	if (str[0] == '-') {
-		throw ex;
-	}
-
-	if (strlen > 2 && str[0] == '0') {
-		char t = str[1];
-		if ((t < '0' || t > '9') && t != '.') {
-			str += 2;
-			strlen -= 2;
-			switch (t) {
-				case 'x':
-					base = 16;
-					break;
-
-				case 'b':
-					base = 2;
-					break;
-
-				case 'd':break;
-
-				default:
-					throw ex;
-			}
-		}
-	}
-
-	reg_t out = 0;
-	char c;
-	while (strlen > 0) {
-		c = *str;
-
-		if (c == '.') {
-			throw ex;
-		}
-
-		out *= base;
-
-		if ('0' <= c && c <= '9') {
-			if (c - '0' >= base) throw ex;
-			out += c - '0';
-		} else if ('A' <= c && c <= 'Z') {
-			if (c - 'A' + 10 >= base) throw ex;
-			out += c - 'A' + 10;
-		} else if ('a' <= c && c <= 'z') {
-			if (c - 'a' + 10 >= base) throw ex;
-			out += c - 'a' + 10;
-		} else {
-			throw ex;
-		}
-
-		strlen--;
-		str++;
-	}
-
-	return out;
 }

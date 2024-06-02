@@ -1,3 +1,5 @@
+#include "tokenizer.h"
+#include "../utils/string_lookup.h"
 #include "compiler.h"
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -68,7 +70,7 @@ static float parseFloat(char str[], const int strlen, const float base) {
 	return out;
 }
 
-static void putSymbols(const char* const str, const int slen, const compiler::code_location& loc, compiler::TokenData& outputData) {
+static void putSymbols(const char* const str, const int slen, const code_location& loc, compiler::TokenData& outputData) {
 	using namespace compiler;
 	if (slen == 0) return;
 	if (slen == 1) {
@@ -238,8 +240,6 @@ int compiler::tokenize(std::iostream& inputFile, TokenData& outputData, Compiler
 	int i = 0;
 	outputData.newLine(0);
 	// Starting line and column for the current token
-	int startLine = 0;
-	int startColumn = 0;
 	code_location startLoc(0, 0);
 	// end
 	bool end = inputFile.eof();

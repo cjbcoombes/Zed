@@ -1,5 +1,8 @@
-#include "../utils/utils.h"
-#include "../utils/bytecode.h"
+#pragma once
+#include "../utils/flags.h"
+#include <stdexcept>
+#include <memory>
+
 
 namespace executor {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~

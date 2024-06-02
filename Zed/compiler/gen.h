@@ -1,4 +1,4 @@
-#include "ast.h"
+#pragma once
 
 namespace compiler::gen {
 		

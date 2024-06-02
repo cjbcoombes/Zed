@@ -78,7 +78,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="utils\utils.h">
+    <ClInclude Include="utils\string_lookup.h">
       <Filter>Source Files\utils</Filter>
     </ClInclude>
     <ClInclude Include="main\main.h">
@@ -122,6 +122,15 @@
     </ClInclude>
     <ClInclude Include="main\argparse.h">
       <Filter>Source Files\main</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\code_location.h">
+      <Filter>Source Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\flags.h">
+      <Filter>Source Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\io_utils.h">
+      <Filter>Source Files\utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

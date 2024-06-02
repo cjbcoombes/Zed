@@ -1,6 +1,8 @@
 #pragma once
-#include "utils.h"
 #include "opcode.h"
+#include <cstdint>
+#include <span>
+#include <memory>
 
 
 namespace bytecode {

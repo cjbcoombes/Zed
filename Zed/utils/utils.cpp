@@ -1,4 +1,6 @@
-#include "utils.h"
+#include "string_lookup.h"
+#include "flags.h"
+#include "code_location.h"
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // String Array Utils
@@ -15,6 +17,12 @@ int lookupString(const char* const match, const std::span<const char* const>& st
 
 	return -1;
 }
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Code Location Struct
+
+code_location::code_location(const int line, const int column) : line(line), column(column) {}
+code_location::code_location() : line(-1), column(-1) {}
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Flags Struct

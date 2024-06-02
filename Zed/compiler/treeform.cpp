@@ -1,4 +1,9 @@
+#include "treeform.h"
+#include "../utils/string_lookup.h"
+#include "nodes.h"
+#include "tokenizer.h"
 #include "compiler.h"
+#include "patterns.h"
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Types
@@ -17,6 +22,16 @@ bool compiler::ast::sameType(const ExprType& a, const ExprType& b) {
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Tree
+
+compiler::ast::Tree::Tree() : nodes(), root(nullptr) {}
+
+void compiler::ast::Tree::setRoot(Node* const root) {
+	if (this->root != nullptr) {
+		throw std::logic_error("Tree root was set multiple times");
+	} else {
+		this->root = root;
+	}
+}
 
 template<class N>
 N* compiler::ast::Tree::add(std::unique_ptr<N> node) {

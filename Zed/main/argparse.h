@@ -1,4 +1,8 @@
-#include "../utils/utils.h"
+#pragma once
+#include <string>
+#include <span>
+#include <vector>
+
 
 namespace argparse {
 	const std::string DEFAULT = "";

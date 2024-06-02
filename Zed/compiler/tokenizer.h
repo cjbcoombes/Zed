@@ -1,5 +1,15 @@
-#include "../utils/utils.h"
+#pragma once
+#include "../utils/code_location.h"
 #include "../utils/bytecode.h"
+#include <sstream>
+#include <list>
+#include <vector>
+#include <span>
+
+namespace compiler {
+	class CompilerStatus;
+	struct CompilerSettings;
+}
 
 namespace compiler {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -143,14 +153,6 @@ namespace compiler {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Token Data Types
 
-	struct code_location {
-		int line;
-		int column;
-
-		code_location(const int line, const int column) : line(line), column(column) {}
-		code_location() : line(-1), column(-1) {}
-	};
-
 	// Represents a single token, once parsed
 	struct Token {
 		TokenType type;
@@ -202,4 +204,14 @@ namespace compiler {
 		TokenData(const TokenData&) = delete;
 		TokenData& operator=(const TokenData&) = delete;
 	};
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Tokenizer Functions
+
+	// Turns a file into a list of tokens
+	int tokenize(std::iostream& inputFile, TokenData& outputData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream);
+
+	// Prints tokens nicely
+	void printTokens(const TokenData& tokenData, std::ostream& stream);
+	void printToken(const Token& token, std::ostream& stream);
 }

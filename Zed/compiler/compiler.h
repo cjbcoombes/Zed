@@ -1,4 +1,20 @@
-#include "ast.h"
+#pragma once
+#include "../utils/code_location.h"
+#include "../utils/flags.h"
+#include "../utils/io_utils.h"
+#include <list>
+
+namespace compiler {
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Forward Declarations
+
+	struct Token;
+	class TokenData;
+
+	namespace ast {
+		class Tree;
+	}
+}
 
 namespace compiler {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -139,21 +155,5 @@ namespace compiler {
 	int compile(const char* const& inputPath, const char* const& outputPath, CompilerSettings& settings);
 	int compile_(std::iostream& inputFile, std::iostream& outputFile, CompilerSettings& settings, std::ostream& stream);
 
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// Tokenizer Functions
-
-	// Turns a file into a list of tokens
-	int tokenize(std::iostream& inputFile, TokenData& outputData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream);
-	// Prints tokens nicely
-	void printTokens(const TokenData& tokenData, std::ostream& stream);
-	void printToken(const Token& token, std::ostream& stream);
-
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// AST Functions
-
-	int makeAST(ast::Tree& tree, const TokenData& tokenData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream);
-
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// Bytecode Generation
 
 }

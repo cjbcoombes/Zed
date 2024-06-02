@@ -1,4 +1,6 @@
 #include "disassembler.h"
+#include "../utils/io_utils.h"
+#include <fstream>
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Disassembler Exceptions

@@ -1,4 +1,8 @@
 #include "executor.h"
+#include "../utils/io_utils.h"
+#include "../utils/bytecode.h"
+#include <fstream>
+#include <list>
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Executor Settings

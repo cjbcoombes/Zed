@@ -1,6 +1,7 @@
 #pragma once
-#include "../utils/utils.h"
+#include "../utils/flags.h"
 #include "../utils/bytecode.h"
+#include <stdexcept>
 
 namespace disassembler {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -40,7 +41,7 @@ namespace disassembler {
 		DisassemblerException(const ErrorType eType, const char* const extra);
 		DisassemblerException(const ErrorType eType, const std::string& extra);
 	};
-	
+
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Disassembler Functions
 

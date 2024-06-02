@@ -1,4 +1,7 @@
-#include "compiler.h"
+#include "nodes.h"
+#include "../utils/io_utils.h"
+#include "tokenizer.h"
+#include "treeform.h"
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Types

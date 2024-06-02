@@ -1,4 +1,7 @@
+#include "patterns.h"
 #include "compiler.h"
+#include "tokenizer.h"
+#include <stack>
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Matches and MatchData

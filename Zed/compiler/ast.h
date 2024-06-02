@@ -1,14 +1,42 @@
-#include "treeform.h"
+#pragma once
+#include "../utils/io_utils.h"
+
+namespace compiler {
+	class CompilerStatus;
+	struct CompilerSettings;
+
+	class TokenData;
+
+	namespace ast {
+		class MatchData;
+
+		class Tree;
+	}
+}
 
 namespace compiler::ast {
-
-	
-
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// AST Functions
 
-	// Turns the list of tokens into a tree of matched patterns
-	int matchPatterns(const TokenData& tokenData, ast::MatchData& matchData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream);
-	// Turns the patterns into an actual AST
-	int formTree(ast::Tree& tree, const ast::MatchData& matchData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream);
+	// Make the AST from the TokenData
+	int makeAST(ast::Tree& tree, const TokenData& tokenData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream);
 }
+
+
+/*
+
+assembler
+disassembler
+executor
+compiler
+v
+main
+
+
+
+
+
+
+
+
+*/

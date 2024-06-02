@@ -1,4 +1,8 @@
 #include "compiler.h"
+#include "tokenizer.h"
+#include "treeform.h"
+#include "ast.h"
+#include <fstream>
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Compiler Issues
@@ -88,7 +92,7 @@ int compiler::compile(const char* const& inputPath, const char* const& outputPat
 		cout << IO_MAIN "Compilation finished with code: " << out << IO_NORM IO_END;
 		return out;
 	} catch (std::exception& e) {
-		cout << IO_ERR "An unknown error ocurred during compilation. This error is most likely an issue with the c++ compiler code, not your code. Sorry. The provided error message is as follows:\n" << e.what() << IO_NORM IO_END;
+		cout << IO_ERR "An unknown error occurred during compilation. This error is most likely an issue with the c++ compiler code, not your code. Sorry. The provided error message is as follows:\n" << e.what() << IO_NORM IO_END;
 	}
 
 	return 1;

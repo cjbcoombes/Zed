@@ -1,4 +1,13 @@
-#include "../utils/utils.h"
+#pragma once
+#include "../utils/code_location.h"
+#include "../utils/bytecode.h"
+#include <string>
+#include <vector>
+
+namespace compiler {
+	struct Token;
+	class TokenData;
+}
 
 namespace compiler::ast {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -145,26 +154,5 @@ namespace compiler::ast {
 		MacroNode(const Type macroType, const ExprType exprType, Node* const arg, const code_location loc);
 
 		void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) const override;
-	};
-
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// TODO: put this in ast.h once headers are figured out
-	// Tree
-
-	class Tree {
-		std::list<std::unique_ptr<Node>> nodes;
-		Node* root;
-
-	public:
-		Tree();
-
-		template<class N>
-		N* add(std::unique_ptr<N> node);
-
-		template<class N, class... Args>
-		N* addNode(Args&&... args);
-
-		void print(TokenData& tokenData, std::ostream& stream) const;
-		void setRoot(Node* const root);
 	};
 }

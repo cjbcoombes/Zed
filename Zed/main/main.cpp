@@ -1,4 +1,9 @@
 #include "main.h"
+#include "../assembler/assembler.h"
+#include "../disassembler/disassembler.h"
+#include "../vm/executor.h"
+#include "../compiler/compiler.h"
+#include "argparse.h"
 
 #define CHECK_ARGS(str) if (argc - i < 1) {cout << IO_ERR "Not enough arguments for " str IO_NORM IO_END;return 1;}
 #define ERR(str) std::cout << IO_ERR str IO_NORM IO_END; return 1
