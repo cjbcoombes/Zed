@@ -7,9 +7,9 @@ bytecode::Program::Program(std::iostream& program) {
 	// https://stackoverflow.com/questions/22984956/tellg-function-give-wrong-size-of-file
 	program.seekg(0, std::ios::beg);
 	program.ignore(std::numeric_limits<std::streamsize>::max());
-	std::streamsize length = program.gcount();
+	const std::streamsize length = program.gcount();
 
-	owner = std::make_unique<char[]>(length + FILLER_SIZE);
+	owner = std::make_unique<char[]>(static_cast<size_t>(length) + FILLER_SIZE);
 	start = owner.get();
 	ip = start;
 	end = start + length;
@@ -18,7 +18,7 @@ bytecode::Program::Program(std::iostream& program) {
 	program.seekg(0, std::ios::beg);
 	program.read(start, length);
 
-	std::fill(start + length, start + length + FILLER_SIZE, bytecode::Opcode::HALT);
+	std::fill_n(start + length, FILLER_SIZE, bytecode::Opcode::HALT);
 }
 
 char* bytecode::Program::pos() const noexcept {
@@ -37,7 +37,7 @@ bool bytecode::Program::inBounds() const noexcept {
 	return start <= ip && ip < end;
 }
 
-void bytecode::Program::goto_(types::word_t loc) noexcept {
+void bytecode::Program::goto_(const types::word_t loc) noexcept {
 	ip = start + loc;
 }
 

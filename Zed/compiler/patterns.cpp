@@ -12,7 +12,7 @@ compiler::ast::GroupMatch::GroupMatch(const MatchType type, const code_location 
 compiler::ast::FixedSizeMatch::FixedSizeMatch(const MatchType type, const code_location loc) : Match(type, loc), matches() {}
 
 compiler::ast::MatchData::MatchData(const TokenData& tokenData) : matches(), root(nullptr) {
-	GroupMatch* tempRoot = add(std::make_unique<GroupMatch>(MatchType::ROOT_GROUP, code_location()));
+	GroupMatch* const tempRoot = add(std::make_unique<GroupMatch>(MatchType::ROOT_GROUP, code_location()));
 	for (const Token& token : tokenData.getTokens()) {
 		tempRoot->matches.push_back(add(std::make_unique<TokenMatch>(&token)));
 	}
@@ -62,7 +62,7 @@ int compiler::ast::GroupingPattern::match(std::list<const Match*>& matches, Matc
 				GroupMatch* group = matchData.addMatch<GroupMatch>(groupType, token->loc);
 
 				group->matches.splice(group->matches.begin(), matches, std::next(openings.top().second), it);
-				int out = applyPatterns(group->matches, matchData, status, settings, stream);
+				const int out = applyPatterns(group->matches, matchData, status, settings, stream);
 
 				matches.insert(it, group);
 				--it;
@@ -122,6 +122,10 @@ int compiler::ast::GroupingPattern::match(std::list<const Match*>& matches, Matc
 					out = closeGroup(MatchType::CURLY_GROUP, CompilerIssue::Type::INVALID_CLOSING_CURLY);
 					if (out) return out;
 					break;
+
+				default:
+					// skip intentionally
+					break;
 			}
 		}
 	}
@@ -147,12 +151,16 @@ int compiler::ast::GroupingPattern::match(std::list<const Match*>& matches, Matc
 	return 0;
 }
 
+compiler::ast::FixedSizePattern::FixedSizePattern(il_t predicates, const MatchType matchType, const int linecolsource)
+	: predicates(predicates), matchType(matchType), linecolsource(linecolsource) {
+}
+
 int compiler::ast::FixedSizePattern::match(std::list<const Match*>& matches, MatchData& matchData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) {
 	for (auto start = matches.begin(); start != matches.end();) {
-		std::list<const Match*>::iterator ptr = start;
+		auto ptr = start;
 		bool matched = true;
 
-		for (auto pred = predicates.begin(); pred != predicates.end(); ++pred, ++ptr) {
+		for (auto pred = predicates.cbegin(); pred != predicates.cend(); ++pred, ++ptr) {
 			if (ptr == matches.end()) return 0; // no more matches possible
 			if (!(*pred)(*ptr)) {
 				matched = false;
@@ -169,10 +177,10 @@ int compiler::ast::FixedSizePattern::match(std::list<const Match*>& matches, Mat
 			start = matches.erase(start, ptr);
 
 			// Backtrack in case the new group now should be put in a match
-			int n = predicates.size();
+			size_t n = predicates.size();
 			while (n > 0 && start != matches.begin()) {
 				--start;
-				n--;
+				--n;
 			}
 		} else {
 			++start;
@@ -196,8 +204,8 @@ int compiler::ast::applyPatterns(std::list<const Match*>& matches, MatchData& ma
 	auto predTokens = [](std::initializer_list<TokenType> tokens) -> pred_t {
 		return [=](const Match* m) -> bool {
 			if (m->type != MatchType::TOKEN) return false;
-			TokenType tt = dynamic_cast<const TokenMatch*>(m)->token->type;
-			for (TokenType t : tokens) {
+			const TokenType tt = dynamic_cast<const TokenMatch*>(m)->token->type;
+			for (const TokenType t : tokens) {
 				if (t == tt) return true;
 			}
 			return false;

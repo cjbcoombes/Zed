@@ -20,9 +20,9 @@ int lookupString(const char* const match, const std::span<const char* const>& st
 // Flags Struct
 
 Flags::Flags() noexcept : bits(0) {}
-Flags::Flags(const int bits) noexcept : bits(bits) {}
+Flags::Flags(const bits_t bits) noexcept : bits(bits) {}
 
-bool Flags::hasFlags(const int flags) const noexcept {
+bool Flags::hasFlags(const bits_t flags) const noexcept {
 	return !(flags & (~bits));
 }
 
@@ -30,7 +30,7 @@ bool Flags::hasFlags(const Flags& other) const noexcept {
 	return hasFlags(other.bits);
 }
 
-void Flags::setFlags(const int flags) noexcept  {
+void Flags::setFlags(const bits_t flags) noexcept  {
 	bits |= flags;
 }
 
@@ -38,10 +38,10 @@ void Flags::setFlags(const Flags& other) noexcept {
 	setFlags(other.bits);
 }
 
-void Flags::unsetFlags(const int flags) noexcept {
+void Flags::unsetFlags(const bits_t flags) noexcept {
 	bits &= ~flags;
 }
 
-void Flags::toggleFlags(const int flags) noexcept {
+void Flags::toggleFlags(const bits_t flags) noexcept {
 	bits ^= flags;
 }

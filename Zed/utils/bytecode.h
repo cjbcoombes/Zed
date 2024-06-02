@@ -110,7 +110,7 @@ namespace bytecode {
 		[[nodiscard]] int offset() const noexcept;
 		[[nodiscard]] bool inBounds() const noexcept;
 
-		void goto_(types::word_t loc) noexcept;
+		void goto_(const types::word_t loc) noexcept;
 
 		template<typename T>
 		void read(T* val) noexcept;

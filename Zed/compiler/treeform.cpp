@@ -33,7 +33,24 @@ N* compiler::ast::Tree::addNode(Args&&... args) {
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Node Constructors
 
-compiler::ast::LiteralNode::LiteralNode(const Token* token) : Node(NodeType::LITERAL, token->loc), int_(0) {
+compiler::ast::Node::Node(const NodeType type, const code_location loc) : type(type), exprType(ExprType::primNoType), loc(loc) {}
+compiler::ast::Node::Node(const NodeType type, const ExprType exprType, const code_location loc) : type(type), exprType(exprType), loc(loc) {}
+
+compiler::ast::UnimplNode::UnimplNode(const char* const msg, const code_location loc) : Node(NodeType::UNIMPL, loc), msg(msg), nodes() {}
+
+compiler::ast::BlockNode::BlockNode(const code_location loc) : Node(NodeType::BLOCK, loc) {}
+
+compiler::ast::TokenNode::TokenNode(const Token* const token) : Node(NodeType::TOKEN, token->loc), token(token) {}
+
+compiler::ast::ArithBinopNode::ArithBinopNode(const Type opType, const ExprType exprType, Node* const left, Node* const right, const code_location loc)
+	: Node(NodeType::ARITH_BINOP, exprType, loc), left(left), right(right), opType(opType) {
+}
+
+compiler::ast::MacroNode::MacroNode(const Type macroType, const ExprType exprType, Node* const arg, const code_location loc)
+	: Node(NodeType::MACRO, exprType, loc), macroType(macroType), arg(arg) {
+}
+
+compiler::ast::LiteralNode::LiteralNode(const Token* const token) : Node(NodeType::LITERAL, token->loc), int_(0) {
 	switch (token->type) {
 		case TokenType::NUM_INT:
 			int_ = token->int_;
@@ -247,8 +264,10 @@ compiler::ast::treeres_t compiler::ast::FixedSizeMatch::formTree(Tree& tree, Com
 }
 
 int compiler::ast::formTree(ast::Tree& tree, const ast::MatchData& matchData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) {
-	auto res = matchData.root->formTree(tree, status, settings, stream);
-	tree.root = res.first;
+	auto res = matchData.getRoot()->formTree(tree, status, settings, stream);
+	if (!res.second) {
+		tree.setRoot(res.first);
+	}
 
 	return res.second;
 }

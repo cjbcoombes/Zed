@@ -575,7 +575,7 @@ int executor::exec_(std::iostream& file, const ExecutorSettings& settings, std::
 
 			case TIME:
 				program.read<reg_t>(&rid1);
-				wordReg[rid1].int_ = std::time(nullptr);
+				wordReg[rid1].int_ = static_cast<int_t>(std::time(nullptr));
 				break;
 
 			default:

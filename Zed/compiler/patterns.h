@@ -30,6 +30,7 @@ namespace compiler {
 			Match(const MatchType type, const code_location loc);
 			virtual ~Match() = default;
 
+			// Forms the tree version of this match, which means returning a Node* (or an error, hence treeres_t)
 			[[nodiscard]] virtual treeres_t formTree(Tree& tree, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) const;
 		};
 
@@ -85,6 +86,7 @@ namespace compiler {
 		public:
 			virtual ~Pattern() = default;
 
+			// Matches this pattern and splices the changes directly into the provided matches list
 			virtual int match(std::list<const Match*>& matches, MatchData& matchData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream);
 		};
 
@@ -96,18 +98,19 @@ namespace compiler {
 
 
 		// TODO: finish refactors for this class (privacy, const, no copying?)
-		// A general Pattern for fixed-size matches
+		// A general Pattern for fixed-size matches, which match based on a provided list of predicates
 		class FixedSizePattern : public Pattern {
 		public:
 			typedef std::function<bool(const Match*)> pred_t;
 			typedef std::initializer_list<pred_t>&& il_t;
 
+		private:
 			std::vector<pred_t> predicates;
 			MatchType matchType;
 			int linecolsource;
 
-			FixedSizePattern(std::initializer_list<pred_t>&& predicates, MatchType matchType, int linecolsource)
-				: predicates(predicates), matchType(matchType), linecolsource(linecolsource) {}
+		public:
+			FixedSizePattern(il_t predicates, const MatchType matchType, const int linecolsource);
 
 			int match(std::list<const Match*>& matches, MatchData& matchData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) override;
 		};

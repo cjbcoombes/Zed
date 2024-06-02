@@ -21,10 +21,10 @@ namespace compiler::ast {
 
 		PrimType type;
 
-		ExprType() : ExprType(ExprType::primNoType) {}
-		ExprType(PrimType type) : type(type) {}
+		ExprType();
+		explicit ExprType(const PrimType type);
 
-		void printSimple(std::ostream& stream);
+		void printSimple(std::ostream& stream) const;
 	};
 
 	bool sameType(const ExprType& a, const ExprType& b);
@@ -42,55 +42,50 @@ namespace compiler::ast {
 	};
 
 	// Parent Node
-	class Node {
-	public:
+	struct Node {
 		NodeType type;
 		ExprType exprType;
 		code_location loc;
 
-		Node(NodeType type, code_location loc) : type(type), loc(loc), exprType(ExprType::primNoType) {}
-		Node(NodeType type, ExprType exprType, code_location loc) : type(type), loc(loc), exprType(exprType) {}
+		Node(const NodeType type, const code_location loc);
+		Node(const NodeType type, const ExprType exprType, const code_location loc);
+		virtual ~Node() = default;
 
-		virtual void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last);
-		virtual void printSimple(TokenData& tokenData, std::ostream& stream);
-		void printType(std::ostream& stream);
+		virtual void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) const;
+		virtual void printSimple(TokenData& tokenData, std::ostream& stream) const;
+		void printType(std::ostream& stream) const;
 	};
 
 	// A Node for currently unimplemented cases
-	class UnimplNode : public Node {
-	public:
+	struct UnimplNode : Node {
 		std::string msg;
 		std::vector<Node*> nodes;
 
-		UnimplNode(const char* msg, code_location loc) : Node(NodeType::UNIMPL, loc), msg(msg), nodes() {}
-		//UnimplNode(std::string msg, code_location loc) : Node(NodeType::UNIMPL, loc), msg(msg) {}
+		UnimplNode(const char* const msg, const code_location loc);
 
-		void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) override;
+		void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) const override;
 	};
 
 	// A Node for a block (just a group of other Nodes)
-	class BlockNode : public Node {
-	public:
+	struct BlockNode : Node {
 		std::vector<Node*> nodes;
 
-		BlockNode(code_location loc) : Node(NodeType::BLOCK, loc) {}
+		explicit BlockNode(const code_location loc);
 
-		void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) override;
+		void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) const override;
 	};
 
 	// A Node for a token
-	class TokenNode : public Node {
-	public:
+	struct TokenNode : Node {
 		const Token* token;
 
-		TokenNode(const Token* const token) : Node(NodeType::TOKEN, token->loc), token(token) {}
+		explicit TokenNode(const Token* const token);
 
-		void printSimple(TokenData& tokenData, std::ostream& stream) override;
+		void printSimple(TokenData& tokenData, std::ostream& stream) const override;
 	};
 
-	// A Node for a binary arithmetic operaton
-	class ArithBinopNode : public Node {
-	public:
+	// A Node for a binary arithmetic operation
+	struct ArithBinopNode : Node {
 		enum class Type {
 			ADD, SUB, MUL, DIV
 		};
@@ -99,15 +94,13 @@ namespace compiler::ast {
 		Node* right;
 		Type opType;
 
-		ArithBinopNode(Type opType, ExprType exprType, Node* left, Node* right, code_location loc)
-			: Node(NodeType::ARITH_BINOP, exprType, loc), opType(opType), left(left), right(right) {}
+		ArithBinopNode(const Type opType, const ExprType exprType, Node* const left, Node* const right, const code_location loc);
 
-		void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) override;
+		void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) const override;
 	};
 
 	// A Node for literal values
-	class LiteralNode : public Node {
-	public:
+	struct LiteralNode : Node {
 		enum class Type {
 			INT, FLOAT, BOOL, CHAR
 		};
@@ -122,14 +115,13 @@ namespace compiler::ast {
 
 		Type litType;
 
-		LiteralNode(const Token* token);
+		explicit LiteralNode(const Token* const token);
 
-		void printSimple(TokenData& tokenData, std::ostream& stream) override;
+		void printSimple(TokenData& tokenData, std::ostream& stream) const override;
 	};
 
 	// A Node for Macros
-	class MacroNode : public Node {
-	public:
+	struct MacroNode : Node {
 		enum class Type {
 			HELLO_WORLD,
 			PRINT_I,
@@ -150,21 +142,21 @@ namespace compiler::ast {
 		Type macroType;
 		Node* arg;
 
-		MacroNode(Type macroType, ExprType exprType, Node* arg, code_location loc) 
-			: Node(NodeType::MACRO, exprType, loc), macroType(macroType), arg(arg) {}
+		MacroNode(const Type macroType, const ExprType exprType, Node* const arg, const code_location loc);
 
-		void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) override;
+		void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) const override;
 	};
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// TODO: put this in ast.h once headers are figured out
 	// Tree
 
 	class Tree {
-	public:
 		std::list<std::unique_ptr<Node>> nodes;
 		Node* root;
 
-		Tree() : nodes(), root(nullptr) {}
+	public:
+		Tree();
 
 		template<class N>
 		N* add(std::unique_ptr<N> node);
@@ -172,6 +164,7 @@ namespace compiler::ast {
 		template<class N, class... Args>
 		N* addNode(Args&&... args);
 
-		void print(TokenData& tokenData, std::ostream& stream);
+		void print(TokenData& tokenData, std::ostream& stream) const;
+		void setRoot(Node* const root);
 	};
 }

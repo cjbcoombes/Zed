@@ -151,7 +151,7 @@ namespace compiler {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// AST Functions
 
-	int makeAST(ast::Tree& tree, TokenData& tokenData, CompilerStatus& status, CompilerSettings& settings, std::ostream& stream);
+	int makeAST(ast::Tree& tree, const TokenData& tokenData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream);
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Bytecode Generation
