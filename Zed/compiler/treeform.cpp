@@ -55,7 +55,7 @@ compiler::ast::UnimplNode::UnimplNode(const char* const msg, const code_location
 
 compiler::ast::BlockNode::BlockNode(const code_location loc) : Node(NodeType::BLOCK, loc) {}
 
-compiler::ast::TokenNode::TokenNode(const Token* const token) : Node(NodeType::TOKEN, token->loc), token(token) {}
+compiler::ast::TokenNode::TokenNode(const tokens::Token* const token) : Node(NodeType::TOKEN, token->loc), token(token) {}
 
 compiler::ast::ArithBinopNode::ArithBinopNode(const Type opType, const ExprType exprType, Node* const left, Node* const right, const code_location loc)
 	: Node(NodeType::ARITH_BINOP, exprType, loc), left(left), right(right), opType(opType) {
@@ -65,7 +65,9 @@ compiler::ast::MacroNode::MacroNode(const Type macroType, const ExprType exprTyp
 	: Node(NodeType::MACRO, exprType, loc), macroType(macroType), arg(arg) {
 }
 
-compiler::ast::LiteralNode::LiteralNode(const Token* const token) : Node(NodeType::LITERAL, token->loc), int_(0) {
+compiler::ast::LiteralNode::LiteralNode(const tokens::Token* const token) : Node(NodeType::LITERAL, token->loc), int_(0) {
+	using tokens::TokenType;
+
 	switch (token->type) {
 		case TokenType::NUM_INT:
 			int_ = token->int_;
@@ -110,6 +112,8 @@ compiler::ast::treeres_t compiler::ast::Match::formTree(Tree& tree, CompilerStat
 }
 
 compiler::ast::treeres_t compiler::ast::TokenMatch::formTree(Tree& tree, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) const {
+	using tokens::TokenType;
+
 	switch (token->type) {
 		case TokenType::NUM_INT:
 		case TokenType::NUM_FLOAT:
@@ -162,6 +166,7 @@ static compiler::ast::treeres_t formArithBinop(const compiler::ast::FixedSizeMat
 											   std::ostream& stream) {
 	using namespace compiler::ast;
 	using namespace compiler;
+	using tokens::TokenType;
 
 	if (match.matches.size() != 3 || match.matches[1]->type != MatchType::TOKEN) {
 		throw std::logic_error("Binary Arithmetic Match doesn't have exactly 3 children, where the second is a token");
@@ -216,7 +221,7 @@ static compiler::ast::treeres_t formMacro(const compiler::ast::FixedSizeMatch& m
 
 	if (match.matches.size() != 3
 		|| match.matches[1]->type != MatchType::TOKEN
-		|| dynamic_cast<const TokenMatch*>(match.matches[1])->token->type != TokenType::IDENTIFIER) {
+		|| dynamic_cast<const TokenMatch*>(match.matches[1])->token->type != tokens::TokenType::IDENTIFIER) {
 		throw std::logic_error("Macro Match doesn't have exactly three children, the second of which is an identifier");
 	}
 

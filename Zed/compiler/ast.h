@@ -5,7 +5,9 @@ namespace compiler {
 	class CompilerStatus;
 	struct CompilerSettings;
 
-	class TokenData;
+	namespace tokens {
+		class TokenData;
+	}
 
 	namespace ast {
 		class MatchData;
@@ -19,7 +21,7 @@ namespace compiler::ast {
 	// AST Functions
 
 	// Make the AST from the TokenData
-	int makeAST(ast::Tree& tree, const TokenData& tokenData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream);
+	int makeAST(ast::Tree& tree, const tokens::TokenData& tokenData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream);
 }
 
 

@@ -11,7 +11,7 @@ namespace compiler {
 	struct CompilerSettings;
 }
 
-namespace compiler {
+namespace compiler::tokens {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Tokenizer Constants?
 	constexpr int MAX_TOKEN_STR_LEN = 1024;

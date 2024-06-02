@@ -19,7 +19,7 @@ std::string compiler::CompilerIssue::what() const {
 	}
 }
 
-void compiler::CompilerIssue::print(const TokenData& tokenData, std::ostream& stream) const {
+void compiler::CompilerIssue::print(const tokens::TokenData& tokenData, std::ostream& stream) const {
 	const char* starter = IO_INFO;
 	switch (level()) {
 		case Level::WARN:
@@ -59,7 +59,7 @@ compiler::CompilerIssue::Level compiler::CompilerIssue::level() const {
 
 compiler::CompilerStatus::CompilerStatus() : issues(), abort(false) {}
 
-void compiler::CompilerStatus::print(const TokenData& tokenData, std::ostream& stream) const {
+void compiler::CompilerStatus::print(const tokens::TokenData& tokenData, std::ostream& stream) const {
 	for (const CompilerIssue& issue : issues) {
 		issue.print(tokenData, stream);
 	}
@@ -105,7 +105,7 @@ int compiler::compile_(std::iostream& inputFile, std::iostream& outputFile, Comp
 
 	CompilerStatus status;
 
-	TokenData tokenData;
+	tokens::TokenData tokenData;
 	stream << IO_MAIN "Tokenizing..." IO_NORM "\n";
 	out = tokenize(inputFile, tokenData, status, settings, stream);
 	stream << IO_MAIN "Tokenization finished with code: " << out << IO_NORM "\n";

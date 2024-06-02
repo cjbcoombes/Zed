@@ -8,15 +8,15 @@
 
 compiler::ast::Match::Match(const MatchType type, const code_location loc) : type(type), loc(loc) {}
 
-compiler::ast::TokenMatch::TokenMatch(const Token* const token) : Match(MatchType::TOKEN, token->loc), token(token) {}
+compiler::ast::TokenMatch::TokenMatch(const tokens::Token* const token) : Match(MatchType::TOKEN, token->loc), token(token) {}
 
 compiler::ast::GroupMatch::GroupMatch(const MatchType type, const code_location loc) : Match(type, loc) {}
 
 compiler::ast::FixedSizeMatch::FixedSizeMatch(const MatchType type, const code_location loc) : Match(type, loc), matches() {}
 
-compiler::ast::MatchData::MatchData(const TokenData& tokenData) : matches(), root(nullptr) {
+compiler::ast::MatchData::MatchData(const tokens::TokenData& tokenData) : matches(), root(nullptr) {
 	GroupMatch* const tempRoot = add(std::make_unique<GroupMatch>(MatchType::ROOT_GROUP, code_location()));
-	for (const Token& token : tokenData.getTokens()) {
+	for (const tokens::Token& token : tokenData.getTokens()) {
 		tempRoot->matches.push_back(add(std::make_unique<TokenMatch>(&token)));
 	}
 
@@ -50,6 +50,8 @@ int compiler::ast::Pattern::match(std::list<const Match*>& matches, MatchData& m
 }
 
 int compiler::ast::GroupingPattern::match(std::list<const Match*>& matches, MatchData& matchData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) {
+	using tokens::TokenType;
+	using tokens::Token;
 
 	std::stack<std::pair<MatchType, std::list<const Match*>::iterator>> openings;
 	auto it = matches.begin();
@@ -197,6 +199,7 @@ int compiler::ast::applyPatterns(std::list<const Match*>& matches, MatchData& ma
 	typedef FixedSizePattern::pred_t pred_t;
 	// Allows type deduction for use of initializer_list in make_unique
 	typedef FixedSizePattern::il_t il_t;
+	using tokens::TokenType;
 
 	pred_t predTrue = [](const Match* m) -> bool { return true; };
 	auto predToken = [](TokenType t) -> pred_t {
@@ -232,7 +235,7 @@ int compiler::ast::applyPatterns(std::list<const Match*>& matches, MatchData& ma
 	return 0;
 }
 
-int compiler::ast::matchPatterns(const TokenData& tokenData, ast::MatchData& matchData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) {
+int compiler::ast::matchPatterns(const tokens::TokenData& tokenData, ast::MatchData& matchData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) {
 	using namespace compiler::ast;
 
 	const int out = applyPatterns(matchData.getRoot()->matches, matchData, status, settings, stream);

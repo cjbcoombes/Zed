@@ -2,7 +2,7 @@
 #include "patterns.h"
 #include "treeform.h"
 
-int compiler::ast::makeAST(ast::Tree& tree, const TokenData& tokenData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) {
+int compiler::ast::makeAST(ast::Tree& tree, const tokens::TokenData& tokenData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) {
 	ast::MatchData matchData(tokenData);
 
 	int out = ast::matchPatterns(tokenData, matchData, status, settings, stream);

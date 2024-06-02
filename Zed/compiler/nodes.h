@@ -5,8 +5,10 @@
 #include <vector>
 
 namespace compiler {
-	struct Token;
-	class TokenData;
+	namespace tokens {
+		struct Token;
+		class TokenData;
+	}
 }
 
 namespace compiler::ast {
@@ -60,8 +62,8 @@ namespace compiler::ast {
 		Node(const NodeType type, const ExprType exprType, const code_location loc);
 		virtual ~Node() = default;
 
-		virtual void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) const;
-		virtual void printSimple(TokenData& tokenData, std::ostream& stream) const;
+		virtual void print(tokens::TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) const;
+		virtual void printSimple(tokens::TokenData& tokenData, std::ostream& stream) const;
 		void printType(std::ostream& stream) const;
 	};
 
@@ -72,7 +74,7 @@ namespace compiler::ast {
 
 		UnimplNode(const char* const msg, const code_location loc);
 
-		void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) const override;
+		void print(tokens::TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) const override;
 	};
 
 	// A Node for a block (just a group of other Nodes)
@@ -81,16 +83,16 @@ namespace compiler::ast {
 
 		explicit BlockNode(const code_location loc);
 
-		void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) const override;
+		void print(tokens::TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) const override;
 	};
 
 	// A Node for a token
 	struct TokenNode : Node {
-		const Token* token;
+		const tokens::Token* token;
 
-		explicit TokenNode(const Token* const token);
+		explicit TokenNode(const tokens::Token* const token);
 
-		void printSimple(TokenData& tokenData, std::ostream& stream) const override;
+		void printSimple(tokens::TokenData& tokenData, std::ostream& stream) const override;
 	};
 
 	// A Node for a binary arithmetic operation
@@ -105,7 +107,7 @@ namespace compiler::ast {
 
 		ArithBinopNode(const Type opType, const ExprType exprType, Node* const left, Node* const right, const code_location loc);
 
-		void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) const override;
+		void print(tokens::TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) const override;
 	};
 
 	// A Node for literal values
@@ -124,9 +126,9 @@ namespace compiler::ast {
 
 		Type litType;
 
-		explicit LiteralNode(const Token* const token);
+		explicit LiteralNode(const tokens::Token* const token);
 
-		void printSimple(TokenData& tokenData, std::ostream& stream) const override;
+		void printSimple(tokens::TokenData& tokenData, std::ostream& stream) const override;
 	};
 
 	// A Node for Macros
@@ -153,6 +155,6 @@ namespace compiler::ast {
 
 		MacroNode(const Type macroType, const ExprType exprType, Node* const arg, const code_location loc);
 
-		void print(TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) const override;
+		void print(tokens::TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) const override;
 	};
 }

@@ -6,7 +6,9 @@ namespace compiler {
 	struct CompilerSettings;
 	class CompilerStatus;
 
-	class TokenData;
+	namespace tokens {
+		class TokenData;
+	}
 
 	namespace ast {
 		class MatchData;
@@ -32,7 +34,7 @@ namespace compiler::ast {
 		template<class N, class... Args>
 		N* addNode(Args&&... args);
 
-		void print(TokenData& tokenData, std::ostream& stream) const;
+		void print(tokens::TokenData& tokenData, std::ostream& stream) const;
 		void setRoot(Node* const root);
 	};
 

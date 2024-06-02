@@ -10,14 +10,14 @@ static bool isIdChar(const char c) {
 }
 
 static bool isSymbolChar(const char c) {
-	for (const char& symb : compiler::symbolChars) {
+	for (const char& symb : compiler::tokens::symbolChars) {
 		if (symb == c) return true;
 	}
 	return false;
 }
 
-static bool isTypeToken(const compiler::TokenType type) {
-	using namespace compiler;
+static bool isTypeToken(const compiler::tokens::TokenType type) {
+	using namespace compiler::tokens;
 
 	return type == TokenType::TYPE_BOOL
 		|| type == TokenType::TYPE_CHAR
@@ -70,8 +70,8 @@ static float parseFloat(char str[], const int strlen, const float base) {
 	return out;
 }
 
-static void putSymbols(const char* const str, const int slen, const code_location& loc, compiler::TokenData& outputData) {
-	using namespace compiler;
+static void putSymbols(const char* const str, const int slen, const code_location& loc, compiler::tokens::TokenData& outputData) {
+	using namespace compiler::tokens;
 	if (slen == 0) return;
 	if (slen == 1) {
 		for (int i = 0; i < symbolCount; i++) {
@@ -108,23 +108,23 @@ static void putSymbols(const char* const str, const int slen, const code_locatio
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // TokenData
 
-compiler::Token* compiler::TokenData::put(const TokenType type, const code_location& loc) {
+compiler::tokens::Token* compiler::tokens::TokenData::put(const TokenType type, const code_location& loc) {
 	tokens.emplace_back(type, loc);
 	return &tokens.back();
 }
-void compiler::TokenData::putInt(const int val, const code_location& loc) {
+void compiler::tokens::TokenData::putInt(const int val, const code_location& loc) {
 	put(TokenType::NUM_INT, loc)->int_ = val;
 }
-void compiler::TokenData::putFloat(const float val, const code_location& loc) {
+void compiler::tokens::TokenData::putFloat(const float val, const code_location& loc) {
 	put(TokenType::NUM_FLOAT, loc)->float_ = val;
 }
-void compiler::TokenData::putChar(const char val, const code_location& loc) {
+void compiler::tokens::TokenData::putChar(const char val, const code_location& loc) {
 	put(TokenType::CHAR, loc)->char_ = val;
 }
-void compiler::TokenData::putType(const TokenType type, const code_location& loc) {
+void compiler::tokens::TokenData::putType(const TokenType type, const code_location& loc) {
 	tokens.emplace_back(type, loc);
 }
-void compiler::TokenData::putStr(const TokenType type, const code_location& loc, const std::string& str) {
+void compiler::tokens::TokenData::putStr(const TokenType type, const code_location& loc, const std::string& str) {
 	std::string* strPtr = nullptr;
 	for (auto i = strList.begin(); i != strList.end(); ++i) {
 		if ((*i) == str) {
@@ -141,11 +141,11 @@ void compiler::TokenData::putStr(const TokenType type, const code_location& loc,
 	put(type, loc)->str = strPtr;
 }
 
-void compiler::TokenData::newLine(const int location) {
+void compiler::tokens::TokenData::newLine(const int location) {
 	lineStarts.push_back(location);
 }
 
-std::string_view compiler::TokenData::getLine(const int line) const {
+std::string_view compiler::tokens::TokenData::getLine(const int line) const {
 	const int size = lineStarts.size();
 
 	if (line >= size) {
@@ -157,18 +157,18 @@ std::string_view compiler::TokenData::getLine(const int line) const {
 	}
 }
 
-void compiler::TokenData::newChar(const char c) {
+void compiler::tokens::TokenData::newChar(const char c) {
 	content << c;
 }
 
-const std::list<compiler::Token>& compiler::TokenData::getTokens() const noexcept {
+const std::list<compiler::tokens::Token>& compiler::tokens::TokenData::getTokens() const noexcept {
 	return tokens;
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Tokenizer Functions
 
-int compiler::tokenize(std::iostream& inputFile, TokenData& outputData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) {
+int compiler::tokens::tokenize(std::iostream& inputFile, TokenData& outputData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) {
 	// Go to the start of the file
 	inputFile.clear();
 	inputFile.seekg(0, std::ios::beg);
@@ -466,7 +466,7 @@ int compiler::tokenize(std::iostream& inputFile, TokenData& outputData, Compiler
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Printing Functions
 
-void compiler::printTokens(const TokenData& tokenData, std::ostream& stream) {
+void compiler::tokens::printTokens(const TokenData& tokenData, std::ostream& stream) {
 	int line = 0;
 	stream << IO_NORM;
 	for (const Token& t : tokenData.getTokens()) {
@@ -478,7 +478,7 @@ void compiler::printTokens(const TokenData& tokenData, std::ostream& stream) {
 	stream << '\n';
 }
 
-void compiler::printToken(const Token& t, std::ostream& stream) {
+void compiler::tokens::printToken(const Token& t, std::ostream& stream) {
 	const int type = static_cast<int>(t.type);
 
 	if (t.type == TokenType::STRING) {

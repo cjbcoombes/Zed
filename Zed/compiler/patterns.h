@@ -9,8 +9,10 @@ namespace compiler {
 	struct CompilerSettings;
 	class CompilerStatus;
 
-	struct Token;
-	class TokenData;
+	namespace tokens {
+		struct Token;
+		class TokenData;
+	}
 
 	namespace ast {
 		struct Node;
@@ -50,9 +52,9 @@ namespace compiler::ast {
 
 	// A Match of just a token
 	struct TokenMatch : Match {
-		const Token* token;
+		const tokens::Token* token;
 
-		explicit TokenMatch(const Token* const token);
+		explicit TokenMatch(const tokens::Token* const token);
 
 		[[nodiscard]] treeres_t formTree(Tree& tree, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) const override;
 	};
@@ -81,7 +83,7 @@ namespace compiler::ast {
 		GroupMatch* root;
 
 	public:
-		explicit MatchData(const TokenData& tokenData);
+		explicit MatchData(const tokens::TokenData& tokenData);
 
 		template<class M>
 		M* add(std::unique_ptr<M> match);
@@ -133,5 +135,5 @@ namespace compiler::ast {
 	int applyPatterns(std::list<const Match*>& matches, MatchData& matchData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream);
 
 	// Turns the list of tokens into a tree of matched patterns
-	int matchPatterns(const TokenData& tokenData, ast::MatchData& matchData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream);
+	int matchPatterns(const tokens::TokenData& tokenData, ast::MatchData& matchData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream);
 }

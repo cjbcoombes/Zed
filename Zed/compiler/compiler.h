@@ -8,8 +8,10 @@ namespace compiler {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Forward Declarations
 
-	struct Token;
-	class TokenData;
+	namespace tokens {
+		struct Token;
+		class TokenData;
+	}
 
 	namespace ast {
 		class Tree;
@@ -124,7 +126,7 @@ namespace compiler {
 
 		[[nodiscard]] std::string what() const;
 		[[nodiscard]] Level level() const;
-		void print(const TokenData& tokenData, std::ostream& stream) const;
+		void print(const tokens::TokenData& tokenData, std::ostream& stream) const;
 	};
 
 	// The compiler status, which collects compiler issues throughout compilation
@@ -145,7 +147,7 @@ namespace compiler {
 			}
 		}
 
-		void print(const TokenData& tokenData, std::ostream& stream) const;
+		void print(const tokens::TokenData& tokenData, std::ostream& stream) const;
 	};
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
