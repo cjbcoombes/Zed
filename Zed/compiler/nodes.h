@@ -3,6 +3,9 @@
 #include "../utils/bytecode.h"
 #include <string>
 #include <vector>
+#include <string_view>
+#include <optional>
+#include <list>
 
 namespace compiler {
 	namespace tokens {
@@ -15,30 +18,53 @@ namespace compiler::ast {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Types
 
+	// "Primitive" expression types
+	enum class PrimType {
+		ERR, VOID, INT, FLOAT, BOOL, CHAR
+	};
+	constexpr int primTypeCount = 7;
+
+	class TypeData {
+		friend struct ExprType;
+
+		struct Type {
+			std::vector<const Type*> subtypes;
+			std::optional<std::string*> name;
+
+			Type();
+			explicit Type(std::vector<const Type*>&& subtypes);
+			Type(std::vector<const Type*>&& subtypes, std::string* name);
+		};
+
+		std::list<Type> types;
+		Type* prims[primTypeCount];
+
+	public:
+		TypeData();
+
+		static [[nodiscard]] ExprType none();
+		[[nodiscard]] ExprType err() const;
+		[[nodiscard]] ExprType prim(PrimType primType) const;
+		[[nodiscard]] ExprType tuple(std::vector<const Type*>&& subtypes);
+
+		[[nodiscard]] static bool isNoneType(const ExprType& t);
+		[[nodiscard]] bool sameType(const ExprType& a, const ExprType& b) const;
+		[[nodiscard]] bool sameType(const ExprType& a, PrimType primType) const;
+
+		void printType(const ExprType& type, std::ostream& stream) const;
+	};
+
 	// A type in the type system
 	// Currently not fleshed-out. Just primitives
 	struct ExprType {
-		enum class PrimType {
-			NONE, ERR, VOID, INT, FLOAT, BOOL, CHAR
-		};
+		friend class TypeData;
 
-		static const ExprType primNoType;
-		static const ExprType primErrType;
-		static const ExprType primVoid;
-		static const ExprType primInt;
-		static const ExprType primFloat;
-		static const ExprType primBool;
-		static const ExprType primChar;
-
-		PrimType type;
-
-		ExprType();
-		explicit ExprType(const PrimType type);
-
-		void printSimple(std::ostream& stream) const;
+	private:
+		TypeData::Type* type;
+		// no type is nullptr
+		
+		explicit ExprType(TypeData::Type* type);
 	};
-
-	bool sameType(const ExprType& a, const ExprType& b);
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Nodes
@@ -49,7 +75,8 @@ namespace compiler::ast {
 		BLOCK,
 		ARITH_BINOP,
 		LITERAL,
-		MACRO
+		MACRO,
+		TYPE
 	};
 
 	// Parent Node
@@ -62,9 +89,9 @@ namespace compiler::ast {
 		Node(const NodeType type, const ExprType exprType, const code_location loc);
 		virtual ~Node() = default;
 
-		virtual void print(tokens::TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) const;
-		virtual void printSimple(tokens::TokenData& tokenData, std::ostream& stream) const;
-		void printType(std::ostream& stream) const;
+		virtual void print(const TypeData& typeData, std::ostream& stream, std::string&& indent, bool last) const;
+		virtual void printSimple(const TypeData& typeData, std::ostream& stream) const;
+		void printType(const TypeData& typeData, std::ostream& stream) const;
 	};
 
 	// A Node for currently unimplemented cases
@@ -74,7 +101,7 @@ namespace compiler::ast {
 
 		UnimplNode(const char* const msg, const code_location loc);
 
-		void print(tokens::TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) const override;
+		void print(const TypeData& typeData, std::ostream& stream, std::string&& indent, bool last) const override;
 	};
 
 	// A Node for a block (just a group of other Nodes)
@@ -83,7 +110,7 @@ namespace compiler::ast {
 
 		explicit BlockNode(const code_location loc);
 
-		void print(tokens::TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) const override;
+		void print(const TypeData& typeData, std::ostream& stream, std::string&& indent, bool last) const override;
 	};
 
 	// A Node for a token
@@ -92,7 +119,7 @@ namespace compiler::ast {
 
 		explicit TokenNode(const tokens::Token* const token);
 
-		void printSimple(tokens::TokenData& tokenData, std::ostream& stream) const override;
+		void printSimple(const TypeData& typeData, std::ostream& stream) const override;
 	};
 
 	// A Node for a binary arithmetic operation
@@ -107,7 +134,7 @@ namespace compiler::ast {
 
 		ArithBinopNode(const Type opType, const ExprType exprType, Node* const left, Node* const right, const code_location loc);
 
-		void print(tokens::TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) const override;
+		void print(const TypeData& typeData, std::ostream& stream, std::string&& indent, bool last) const override;
 	};
 
 	// A Node for literal values
@@ -126,9 +153,9 @@ namespace compiler::ast {
 
 		Type litType;
 
-		explicit LiteralNode(const tokens::Token* const token);
+		LiteralNode(const tokens::Token* const token, const TypeData& typeData, const code_location loc);
 
-		void printSimple(tokens::TokenData& tokenData, std::ostream& stream) const override;
+		void printSimple(const TypeData& typeData, std::ostream& stream) const override;
 	};
 
 	// A Node for Macros
@@ -155,6 +182,14 @@ namespace compiler::ast {
 
 		MacroNode(const Type macroType, const ExprType exprType, Node* const arg, const code_location loc);
 
-		void print(tokens::TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) const override;
+		void print(const TypeData& typeData, std::ostream& stream, std::string&& indent, bool last) const override;
+	};
+
+	struct TypeNode : Node {
+		ExprType repType;
+
+		TypeNode(const ExprType repType, const code_location loc);
+
+		void printSimple(const TypeData& typeData, std::ostream& stream) const override;
 	};
 }

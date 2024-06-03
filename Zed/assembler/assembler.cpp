@@ -16,8 +16,8 @@ assembler::AssemblerException::AssemblerException(const ErrorType eType, const i
 assembler::AssemblerException::AssemblerException(const ErrorType eType, const int line, const int column, const char* extra)
 	: std::runtime_error(std::string(errorTypeStrings[static_cast<int>(eType)]) + " : " + extra), eType(eType), line(line), column(column) {}
 
-assembler::AssemblerException::AssemblerException(const ErrorType eType, const int line, const int column, const std::string& extra)
-	: std::runtime_error(std::string(errorTypeStrings[static_cast<int>(eType)]) + " : " + extra), eType(eType), line(line), column(column) {}
+assembler::AssemblerException::AssemblerException(const ErrorType eType, const int line, const int column, std::string extra)
+	: std::runtime_error(std::string(errorTypeStrings[static_cast<int>(eType)]) + " : " + std::move(extra)), eType(eType), line(line), column(column) {}
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Parsing Helper Functions

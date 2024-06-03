@@ -4,12 +4,6 @@
 #include "treeform.h"
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Types
-
-compiler::ast::ExprType::ExprType() : ExprType(ExprType::primNoType) {}
-compiler::ast::ExprType::ExprType(const PrimType type) : type(type) {}
-
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Node/Tree Printing
 
 #define TREE_BRANCH_MID "+-- "
@@ -18,72 +12,64 @@ compiler::ast::ExprType::ExprType(const PrimType type) : type(type) {}
 #define TREE_PASS "|   "
 #define TYPE_CONN " -> "
 
-void compiler::ast::ExprType::printSimple(std::ostream& stream) const {
-	switch (type) {
-		case PrimType::NONE:
-			stream << "*";
-			break;
-		case PrimType::ERR:
-			stream << IO_FMT_ERR("err-type");
-			break;
-		case PrimType::VOID:
-			stream << IO_FMT_KEYWORD("void");
-			break;
-		case PrimType::INT:
-			stream << IO_FMT_KEYWORD("int");
-			break;
-		case PrimType::FLOAT:
-			stream << IO_FMT_KEYWORD("float");
-			break;
-		case PrimType::CHAR:
-			stream << IO_FMT_KEYWORD("char");
-			break;
-		case PrimType::BOOL:
-			stream << IO_FMT_KEYWORD("bool");
-			break;
-		default:
-			stream << "Complex Type"; // TODO: make good
+void compiler::ast::TypeData::printType(const ExprType& type, std::ostream& stream) const {
+	if (type.type == nullptr) {
+		stream << "*";
+	} else if (type.type == prims[static_cast<int>(PrimType::ERR)]) {
+		stream << IO_FMT_ERR("err-type");
+	} else if (type.type == prims[static_cast<int>(PrimType::VOID)]) {
+		stream << IO_FMT_KEYWORD("void");
+	} else if (type.type == prims[static_cast<int>(PrimType::INT)]) {
+		stream << IO_FMT_KEYWORD("int");
+	} else if (type.type == prims[static_cast<int>(PrimType::FLOAT)]) {
+		stream << IO_FMT_KEYWORD("float");
+	} else if (type.type == prims[static_cast<int>(PrimType::CHAR)]) {
+		stream << IO_FMT_KEYWORD("char");
+	} else if (type.type == prims[static_cast<int>(PrimType::BOOL)]) {
+		stream << IO_FMT_KEYWORD("bool");
+	} else {
+		stream << "Complex Type";
 	}
 }
 
-void compiler::ast::Node::print(tokens::TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) const {
+void compiler::ast::Node::print(const TypeData& typeData, std::ostream& stream, std::string&& indent, bool last) const {
 	stream << indent;
 	if (last) stream << TREE_BRANCH_END;
 	else stream << TREE_BRANCH_MID;
-	printSimple(tokenData, stream);
-	printType(stream);
+	printSimple(typeData, stream);
+	printType(typeData, stream);
 	stream << '\n';
 }
 
-void compiler::ast::Node::printSimple(tokens::TokenData& tokenData, std::ostream& stream) const {
+void compiler::ast::Node::printSimple(const TypeData& typeData, std::ostream& stream) const {
 	stream << "??? Node ???";
 }
 
-void compiler::ast::Node::printType(std::ostream& stream) const {
-	if (!sameType(exprType, ExprType::primNoType)) {
+void compiler::ast::Node::printType(const TypeData& typeData, std::ostream& stream) const {
+	if (!typeData.isNoneType(exprType)) {
 		stream << TYPE_CONN;
-		exprType.printSimple(stream);
+		typeData.printType(exprType, stream);
 	}
 }
 
-void compiler::ast::UnimplNode::print(tokens::TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) const {
+void compiler::ast::UnimplNode::print(const TypeData& typeData, std::ostream& stream, std::string&& indent, bool last) const {
 	stream << indent;
 	if (last) stream << TREE_BRANCH_END;
 	else stream << TREE_BRANCH_MID;
 	stream << "Unimplemented ( " << msg << " )\n";
 
 	for (auto i = nodes.cbegin(); i != nodes.cend(); i++) {
-		(*i)->print(tokenData, stream, indent + (last ? TREE_SPACE : TREE_PASS), std::next(i) == nodes.end());
+		(*i)->print(typeData, stream, indent + (last ? TREE_SPACE : TREE_PASS), std::next(i) == nodes.end());
 	}
 }
 
-void compiler::ast::TokenNode::printSimple(tokens::TokenData& tokenData, std::ostream& stream) const {
+void compiler::ast::TokenNode::printSimple(const TypeData& typeData, std::ostream& stream) const {
 	stream << "Token ( ";
 	compiler::tokens::printToken(*token, stream);
 	stream << " )";
 }
 
-void compiler::ast::LiteralNode::printSimple(tokens::TokenData& tokenData, std::ostream& stream) const {
+void compiler::ast::LiteralNode::printSimple(const TypeData& typeData, std::ostream& stream) const {
 	stream << "Lit ( ";
 	switch (litType) {
 		case Type::INT:
@@ -102,20 +88,20 @@ void compiler::ast::LiteralNode::printSimple(tokens::TokenData& tokenData, std::
 	stream << " )";
 }
 
-void compiler::ast::BlockNode::print(tokens::TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) const {
+void compiler::ast::BlockNode::print(const TypeData& typeData, std::ostream& stream, std::string&& indent, bool last) const {
 	stream << indent;
 	if (last) stream << TREE_BRANCH_END;
 	else stream << TREE_BRANCH_MID;
 	stream << "Block";
-	printType(stream);
+	printType(typeData, stream);
 	stream << '\n';
 
 	for (auto i = nodes.cbegin(); i != nodes.cend(); i++) {
-		(*i)->print(tokenData, stream, indent + (last ? TREE_SPACE : TREE_PASS), std::next(i) == nodes.end());
+		(*i)->print(typeData, stream, indent + (last ? TREE_SPACE : TREE_PASS), std::next(i) == nodes.end());
 	}
 }
 
-void compiler::ast::ArithBinopNode::print(tokens::TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) const {
+void compiler::ast::ArithBinopNode::print(const TypeData& typeData, std::ostream& stream, std::string&& indent, bool last) const {
 	stream << indent;
 	if (last) stream << TREE_BRANCH_END;
 	else stream << TREE_BRANCH_MID;
@@ -125,27 +111,33 @@ void compiler::ast::ArithBinopNode::print(tokens::TokenData& tokenData, std::ost
 	else if (opType == Type::MUL) stream << "*";
 	else if (opType == Type::DIV) stream << "/";
 	stream << " )";
-	printType(stream);
+	printType(typeData, stream);
 	stream << '\n';
 
-	left->print(tokenData, stream, indent + (last ? TREE_SPACE : TREE_PASS), false);
-	right->print(tokenData, stream, indent + (last ? TREE_SPACE : TREE_PASS), true);
+	left->print(typeData, stream, indent + (last ? TREE_SPACE : TREE_PASS), false);
+	right->print(typeData, stream, indent + (last ? TREE_SPACE : TREE_PASS), true);
 }
 
-void compiler::ast::MacroNode::print(tokens::TokenData& tokenData, std::ostream& stream, std::string&& indent, bool last) const {
+void compiler::ast::MacroNode::print(const TypeData& typeData, std::ostream& stream, std::string&& indent, bool last) const {
 	stream << indent;
 	if (last) stream << TREE_BRANCH_END;
 	else stream << TREE_BRANCH_MID;
 	stream << "Arith Binop ( #";
 	stream << macroStrings[static_cast<int>(macroType)];
 	stream << " )";
-	printType(stream);
+	printType(typeData, stream);
 	stream << '\n';
 
-	arg->print(tokenData, stream, indent + (last ? TREE_SPACE : TREE_PASS), true);
+	arg->print(typeData, stream, indent + (last ? TREE_SPACE : TREE_PASS), true);
 }
 
-void compiler::ast::Tree::print(tokens::TokenData& tokenData, std::ostream& stream) const {
-	if (root) root->print(tokenData, stream, "", true);
+void compiler::ast::TypeNode::printSimple(const TypeData& typeData, std::ostream& stream) const {
+	stream << "Type ( ";
+	typeData.printType(repType, stream);
+	stream << " )";
+}
+
+void compiler::ast::Tree::print(std::ostream& stream) const {
+	if (root) root->print(typeData, stream, "", true);
 	else stream << "[tree root not set]";
 }

@@ -72,6 +72,7 @@ namespace compiler::tokens {
 		RIGHT_ANGLE_EQUALS,
 		PLUS_PLUS,
 		DASH_DASH,
+		DASH_RIGHT_ANGLE,
 		SLASH_SLASH,
 		SLASH_STAR,
 		STAR_SLASH,
@@ -88,6 +89,11 @@ namespace compiler::tokens {
 		TRUE,
 		FALSE,
 		FUN,
+		TYPE,
+		MIXED,
+		NARROW,
+		LET,
+		DEFAULT,
 		// Primitive typenames (included in keywords)
 		TYPE_INT,
 		TYPE_FLOAT,
@@ -120,6 +126,7 @@ namespace compiler::tokens {
 		"+=", "-=", "*=", "/=", "%=",
 		"==", "<=", ">=",
 		"++", "--",
+		"->",
 		"//", "/*", "*/"
 	};
 	constexpr int maxMultiSymbolLen = 7; // THIS HAS TO BE THE SIZE OF THE LARGEST SYMBOL
@@ -141,6 +148,11 @@ namespace compiler::tokens {
 		"true",
 		"false",
 		"fun",
+		"type",
+		"mixed",
+		"narrow",
+		"let",
+		"default",
 		"int",
 		"float",
 		"bool",
@@ -192,7 +204,7 @@ namespace compiler::tokens {
 		void putFloat(const float val, const code_location& loc);
 		void putChar(const char val, const code_location& loc);
 		void putType(const TokenType type, const code_location& loc);
-		void putStr(const TokenType type, const code_location& loc, const std::string& str);
+		void putStr(const TokenType type, const code_location& loc, std::string str);
 
 		void newLine(const int location);
 		[[nodiscard]] std::string_view getLine(const int line) const;

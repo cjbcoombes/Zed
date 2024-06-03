@@ -122,7 +122,7 @@ namespace compiler {
 
 		CompilerIssue(const Type& type, const code_location loc);
 		CompilerIssue(const Type& type, const code_location loc, const char* const& extra);
-		CompilerIssue(const Type& type, const code_location loc, const std::string& extra);
+		CompilerIssue(const Type& type, const code_location loc, std::string extra);
 
 		[[nodiscard]] std::string what() const;
 		[[nodiscard]] Level level() const;

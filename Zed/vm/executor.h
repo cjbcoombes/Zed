@@ -46,7 +46,6 @@ namespace executor {
 	public:
 		ExecutorException(const ErrorType eType, const int loc);
 		ExecutorException(const ErrorType eType, const int loc, const char* const extra);
-		//ExecutorException(const ErrorType eType, const int loc, const std::string& extra);
 
 		[[nodiscard]] int getLoc() const noexcept;
 	};

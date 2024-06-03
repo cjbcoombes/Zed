@@ -11,8 +11,8 @@ disassembler::DisassemblerException::DisassemblerException(const ErrorType eType
 disassembler::DisassemblerException::DisassemblerException(const ErrorType eType, const char* extra)
 	: std::runtime_error(std::string(errorTypeStrings[static_cast<int>(eType)]) + " : " + extra), eType(eType) {}
 
-disassembler::DisassemblerException::DisassemblerException(const ErrorType eType, const std::string& extra)
-	: std::runtime_error(std::string(errorTypeStrings[static_cast<int>(eType)]) + " : " + extra), eType(eType) {}
+disassembler::DisassemblerException::DisassemblerException(const ErrorType eType, std::string extra)
+	: std::runtime_error(std::string(errorTypeStrings[static_cast<int>(eType)]) + " : " + std::move(extra)), eType(eType) {}
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Disassembler Functions

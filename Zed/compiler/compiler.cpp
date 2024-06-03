@@ -9,7 +9,7 @@
 
 compiler::CompilerIssue::CompilerIssue(const Type& type, const code_location loc) : type(type), loc(loc), extra() {}
 compiler::CompilerIssue::CompilerIssue(const Type& type, const code_location loc, const char* const& extra) : type(type), loc(loc), extra(extra) {}
-compiler::CompilerIssue::CompilerIssue(const Type& type, const code_location loc, const std::string& extra) : type(type), loc(loc), extra(extra) {}
+compiler::CompilerIssue::CompilerIssue(const Type& type, const code_location loc, std::string extra) : type(type), loc(loc), extra(std::move(extra)) {}
 
 std::string compiler::CompilerIssue::what() const {
 	if (extra.length() == 0) {
@@ -128,7 +128,7 @@ int compiler::compile_(std::iostream& inputFile, std::iostream& outputFile, Comp
 		return out;
 	} else if (isDebug && settings.flags.hasFlags(FLAG_DEBUG_AST)) {
 		stream << IO_DEBUG "AST output\n" IO_DEBUG "---------------------------------------------" IO_NORM "\n";
-		tree.print(tokenData, stream);
+		tree.print(stream);
 		stream << IO_DEBUG "---------------------------------------------" IO_NORM "\n";
 	}
 

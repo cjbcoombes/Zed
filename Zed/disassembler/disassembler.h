@@ -39,7 +39,7 @@ namespace disassembler {
 
 		explicit DisassemblerException(const ErrorType eType);
 		DisassemblerException(const ErrorType eType, const char* const extra);
-		DisassemblerException(const ErrorType eType, const std::string& extra);
+		DisassemblerException(const ErrorType eType, std::string extra);
 	};
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~

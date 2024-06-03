@@ -1,12 +1,12 @@
 #include "argparse.h"
 
-argparse::Option::Option(const std::string& name) : name(name), args() {}
+argparse::Option::Option(std::string name) : name(std::move(name)), args() {}
 
 const std::vector<std::string>& argparse::Option::getArgs() const noexcept { return args; }
 
 const std::string& argparse::Option::getName() const noexcept { return name; }
 
-argparse::Command::Command(const std::string& name) : name(name), options() {}
+argparse::Command::Command(std::string name) : name(std::move(name)), options() {}
 
 const std::vector<argparse::Option>& argparse::Command::getOptions() const noexcept { return options; }
 

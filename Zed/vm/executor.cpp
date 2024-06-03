@@ -16,7 +16,6 @@ executor::ExecutorException::ExecutorException(const ErrorType eType, const int 
 	: std::runtime_error(errorTypeStrings[static_cast<int>(eType)]), eType(eType), loc(loc) {}
 executor::ExecutorException::ExecutorException(const ErrorType eType, const int loc, const char* const extra)
 	: std::runtime_error(std::string(errorTypeStrings[static_cast<int>(eType)]) + " : " + extra), eType(eType), loc(loc) {}
-//executor::ExecutorException::ExecutorException(const ErrorType eType, const int loc, const std::string& extra) : eType(eType), loc(loc), extra(extra) {}
 
 int executor::ExecutorException::getLoc() const noexcept {
 	return loc;

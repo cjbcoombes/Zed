@@ -26,6 +26,8 @@ namespace compiler::ast {
 		Node* root;
 
 	public:
+		TypeData typeData;
+
 		Tree();
 
 		template<class N>
@@ -34,7 +36,7 @@ namespace compiler::ast {
 		template<class N, class... Args>
 		N* addNode(Args&&... args);
 
-		void print(tokens::TokenData& tokenData, std::ostream& stream) const;
+		void print(std::ostream& stream) const;
 		void setRoot(Node* const root);
 	};
 

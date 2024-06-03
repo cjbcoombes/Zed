@@ -124,7 +124,7 @@ void compiler::tokens::TokenData::putChar(const char val, const code_location& l
 void compiler::tokens::TokenData::putType(const TokenType type, const code_location& loc) {
 	tokens.emplace_back(type, loc);
 }
-void compiler::tokens::TokenData::putStr(const TokenType type, const code_location& loc, const std::string& str) {
+void compiler::tokens::TokenData::putStr(const TokenType type, const code_location& loc, std::string str) {
 	std::string* strPtr = nullptr;
 	for (auto i = strList.begin(); i != strList.end(); ++i) {
 		if ((*i) == str) {
@@ -134,7 +134,7 @@ void compiler::tokens::TokenData::putStr(const TokenType type, const code_locati
 	}
 
 	if (strPtr == nullptr) {
-		strList.push_back(str);
+		strList.emplace_back(std::move(str));
 		strPtr = &strList.back();
 	}
 

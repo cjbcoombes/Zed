@@ -8,22 +8,59 @@
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Types
 
-const compiler::ast::ExprType compiler::ast::ExprType::primNoType{ PrimType::NONE };
-const compiler::ast::ExprType compiler::ast::ExprType::primErrType{ PrimType::ERR };
-const compiler::ast::ExprType compiler::ast::ExprType::primVoid{ PrimType::VOID };
-const compiler::ast::ExprType compiler::ast::ExprType::primInt{ PrimType::INT };
-const compiler::ast::ExprType compiler::ast::ExprType::primFloat{ PrimType::FLOAT };
-const compiler::ast::ExprType compiler::ast::ExprType::primBool{ PrimType::BOOL };
-const compiler::ast::ExprType compiler::ast::ExprType::primChar{ PrimType::CHAR };
+compiler::ast::TypeData::Type::Type() : subtypes(), name() {}
 
-bool compiler::ast::sameType(const ExprType& a, const ExprType& b) {
+compiler::ast::TypeData::Type::Type(std::vector<const Type*>&& subtypes)
+	: subtypes(std::move(subtypes)), name() {
+}
+
+compiler::ast::TypeData::Type::Type(std::vector<const Type*>&& subtypes, std::string* name)
+	: subtypes(std::move(subtypes)), name(name) {
+}
+
+compiler::ast::ExprType::ExprType(TypeData::Type* type) : type(type) {}
+
+compiler::ast::TypeData::TypeData() : types(), prims() {
+	for (auto& prim : prims) {
+		types.emplace_back();
+		prim = &types.back();
+	}
+}
+
+compiler::ast::ExprType compiler::ast::TypeData::none() {
+	return ExprType(nullptr);
+}
+
+compiler::ast::ExprType compiler::ast::TypeData::err() const {
+	return ExprType(prims[static_cast<int>(PrimType::ERR)]);
+}
+
+compiler::ast::ExprType compiler::ast::TypeData::prim(PrimType primType) const {
+	return ExprType(prims[static_cast<int>(primType)]);
+}
+
+compiler::ast::ExprType compiler::ast::TypeData::tuple(std::vector<const Type*>&& subtypes) {
+	types.emplace_back(std::move(subtypes));
+	return ExprType(&types.back());
+}
+
+bool compiler::ast::TypeData::isNoneType(const ExprType& t) {
+	return t.type == nullptr;
+}
+
+
+bool compiler::ast::TypeData::sameType(const ExprType& a, const ExprType& b) const {
 	return a.type == b.type;
+}
+
+bool compiler::ast::TypeData::sameType(const ExprType& a, PrimType primType) const {
+	return a.type == prims[static_cast<int>(primType)];
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Tree
 
-compiler::ast::Tree::Tree() : nodes(), root(nullptr) {}
+compiler::ast::Tree::Tree() : nodes(), root(nullptr), typeData() {}
 
 void compiler::ast::Tree::setRoot(Node* const root) {
 	if (this->root != nullptr) {
@@ -48,7 +85,7 @@ N* compiler::ast::Tree::addNode(Args&&... args) {
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Node Constructors
 
-compiler::ast::Node::Node(const NodeType type, const code_location loc) : type(type), exprType(ExprType::primNoType), loc(loc) {}
+compiler::ast::Node::Node(const NodeType type, const code_location loc) : type(type), exprType(TypeData::none()), loc(loc) {}
 compiler::ast::Node::Node(const NodeType type, const ExprType exprType, const code_location loc) : type(type), exprType(exprType), loc(loc) {}
 
 compiler::ast::UnimplNode::UnimplNode(const char* const msg, const code_location loc) : Node(NodeType::UNIMPL, loc), msg(msg), nodes() {}
@@ -65,34 +102,36 @@ compiler::ast::MacroNode::MacroNode(const Type macroType, const ExprType exprTyp
 	: Node(NodeType::MACRO, exprType, loc), macroType(macroType), arg(arg) {
 }
 
-compiler::ast::LiteralNode::LiteralNode(const tokens::Token* const token) : Node(NodeType::LITERAL, token->loc), int_(0) {
+compiler::ast::TypeNode::TypeNode(const ExprType repType, const code_location loc) : Node(NodeType::TYPE, loc), repType(repType) {}
+
+compiler::ast::LiteralNode::LiteralNode(const tokens::Token* const token, const TypeData& typeData, const code_location loc) : Node(NodeType::LITERAL, loc), int_(0) {
 	using tokens::TokenType;
 
 	switch (token->type) {
 		case TokenType::NUM_INT:
 			int_ = token->int_;
 			litType = Type::INT;
-			exprType = ExprType::primInt;
+			exprType = typeData.prim(PrimType::INT);
 			break;
 		case TokenType::NUM_FLOAT:
 			float_ = token->float_;
 			litType = Type::FLOAT;
-			exprType = ExprType::primFloat;
+			exprType = typeData.prim(PrimType::FLOAT);
 			break;
 		case TokenType::CHAR:
 			char_ = token->char_;
 			litType = Type::CHAR;
-			exprType = ExprType::primChar;
+			exprType = typeData.prim(PrimType::CHAR);
 			break;
 		case TokenType::TRUE:
 			bool_ = true;
 			litType = Type::BOOL;
-			exprType = ExprType::primBool;
+			exprType = typeData.prim(PrimType::BOOL);
 			break;
 		case TokenType::FALSE:
 			bool_ = false;
 			litType = Type::BOOL;
-			exprType = ExprType::primBool;
+			exprType = typeData.prim(PrimType::BOOL);
 			break;
 		default:
 			throw std::logic_error("Literal Node constructed from Token not representing a literal");
@@ -120,7 +159,17 @@ compiler::ast::treeres_t compiler::ast::TokenMatch::formTree(Tree& tree, Compile
 		case TokenType::CHAR:
 		case TokenType::TRUE:
 		case TokenType::FALSE:
-			return { tree.add(std::make_unique<LiteralNode>(token)), 0 };
+			return { tree.add(std::make_unique<LiteralNode>(token, tree.typeData, loc)), 0 };
+
+		case TokenType::TYPE_INT:
+			return { tree.add(std::make_unique<TypeNode>(tree.typeData.prim(PrimType::INT), loc)), 0};
+		case TokenType::TYPE_FLOAT:
+			return { tree.add(std::make_unique<TypeNode>(tree.typeData.prim(PrimType::FLOAT), loc)), 0 };
+		case TokenType::TYPE_CHAR:
+			return { tree.add(std::make_unique<TypeNode>(tree.typeData.prim(PrimType::CHAR), loc)), 0 };
+		case TokenType::TYPE_BOOL:
+			return { tree.add(std::make_unique<TypeNode>(tree.typeData.prim(PrimType::BOOL), loc)), 0 };
+
 		default:
 			return { tree.add(std::make_unique<TokenNode>(token)), 0 };
 	}
@@ -131,7 +180,7 @@ compiler::ast::treeres_t compiler::ast::GroupMatch::formTree(Tree& tree, Compile
 
 	compiler::ast::treeres_t tempRes;
 	BlockNode* tempBlockNode;
-
+	
 	switch (type) {
 		case MatchType::ROOT_GROUP:
 		case MatchType::CURLY_GROUP:
@@ -198,13 +247,15 @@ static compiler::ast::treeres_t formArithBinop(const compiler::ast::FixedSizeMat
 			throw std::logic_error("Binary Arithmetic Match has invalid arithmetic operation token");
 	}
 
-	ExprType exprType;
-	if (sameType(tempRes1.first->exprType, ExprType::primInt) && sameType(tempRes2.first->exprType, ExprType::primInt)) {
-		exprType = ExprType::primInt;
-	} else if (sameType(tempRes1.first->exprType, ExprType::primFloat) && sameType(tempRes2.first->exprType, ExprType::primFloat)) {
-		exprType = ExprType::primFloat;
+	ExprType exprType = tree.typeData.none();
+	if (tree.typeData.sameType(tempRes1.first->exprType, PrimType::INT) && 
+		tree.typeData.sameType(tempRes2.first->exprType, PrimType::INT)) {
+		exprType = tree.typeData.prim(PrimType::INT);
+	} else if (tree.typeData.sameType(tempRes1.first->exprType, PrimType::FLOAT) &&
+			   tree.typeData.sameType(tempRes2.first->exprType, PrimType::FLOAT)) {
+		exprType = tree.typeData.prim(PrimType::FLOAT);
 	} else {
-		exprType = ExprType::primErrType;
+		exprType = tree.typeData.err();
 		status.addIssue(CompilerIssue::Type::INVALID_TYPE_ARITH_BINOP, match.loc);
 	}
 
@@ -235,22 +286,22 @@ static compiler::ast::treeres_t formMacro(const compiler::ast::FixedSizeMatch& m
 
 	if (strIndex == -1) {
 		status.addIssue(CompilerIssue::Type::INVALID_MACRO, match.matches[0]->loc, str);
-		return { tree.add(std::make_unique<MacroNode>(MacroNode::Type::UNKNOWN, ExprType::primErrType, res.first, match.matches[0]->loc)), 0 };
+		return { tree.add(std::make_unique<MacroNode>(MacroNode::Type::UNKNOWN, tree.typeData.err(), res.first, match.matches[0]->loc)), 0};
 	}
 
 	MacroNode::Type type = static_cast<MacroNode::Type>(strIndex);
-	ExprType exprType = ExprType::primNoType;
+	ExprType exprType = tree.typeData.none();
 
 	switch (type) {
 		case MacroNode::Type::HELLO_WORLD:
 			// No type checking
 			break;
-		case MacroNode::Type::PRINT_I:
-			if (!sameType(res.first->exprType, ExprType::primInt)) {
+	case MacroNode::Type::PRINT_I:
+			if (!tree.typeData.sameType(res.first->exprType, PrimType::INT)) {
 				status.addIssue(CompilerIssue::Type::INVALID_TYPE_MACRO, match.matches[2]->loc);
-				exprType = ExprType::primErrType;
+				exprType = tree.typeData.none();
 			} else {
-				exprType = ExprType::primInt;
+				exprType = tree.typeData.prim(PrimType::INT);
 			}
 			break;
 		default:

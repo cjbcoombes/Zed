@@ -219,10 +219,18 @@ int compiler::ast::applyPatterns(std::list<const Match*>& matches, MatchData& ma
 		};
 
 	const std::unique_ptr<Pattern> patterns[] = {
+		// Groups {} () []
 		std::make_unique<GroupingPattern>(),
+		// Property accessor .
+		std::make_unique<FixedSizePattern, il_t>({ predTrue, predToken(TokenType::PERIOD), predTrue }, MatchType::PROP_ACCESS, 1),
+		// Mult/Div * /
 		std::make_unique<FixedSizePattern, il_t>({ predTrue, predTokens({ TokenType::STAR, TokenType::SLASH }), predTrue }, MatchType::ARITH_BINOP, 1),
+		// Add/Sub + -
 		std::make_unique<FixedSizePattern, il_t>({ predTrue, predTokens({ TokenType::PLUS, TokenType::DASH }), predTrue }, MatchType::ARITH_BINOP, 1),
-		std::make_unique<FixedSizePattern, il_t>({ predToken(TokenType::HASH), predToken(TokenType::IDENTIFIER), predTrue}, MatchType::MACRO, 0)
+		// Macros #
+		std::make_unique<FixedSizePattern, il_t>({ predToken(TokenType::HASH), predToken(TokenType::IDENTIFIER), predTrue}, MatchType::MACRO, 0),
+		// Type Annotation :
+		std::make_unique<FixedSizePattern, il_t>({ predTrue, predToken(TokenType::COLON), predTrue }, MatchType::TYPE_ANNOTATION, 1),
 	};
 
 	int out = 0;

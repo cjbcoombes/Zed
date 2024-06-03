@@ -22,7 +22,7 @@ namespace argparse {
 		std::vector<std::string> args;
 
 	public:
-		explicit Option(const std::string& name);
+		explicit Option(std::string name);
 
 		[[nodiscard]] const std::vector<std::string>& getArgs() const noexcept;
 		[[nodiscard]] const std::string& getName() const noexcept;
@@ -37,7 +37,7 @@ namespace argparse {
 		std::vector<Option> options;
 
 	public:
-		explicit Command(const std::string& name);
+		explicit Command(std::string name);
 
 		[[nodiscard]] const std::vector<argparse::Option>& getOptions() const noexcept;
 		[[nodiscard]] const std::string& getName() const noexcept;

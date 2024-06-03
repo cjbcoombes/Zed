@@ -59,7 +59,7 @@ namespace assembler {
 
 		AssemblerException(const ErrorType eType, const int line, const int column);
 		AssemblerException(const ErrorType eType, const int line, const int column, const char* extra);
-		AssemblerException(const ErrorType eType, const int line, const int column, const std::string& extra);
+		AssemblerException(const ErrorType eType, const int line, const int column, std::string extra);
 	};
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~

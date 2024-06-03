@@ -34,8 +34,10 @@ namespace compiler::ast {
 		SQUARE_GROUP,
 		CURLY_GROUP,
 
+		PROP_ACCESS,
 		ARITH_BINOP,
-		MACRO
+		MACRO,
+		TYPE_ANNOTATION
 	};
 
 	// Parent Match
