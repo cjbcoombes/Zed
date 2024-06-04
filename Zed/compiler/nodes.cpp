@@ -12,24 +12,36 @@
 #define TREE_PASS "|   "
 #define TYPE_CONN " -> "
 
-void compiler::ast::TypeData::printType(const ExprType& type, std::ostream& stream) const {
-	if (type.type == nullptr) {
+void compiler::ast::TypeData::printType(const Type* const t, std::ostream& stream) const {
+	if (t == nullptr) {
 		stream << "*";
-	} else if (type.type == prims[static_cast<int>(PrimType::ERR)]) {
+	} else if (t == prims[static_cast<int>(PrimType::ERR)]) {
 		stream << IO_FMT_ERR("err-type");
-	} else if (type.type == prims[static_cast<int>(PrimType::VOID)]) {
+	} else if (t == prims[static_cast<int>(PrimType::VOID)]) {
 		stream << IO_FMT_KEYWORD("void");
-	} else if (type.type == prims[static_cast<int>(PrimType::INT)]) {
+	} else if (t == prims[static_cast<int>(PrimType::INT)]) {
 		stream << IO_FMT_KEYWORD("int");
-	} else if (type.type == prims[static_cast<int>(PrimType::FLOAT)]) {
+	} else if (t == prims[static_cast<int>(PrimType::FLOAT)]) {
 		stream << IO_FMT_KEYWORD("float");
-	} else if (type.type == prims[static_cast<int>(PrimType::CHAR)]) {
+	} else if (t == prims[static_cast<int>(PrimType::CHAR)]) {
 		stream << IO_FMT_KEYWORD("char");
-	} else if (type.type == prims[static_cast<int>(PrimType::BOOL)]) {
+	} else if (t == prims[static_cast<int>(PrimType::BOOL)]) {
 		stream << IO_FMT_KEYWORD("bool");
 	} else {
-		stream << "Complex Type";
+		if (t->name.has_value()) {
+			stream << IO_FMT_ID(*(t->name)) << " : ";
+			const auto sz = t->subtypes.size();
+			if (sz != 1) stream << "[";
+			for (const Type* const tt : t->subtypes) {
+				printType(tt, stream);
+			}
+			if (sz != 1) stream << "[";
+		}
 	}
+}
+
+void compiler::ast::TypeData::printType(const ExprType& type, std::ostream& stream) const {
+	printType(type.type, stream);
 }
 
 void compiler::ast::Node::print(const TypeData& typeData, std::ostream& stream, std::string&& indent, bool last) const {

@@ -19,6 +19,14 @@ namespace compiler {
 
 namespace compiler::ast {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Context
+
+	struct TreeContext {
+		TreeContext() = default;
+		TreeContext(const TreeContext& other);
+	};
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Tree
 
 	class Tree {

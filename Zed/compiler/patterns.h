@@ -18,6 +18,7 @@ namespace compiler {
 		struct Node;
 
 		class Tree;
+		struct TreeContext;
 	}
 }
 
@@ -49,7 +50,7 @@ namespace compiler::ast {
 		virtual ~Match() = default;
 
 		// Forms the tree version of this match, which means returning a Node* (or an error, hence treeres_t)
-		[[nodiscard]] virtual treeres_t formTree(Tree& tree, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) const;
+		[[nodiscard]] virtual treeres_t formTree(Tree& tree, const TreeContext& context, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) const;
 	};
 
 	// A Match of just a token
@@ -58,7 +59,7 @@ namespace compiler::ast {
 
 		explicit TokenMatch(const tokens::Token* const token);
 
-		[[nodiscard]] treeres_t formTree(Tree& tree, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) const override;
+		[[nodiscard]] treeres_t formTree(Tree& tree, const TreeContext& context, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) const override;
 	};
 
 	// A Match of a group of tokens
@@ -67,7 +68,7 @@ namespace compiler::ast {
 
 		GroupMatch(const MatchType type, const code_location loc);
 
-		[[nodiscard]] treeres_t formTree(Tree& tree, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) const override;
+		[[nodiscard]] treeres_t formTree(Tree& tree, const TreeContext& context, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) const override;
 	};
 
 	// A Match of a fixed-size group of tokens
@@ -76,7 +77,7 @@ namespace compiler::ast {
 
 		FixedSizeMatch(const MatchType type, const code_location loc);
 
-		[[nodiscard]] treeres_t formTree(Tree& tree, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) const override;
+		[[nodiscard]] treeres_t formTree(Tree& tree, const TreeContext& context, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) const override;
 	};
 
 	// Collects matches in a way that avoids memory leaks

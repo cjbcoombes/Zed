@@ -34,18 +34,23 @@ namespace compiler::ast {
 			Type();
 			explicit Type(std::vector<const Type*>&& subtypes);
 			Type(std::vector<const Type*>&& subtypes, std::string* name);
+			Type(const Type& other) = default;
+			Type(const Type& other, std::string* newname);
 		};
 
 		std::list<Type> types;
 		Type* prims[primTypeCount];
 
+		void printType(const Type* const t, std::ostream& stream) const;
+
 	public:
 		TypeData();
 
-		static [[nodiscard]] ExprType none();
+		[[nodiscard]] static ExprType none();
 		[[nodiscard]] ExprType err() const;
 		[[nodiscard]] ExprType prim(PrimType primType) const;
 		[[nodiscard]] ExprType tuple(std::vector<const Type*>&& subtypes);
+		[[nodiscard]] ExprType annotate(const ExprType& t, std::string* newname);
 
 		[[nodiscard]] static bool isNoneType(const ExprType& t);
 		[[nodiscard]] bool sameType(const ExprType& a, const ExprType& b) const;
@@ -62,7 +67,7 @@ namespace compiler::ast {
 	private:
 		TypeData::Type* type;
 		// no type is nullptr
-		
+
 		explicit ExprType(TypeData::Type* type);
 	};
 
@@ -175,7 +180,7 @@ namespace compiler::ast {
 		};
 		static constexpr std::span<const char* const> macroSpan{ macroStrings, macroCount };
 		static_assert(sizeof(macroStrings) / sizeof(const char*) == macroCount,
-		              "Number of macros does not match list of macros");
+					  "Number of macros does not match list of macros");
 
 		Type macroType;
 		Node* arg;
