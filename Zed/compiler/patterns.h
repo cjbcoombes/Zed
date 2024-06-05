@@ -126,10 +126,9 @@ namespace compiler::ast {
 	private:
 		std::vector<pred_t> predicates;
 		MatchType matchType;
-		int linecolsource;
 
 	public:
-		FixedSizePattern(il_t predicates, const MatchType matchType, const int linecolsource);
+		FixedSizePattern(il_t predicates, const MatchType matchType);
 
 		int match(std::list<const Match*>& matches, MatchData& matchData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) override;
 	};

@@ -176,10 +176,13 @@ namespace compiler::ast {
 		static constexpr int macroCount = static_cast<int>(Type::Count);
 		static constexpr const char* const macroStrings[] = {
 			"hello_world",
-			"printi"
+			"printi",
+
+			"ERROR",
+			"Unknown"
 		};
 		static constexpr std::span<const char* const> macroSpan{ macroStrings, macroCount };
-		static_assert(sizeof(macroStrings) / sizeof(const char*) == macroCount,
+		static_assert(sizeof(macroStrings) / sizeof(const char*) == macroCount + 2,
 					  "Number of macros does not match list of macros");
 
 		Type macroType;

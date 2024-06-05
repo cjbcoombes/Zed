@@ -143,7 +143,7 @@ void compiler::ast::MacroNode::print(const TypeData& typeData, std::ostream& str
 	stream << indent;
 	if (last) stream << TREE_BRANCH_END;
 	else stream << TREE_BRANCH_MID;
-	stream << "Arith Binop ( #";
+	stream << "Macro ( #";
 	stream << macroStrings[static_cast<int>(macroType)];
 	stream << " )";
 	printType(typeData, stream);

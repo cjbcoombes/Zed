@@ -35,12 +35,33 @@ void compiler::CompilerIssue::print(const tokens::TokenData& tokenData, std::ost
 	}
 
 	stream << starter;
-	if (loc.line >= 0) {
-		stream << '@' << (loc.line + 1) << ':' << (loc.column + 1) << "  " << what() << '\n';
-		stream << starter << "     | " << std::setw(loc.column) << "v" << '\n';
-		stream << starter << std::setw(5) << (loc.line + 1) << "| ";
-		stream << tokenData.getLine(loc.line);
-		stream << starter << "     | " << std::setw(loc.column) << "^" << '\n';
+	if (loc.isValid()) {
+		const bool multiline = loc.endLine != loc.startLine;
+
+		if (multiline) {
+			stream << '@' << (loc.startLine + 1) << ':' << (loc.startCol + 1) << '-' << (loc.endLine + 1) << ':' << (loc.endCol + 1) << "  " << what() << '\n';
+		} else {
+			stream << '@' << (loc.startLine + 1) << ':' << (loc.startCol + 1) << '-' << (loc.endCol + 1) << "  " << what() << '\n';
+		}
+
+		const auto line = tokenData.getLine(loc.startLine);
+		const int end = multiline ? static_cast<int>(line.length()) : loc.endCol;
+
+		stream << starter << "     | ";
+		std::fill_n(std::ostream_iterator<char>(stream), loc.startCol, ' ');
+		std::fill_n(std::ostream_iterator<char>(stream), end - loc.startCol + 1, 'v');
+		if (multiline) stream << "...";
+		stream << '\n';
+
+		stream << starter << std::setw(5) << (loc.startLine + 1) << "| ";
+		stream << line;
+
+		stream << starter << "     | ";
+		std::fill_n(std::ostream_iterator<char>(stream), loc.startCol, ' ');
+		std::fill_n(std::ostream_iterator<char>(stream), end - loc.startCol + 1, '^');
+		if (multiline) stream << "...";
+		stream << '\n';
+
 		stream << IO_NORM;
 	} else {
 		stream << what() << IO_NORM "\n";

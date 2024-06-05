@@ -76,7 +76,7 @@ static void putSymbols(const char* const str, const int slen, const code_locatio
 	if (slen == 1) {
 		for (int i = 0; i < symbolCount; i++) {
 			if (symbolChars[i] == str[0]) {
-				outputData.putType(static_cast<TokenType>(i + firstSymbol), loc);
+				outputData.putType(static_cast<TokenType>(i + firstSymbol), code_location(loc.startLine, loc.startCol));
 				break;
 			}
 		}
@@ -93,8 +93,9 @@ static void putSymbols(const char* const str, const int slen, const code_locatio
 			if (multiSymbolStrings[i][j] != str[j]) break;
 			if (j >= currlen - 1) {
 				// PUT symbol
-				outputData.putType(static_cast<TokenType>(i + firstMultiSymbol), loc);
-				putSymbols(str + currlen, slen - currlen, code_location(loc.line, loc.column + currlen), outputData);
+				outputData.putType(static_cast<TokenType>(i + firstMultiSymbol), 
+								   code_location(loc.startLine, loc.startCol, loc.startLine, loc.startCol + currlen - 1));
+				putSymbols(str + currlen, slen - currlen, code_location(loc.startLine, loc.startCol + currlen), outputData);
 				return;
 			}
 			j++;
@@ -102,7 +103,7 @@ static void putSymbols(const char* const str, const int slen, const code_locatio
 		i++;
 	}
 	putSymbols(str, 1, loc, outputData);
-	putSymbols(str + 1, slen - 1, code_location(loc.line, loc.column + 1), outputData);
+	putSymbols(str + 1, slen - 1, code_location(loc.startLine, loc.startCol + 1), outputData);
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -235,12 +236,13 @@ int compiler::tokens::tokenize(std::iostream& inputFile, TokenData& outputData, 
 	int numBase = 10;
 	int keyword;
 
-	// Line and column
-	code_location loc(0, 0);
+	// Location of the current token
+	code_location loc;
+	int line = 0;
+	// has to start at -1 so it gets set to 0 on the first iteration
+	int col = -1;
 	int i = 0;
 	outputData.newLine(0);
-	// Starting line and column for the current token
-	code_location startLoc(0, 0);
 	// end
 	bool end = inputFile.eof();
 
@@ -257,10 +259,11 @@ int compiler::tokens::tokenize(std::iostream& inputFile, TokenData& outputData, 
 		i++;
 		if (c == '\n' || end) {
 			outputData.newLine(i);
-			loc.line++;
-			loc.column = 0;
+			line++;
+			// has to start at -1 so it gets set to 0 on the next iteration
+			col = -1;
 		} else {
-			loc.column++;
+			col++;
 		}
 
 		switch (currGroupType) {
@@ -270,7 +273,7 @@ int compiler::tokens::tokenize(std::iostream& inputFile, TokenData& outputData, 
 			case GroupType::STRING:
 				// Match certain escape sequences
 				if (end) {
-					status.addIssue(CompilerIssue::Type::UNCLOSED_STRING, startLoc);
+					status.addIssue(CompilerIssue::Type::UNCLOSED_STRING, loc);
 					return 1;
 				} else if (isEscaped) {
 					if (c == 'n') {
@@ -290,7 +293,7 @@ int compiler::tokens::tokenize(std::iostream& inputFile, TokenData& outputData, 
 				} else if (c == '"') {
 					// PUT string
 					currGroup[currGroupLen] = '\0';
-					outputData.putStr(TokenType::STRING, startLoc, std::string(currGroup));
+					outputData.putStr(TokenType::STRING, loc, std::string(currGroup));
 					currGroupType = GroupType::SKIP;
 				} else {
 					if (c == '\\') {
@@ -307,7 +310,7 @@ int compiler::tokens::tokenize(std::iostream& inputFile, TokenData& outputData, 
 			case GroupType::CHAR:
 				// Match certain escape sequences
 				if (end) {
-					status.addIssue(CompilerIssue::Type::UNCLOSED_CHAR, startLoc);
+					status.addIssue(CompilerIssue::Type::UNCLOSED_CHAR, loc);
 					return 1;
 				} if (isEscaped) {
 					if (c == 'n') {
@@ -326,14 +329,14 @@ int compiler::tokens::tokenize(std::iostream& inputFile, TokenData& outputData, 
 					isEscaped = false;
 				} else if (c == '\'') {
 					if (currGroupLen != 1) {
-						status.addIssue(CompilerIssue::Type::INVALID_CHAR, startLoc);
+						status.addIssue(CompilerIssue::Type::INVALID_CHAR, loc);
 						return 1;
 					}
-					outputData.putChar(currGroup[0], startLoc);
+					outputData.putChar(currGroup[0], loc);
 					currGroupType = GroupType::SKIP;
 				} else {
 					if (currGroupLen != 0) {
-						status.addIssue(CompilerIssue::Type::INVALID_CHAR, startLoc);
+						status.addIssue(CompilerIssue::Type::INVALID_CHAR, loc);
 						return 1;
 					}
 					if (c == '\\') {
@@ -362,9 +365,9 @@ int compiler::tokens::tokenize(std::iostream& inputFile, TokenData& outputData, 
 				} else {
 					// PUT number
 					if (!hasDecimal) {
-						outputData.putInt(parseInt(currGroup, currGroupLen, numBase), startLoc);
+						outputData.putInt(parseInt(currGroup, currGroupLen, numBase), loc);
 					} else {
-						outputData.putFloat(parseFloat(currGroup, currGroupLen, static_cast<float>(numBase)), startLoc);
+						outputData.putFloat(parseFloat(currGroup, currGroupLen, static_cast<float>(numBase)), loc);
 					}
 					currGroup[currGroupLen] = '\0';
 					currGroupType = GroupType::NONE;
@@ -384,7 +387,7 @@ int compiler::tokens::tokenize(std::iostream& inputFile, TokenData& outputData, 
 				if (end || currGroupType != GroupType::SYMBOL || !isSymbolChar(c)) {
 					// PUT symbols (greedy thing)
 					currGroup[currGroupLen] = '\0';
-					putSymbols(currGroup, currGroupLen, startLoc, outputData);
+					putSymbols(currGroup, currGroupLen, loc, outputData);
 					currGroupType = currGroupType == GroupType::SYMBOL ? GroupType::NONE : currGroupType;
 				}
 				break;
@@ -394,9 +397,9 @@ int compiler::tokens::tokenize(std::iostream& inputFile, TokenData& outputData, 
 					currGroup[currGroupLen] = '\0';
 					keyword = lookupString(currGroup, keywordSpan);
 					if (keyword == -1) {
-						outputData.putStr(TokenType::IDENTIFIER, startLoc, std::string(currGroup));
+						outputData.putStr(TokenType::IDENTIFIER, loc, std::string(currGroup));
 					} else {
-						outputData.putType(static_cast<TokenType>(keyword + firstKeyword), startLoc);
+						outputData.putType(static_cast<TokenType>(keyword + firstKeyword), loc);
 					}
 					currGroupType = GroupType::NONE;
 				}
@@ -418,11 +421,14 @@ int compiler::tokens::tokenize(std::iostream& inputFile, TokenData& outputData, 
 		}
 
 		if (end) break;
+		loc.endLine = line;
+		loc.endCol = col;
 		if (currGroupType == GroupType::NONE) {
 			// Start a new token
 			currGroupLen = 1;
 			currGroup[0] = c;
-			startLoc = loc;
+			loc.startLine = line;
+			loc.startCol = col;
 			if (c == '"') {
 				currGroupLen = 0;
 				currGroupType = GroupType::STRING;
@@ -448,7 +454,7 @@ int compiler::tokens::tokenize(std::iostream& inputFile, TokenData& outputData, 
 		} else {
 			// Add current char to the current group
 			if (currGroupLen >= MAX_TOKEN_STR_LEN) {
-				status.addIssue(CompilerIssue::Type::TOKEN_TOO_LONG, startLoc);
+				status.addIssue(CompilerIssue::Type::TOKEN_TOO_LONG, loc);
 				return 1;
 			}
 			// For comments we only care about the single previous character (to check for the ending sequence)
@@ -470,8 +476,8 @@ void compiler::tokens::printTokens(const TokenData& tokenData, std::ostream& str
 	int line = 0;
 	stream << IO_NORM;
 	for (const Token& t : tokenData.getTokens()) {
-		if (line != t.loc.line) stream << '\n';
-		line = t.loc.line;
+		if (line != t.loc.startLine) stream << '\n';
+		line = t.loc.startLine;
 		printToken(t, stream);
 		stream << ' ';
 	}

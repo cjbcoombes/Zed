@@ -21,8 +21,17 @@ int lookupString(const char* const match, const std::span<const char* const>& st
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Code Location Struct
 
-code_location::code_location(const int line, const int column) : line(line), column(column) {}
-code_location::code_location() : line(-1), column(-1) {}
+code_location::code_location(const int line, const int column) : startLine(line), startCol(column), endLine(line), endCol(column) {}
+code_location::code_location(const int startLine, const int startCol, const int endLine, const int endCol)
+	: startLine(startLine), startCol(startCol), endLine(endLine), endCol(endCol) {}
+
+code_location::code_location(const code_location& start, const code_location& end)
+	: startLine(start.startLine), startCol(start.startCol), endLine(end.endLine), endCol(end.endCol) {
+}
+code_location::code_location() : startLine(-1), startCol(-1), endLine(-1), endCol(-1) {}
+bool code_location::isValid() const {
+	return startLine >= 0;
+}
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Flags Struct

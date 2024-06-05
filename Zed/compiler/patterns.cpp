@@ -64,7 +64,9 @@ int compiler::ast::GroupingPattern::match(std::list<const Match*>& matches, Matc
 		} else {
 			const Token* token = dynamic_cast<const TokenMatch*>(*openings.top().second)->token;
 			if (openings.top().first == groupType) {
-				GroupMatch* group = matchData.addMatch<GroupMatch>(groupType, token->loc);
+				GroupMatch* group = matchData.addMatch<GroupMatch>(
+					groupType,
+					code_location(token->loc, dynamic_cast<const TokenMatch*>(*it)->token->loc));
 
 				group->matches.splice(group->matches.begin(), matches, std::next(openings.top().second), it);
 				const int out = applyPatterns(group->matches, matchData, status, settings, stream);
@@ -156,9 +158,7 @@ int compiler::ast::GroupingPattern::match(std::list<const Match*>& matches, Matc
 	return 0;
 }
 
-compiler::ast::FixedSizePattern::FixedSizePattern(il_t predicates, const MatchType matchType, const int linecolsource)
-	: predicates(predicates), matchType(matchType), linecolsource(linecolsource) {
-}
+compiler::ast::FixedSizePattern::FixedSizePattern(il_t predicates, const MatchType matchType) : predicates(predicates), matchType(matchType) {}
 
 int compiler::ast::FixedSizePattern::match(std::list<const Match*>& matches, MatchData& matchData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) {
 	for (auto start = matches.begin(); start != matches.end();) {
@@ -174,9 +174,10 @@ int compiler::ast::FixedSizePattern::match(std::list<const Match*>& matches, Mat
 		}
 
 		if (matched) {
-			FixedSizeMatch* match = matchData.addMatch<FixedSizeMatch>(matchType, code_location());
+			FixedSizeMatch* match = matchData.addMatch<FixedSizeMatch>(
+				matchType, 
+				code_location((*start)->loc, (*std::prev(ptr))->loc));
 			std::copy(start, ptr, std::back_inserter(match->matches));
-			match->loc = match->matches[linecolsource]->loc;
 
 			matches.insert(start, match);
 			start = matches.erase(start, ptr);
@@ -222,15 +223,15 @@ int compiler::ast::applyPatterns(std::list<const Match*>& matches, MatchData& ma
 		// Groups {} () []
 		std::make_unique<GroupingPattern>(),
 		// Property accessor .
-		std::make_unique<FixedSizePattern, il_t>({ predTrue, predToken(TokenType::PERIOD), predTrue }, MatchType::PROP_ACCESS, 1),
+		std::make_unique<FixedSizePattern, il_t>({ predTrue, predToken(TokenType::PERIOD), predTrue }, MatchType::PROP_ACCESS),
 		// Mult/Div * /
-		std::make_unique<FixedSizePattern, il_t>({ predTrue, predTokens({ TokenType::STAR, TokenType::SLASH }), predTrue }, MatchType::ARITH_BINOP, 1),
+		std::make_unique<FixedSizePattern, il_t>({ predTrue, predTokens({ TokenType::STAR, TokenType::SLASH }), predTrue }, MatchType::ARITH_BINOP),
 		// Add/Sub + -
-		std::make_unique<FixedSizePattern, il_t>({ predTrue, predTokens({ TokenType::PLUS, TokenType::DASH }), predTrue }, MatchType::ARITH_BINOP, 1),
+		std::make_unique<FixedSizePattern, il_t>({ predTrue, predTokens({ TokenType::PLUS, TokenType::DASH }), predTrue }, MatchType::ARITH_BINOP),
 		// Macros #
-		std::make_unique<FixedSizePattern, il_t>({ predToken(TokenType::HASH), predToken(TokenType::IDENTIFIER), predTrue}, MatchType::MACRO, 0),
+		std::make_unique<FixedSizePattern, il_t>({ predToken(TokenType::HASH), predToken(TokenType::IDENTIFIER), predTrue}, MatchType::MACRO),
 		// Type Annotation :
-		std::make_unique<FixedSizePattern, il_t>({ predTrue, predToken(TokenType::COLON), predTrue }, MatchType::TYPE_ANNOTATION, 1),
+		std::make_unique<FixedSizePattern, il_t>({ predTrue, predToken(TokenType::COLON), predTrue }, MatchType::TYPE_ANNOTATION),
 	};
 
 	int out = 0;
