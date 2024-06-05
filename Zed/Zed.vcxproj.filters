@@ -188,5 +188,8 @@
     <None Include="Lang\CompilerExamples\fibonacci.eze">
       <Filter>Source Files\Lang\CompilerExamples</Filter>
     </None>
+    <None Include="Lang\CompilerExamples\design.z">
+      <Filter>Source Files\Lang\CompilerExamples</Filter>
+    </None>
   </ItemGroup>
 </Project>

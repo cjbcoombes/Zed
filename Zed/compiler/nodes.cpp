@@ -30,17 +30,26 @@ void compiler::ast::TypeData::printType(const Type* const t, std::ostream& strea
 	} else {
 		if (t->name.has_value()) {
 			stream << IO_FMT_ID(*(t->name)) << " : ";
-			const auto sz = t->subtypes.size();
-			if (sz != 1) stream << "[";
-			for (const Type* const tt : t->subtypes) {
-				printType(tt, stream);
+		}
+		const auto sz = t->subtypes.size();
+		if (sz == 0) {
+			stream << "[ type with no internals ]";
+		} else {
+			if (sz != 1) stream << "[ ";
+			for (auto tt = t->subtypes.cbegin(), 
+				 end = t->subtypes.cend(), 
+				 prev = std::prev(end); tt != end; ++tt) {
+				printType(*tt, stream);
+				if (tt != prev) {
+					stream << ", ";
+				}
 			}
-			if (sz != 1) stream << "[";
+			if (sz != 1) stream << " ]";
 		}
 	}
 }
 
-void compiler::ast::TypeData::printType(const ExprType& type, std::ostream& stream) const {
+void compiler::ast::TypeData::printType(const ExprType type, std::ostream& stream) const {
 	printType(type.type, stream);
 }
 

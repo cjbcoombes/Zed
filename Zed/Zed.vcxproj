@@ -68,6 +68,7 @@
     <None Include="Lang\AssemblyExamples\guessing_game.eze" />
     <None Include="Lang\AssemblyExamples\simple_user_input.azm" />
     <None Include="Lang\AssemblyExamples\simple_user_input.eze" />
+    <None Include="Lang\CompilerExamples\design.z" />
     <None Include="Lang\CompilerExamples\example1.eze" />
     <None Include="Lang\CompilerExamples\example1.z" />
     <None Include="Lang\CompilerExamples\fibonacci.eze" />

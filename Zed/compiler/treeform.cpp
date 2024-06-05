@@ -4,6 +4,7 @@
 #include "tokenizer.h"
 #include "compiler.h"
 #include "patterns.h"
+#include <algorithm>
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Types
@@ -19,7 +20,8 @@ compiler::ast::TypeData::Type::Type(std::vector<const Type*>&& subtypes, std::st
 }
 
 compiler::ast::TypeData::Type::Type(const Type& other, std::string* newname)
-	: subtypes(other.subtypes), name(newname) {}
+	: subtypes(other.subtypes), name(newname) {
+}
 
 compiler::ast::ExprType::ExprType(TypeData::Type* type) : type(type) {}
 
@@ -38,31 +40,38 @@ compiler::ast::ExprType compiler::ast::TypeData::err() const {
 	return ExprType(prims[static_cast<int>(PrimType::ERR)]);
 }
 
-compiler::ast::ExprType compiler::ast::TypeData::prim(PrimType primType) const {
+compiler::ast::ExprType compiler::ast::TypeData::prim(const PrimType primType) const {
 	return ExprType(prims[static_cast<int>(primType)]);
 }
 
-// TODO: this has to take in ExprType, not Type. And maybe as an iterable instead of a vector?
-compiler::ast::ExprType compiler::ast::TypeData::tuple(std::vector<const Type*>&& subtypes) {
-	types.emplace_back(std::move(subtypes));
+compiler::ast::ExprType compiler::ast::TypeData::tuple(const std::vector<ExprType>& subtypes) {
+	std::vector<const Type*> newtypes;
+	/*std::ranges::transform(subtypes, std::back_inserter(newtypes),
+						   [](const ExprType e) -> const Type* {
+							   return e.type;
+						   });*/
+	for (const ExprType e : subtypes) {
+		newtypes.push_back(e.type);
+	}
+	types.emplace_back(std::move(newtypes));
 	return ExprType(&types.back());
 }
 
-compiler::ast::ExprType compiler::ast::TypeData::annotate(const ExprType& t, std::string* newname) {
+compiler::ast::ExprType compiler::ast::TypeData::annotate(const ExprType t, std::string* const newname) {
 	types.emplace_back(*t.type, newname);
 	return ExprType(&types.back());
 }
 
-bool compiler::ast::TypeData::isNoneType(const ExprType& t) {
+bool compiler::ast::TypeData::isNoneType(const ExprType t) {
 	return t.type == nullptr;
 }
 
 
-bool compiler::ast::TypeData::sameType(const ExprType& a, const ExprType& b) const {
+bool compiler::ast::TypeData::sameType(const ExprType a, const ExprType b) const {
 	return a.type == b.type;
 }
 
-bool compiler::ast::TypeData::sameType(const ExprType& a, PrimType primType) const {
+bool compiler::ast::TypeData::sameType(const ExprType a, const PrimType primType) const {
 	return a.type == prims[static_cast<int>(primType)];
 }
 
@@ -202,7 +211,8 @@ static compiler::ast::treeres_t formTupleType(const compiler::ast::GroupMatch& m
 	treeres_t tempRes;
 	TreeContext newContext(context);
 
-	std::vector<Node*> nodes;
+	std::vector<ExprType> nodes;
+
 	bool parity = false;
 	for (const Match* const submatch : match.matches) {
 		tempRes = submatch->formTree(tree, newContext, status, settings, stream);
@@ -210,22 +220,21 @@ static compiler::ast::treeres_t formTupleType(const compiler::ast::GroupMatch& m
 			return tempRes;
 		}
 		if (parity) {
-			if (tempRes.first->type != NodeType::TOKEN || 
+			if (tempRes.first->type != NodeType::TOKEN ||
 				dynamic_cast<TokenNode*>(tempRes.first)->token->type != compiler::tokens::TokenType::COMMA) {
 				status.addIssue(compiler::CompilerIssue::Type::MISSING_COMMA_TYPE_LIST, tempRes.first->loc);
-				return { tree.addNode<TypeNode>(tree.typeData.err(), match.loc), 0};
+				return { tree.addNode<TypeNode>(tree.typeData.err(), match.loc), 0 };
 			}
-		} else if (tempRes.first->type != NodeType::TOKEN) {
+		} else if (tempRes.first->type != NodeType::TYPE) {
 			status.addIssue(compiler::CompilerIssue::Type::INVALID_TYPE_TYPE_LIST, tempRes.first->loc);
 			return { tree.addNode<TypeNode>(tree.typeData.err(), match.loc), 0 };
 		} else {
-			nodes.push_back(tempRes.first);
+			nodes.push_back(dynamic_cast<TypeNode*>(tempRes.first)->repType);
 		}
 		parity = !parity;
 	}
 
-	// TODO: construct tuple from the resTypes of the nodes
-
+	return { tree.addNode<TypeNode>(tree.typeData.tuple(nodes), match.loc), 0 };
 }
 
 compiler::ast::treeres_t compiler::ast::GroupMatch::formTree(Tree& tree, const TreeContext& context, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) const {

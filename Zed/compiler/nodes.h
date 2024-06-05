@@ -48,15 +48,15 @@ namespace compiler::ast {
 
 		[[nodiscard]] static ExprType none();
 		[[nodiscard]] ExprType err() const;
-		[[nodiscard]] ExprType prim(PrimType primType) const;
-		[[nodiscard]] ExprType tuple(std::vector<const Type*>&& subtypes);
-		[[nodiscard]] ExprType annotate(const ExprType& t, std::string* newname);
+		[[nodiscard]] ExprType prim(const PrimType primType) const;
+		[[nodiscard]] ExprType tuple(const std::vector<ExprType>& subtypes);
+		[[nodiscard]] ExprType annotate(const ExprType t, std::string* const  newname);
 
-		[[nodiscard]] static bool isNoneType(const ExprType& t);
-		[[nodiscard]] bool sameType(const ExprType& a, const ExprType& b) const;
-		[[nodiscard]] bool sameType(const ExprType& a, PrimType primType) const;
+		[[nodiscard]] static bool isNoneType(const ExprType t);
+		[[nodiscard]] bool sameType(const ExprType a, const ExprType b) const;
+		[[nodiscard]] bool sameType(const ExprType a, const PrimType primType) const;
 
-		void printType(const ExprType& type, std::ostream& stream) const;
+		void printType(const ExprType type, std::ostream& stream) const;
 	};
 
 	// A type in the type system
