@@ -45,7 +45,8 @@ void compiler::CompilerIssue::print(const tokens::TokenData& tokenData, std::ost
 		}
 
 		const auto line = tokenData.getLine(loc.startLine);
-		const int end = multiline ? static_cast<int>(line.length()) : loc.endCol;
+		// -1 for the \n, and -1 again because we're treating the endpoint as inclusive
+		const int end = multiline ? static_cast<int>(line.length() - 2) : loc.endCol;
 
 		stream << starter << "     | ";
 		std::fill_n(std::ostream_iterator<char>(stream), loc.startCol, ' ');

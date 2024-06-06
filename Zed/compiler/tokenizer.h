@@ -99,6 +99,7 @@ namespace compiler::tokens {
 		TYPE_FLOAT,
 		TYPE_BOOL,
 		TYPE_CHAR,
+		TYPE_VOID,
 
 		Count
 	};
@@ -135,7 +136,7 @@ namespace compiler::tokens {
 
 	// Keywords, including names of primitives
 	constexpr int firstKeyword = static_cast<int>(TokenType::RETURN);
-	constexpr int keywordCount = static_cast<int>(TokenType::TYPE_CHAR) + 1 - firstKeyword;
+	constexpr int keywordCount = static_cast<int>(TokenType::TYPE_VOID) + 1 - firstKeyword;
 	constexpr const char* const keywordStrings[] = {
 		"return",
 		"while",
@@ -156,7 +157,8 @@ namespace compiler::tokens {
 		"int",
 		"float",
 		"bool",
-		"char"
+		"char",
+		"void"
 	};
 	constexpr std::span<const char* const> keywordSpan(keywordStrings, keywordCount);
 	static_assert(sizeof(keywordStrings) / sizeof(const char*) == keywordCount,

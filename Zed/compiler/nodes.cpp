@@ -29,7 +29,7 @@ void compiler::ast::TypeData::printType(const Type* const t, std::ostream& strea
 		stream << IO_FMT_KEYWORD("bool");
 	} else {
 		if (t->name.has_value()) {
-			stream << IO_FMT_ID(*(t->name)) << " : ";
+			stream << IO_FMT_ID(**(t->name)) << " : ";
 		}
 		const auto sz = t->subtypes.size();
 		if (sz == 0) {

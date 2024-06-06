@@ -56,6 +56,7 @@ namespace compiler {
 			GEN_ERROR,
 			INVALID_MACRO,
 			INVALID_TYPE_TYPE_LIST,
+			INVALID_TYPE_TYPE_ANNOTATION,
 			MISSING_COMMA_TYPE_LIST,
 			// : with types
 			INVALID_TYPE_MACRO,
@@ -96,6 +97,7 @@ namespace compiler {
 			"General error",
 			"Unknown macro name",
 			"Invalid type in type list",
+			"Invalid type in type annotation",
 			"Missing comma in type list",
 			"Invalid type for macro argument",
 			"Invalid (illegal or non-matching) types for arithmetic binop",

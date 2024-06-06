@@ -58,7 +58,7 @@ compiler::ast::ExprType compiler::ast::TypeData::tuple(const std::vector<ExprTyp
 }
 
 compiler::ast::ExprType compiler::ast::TypeData::annotate(const ExprType t, std::string* const newname) {
-	types.emplace_back(*t.type, newname);
+	types.emplace_back(std::vector<const Type*>{ t.type }, newname);
 	return ExprType(&types.back());
 }
 
@@ -194,6 +194,8 @@ compiler::ast::treeres_t compiler::ast::TokenMatch::formTree(Tree& tree, const T
 			return { tree.add(std::make_unique<TypeNode>(tree.typeData.prim(PrimType::CHAR), loc)), 0 };
 		case TokenType::TYPE_BOOL:
 			return { tree.add(std::make_unique<TypeNode>(tree.typeData.prim(PrimType::BOOL), loc)), 0 };
+		case TokenType::TYPE_VOID:
+			return { tree.add(std::make_unique<TypeNode>(tree.typeData.prim(PrimType::VOID), loc)), 0 };
 
 		default:
 			return { tree.add(std::make_unique<TokenNode>(token)), 0 };
@@ -210,6 +212,8 @@ static compiler::ast::treeres_t formTupleType(const compiler::ast::GroupMatch& m
 
 	treeres_t tempRes;
 	TreeContext newContext(context);
+
+	// TODO: add appropriate context?
 
 	std::vector<ExprType> nodes;
 
@@ -375,16 +379,52 @@ static compiler::ast::treeres_t formMacro(const compiler::ast::FixedSizeMatch& m
 	return { tree.add(std::make_unique<MacroNode>(type, exprType, res.first, match.matches[0]->loc)), 0 };
 }
 
-compiler::ast::treeres_t compiler::ast::FixedSizeMatch::formTree(Tree& tree, const TreeContext& context, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) const {
+static compiler::ast::treeres_t formTypeAnnotation(const compiler::ast::FixedSizeMatch& match,
+												   compiler::ast::Tree& tree,
+												   const compiler::ast::TreeContext& context,
+												   compiler::CompilerStatus& status,
+												   const compiler::CompilerSettings& settings,
+												   std::ostream& stream) {
+	using namespace compiler::ast;
+	using namespace compiler;
+
+	if (match.matches.size() != 3
+		|| match.matches[0]->type != MatchType::TOKEN
+		|| dynamic_cast<const TokenMatch*>(match.matches[0])->token->type != tokens::TokenType::IDENTIFIER
+		|| match.matches[1]->type != MatchType::TOKEN
+		|| dynamic_cast<const TokenMatch*>(match.matches[1])->token->type != tokens::TokenType::COLON) {
+		throw std::logic_error("Type Annotation Match doesn't have exactly three children, the first of which is an identifier, and the second, a colon");
+	}
+
+	treeres_t res = match.matches[2]->formTree(tree, context, status, settings, stream);
+	if (res.second) {
+		return res;
+	}
+
+	if (res.first->type != NodeType::TYPE) {
+		status.addIssue(compiler::CompilerIssue::Type::INVALID_TYPE_TYPE_ANNOTATION, res.first->loc);
+		return { tree.addNode<TypeNode>(tree.typeData.err(), match.loc), 0 };
+	} else {
+		const ExprType repType = dynamic_cast<TypeNode*>(res.first)->repType;
+		std::string* const str = dynamic_cast<const TokenMatch*>(match.matches[0])->token->str;
+		return { tree.addNode<TypeNode>(tree.typeData.annotate(repType, str), match.loc), 0 };
+	}
+}
+
+compiler::ast::treeres_t compiler::ast::FixedSizeMatch::formTree(Tree& tree, 
+																 const TreeContext& context, 
+																 CompilerStatus& status, 
+																 const CompilerSettings& settings,
+																 std::ostream& stream) const {
 	treeres_t tempRes1;
 
 	switch (type) {
 		case MatchType::ARITH_BINOP:
 			return formArithBinop(*this, tree, context, status, settings, stream);
-			break;
 		case MatchType::MACRO:
 			return formMacro(*this, tree, context, status, settings, stream);
-			break;
+		case MatchType::TYPE_ANNOTATION:
+			return formTypeAnnotation(*this, tree, context, status, settings, stream);
 		default:
 			UnimplNode* unimplNode = tree.add(std::make_unique<UnimplNode>("fixed size match with unhandled type", loc));
 			for (const Match* match : matches) {
