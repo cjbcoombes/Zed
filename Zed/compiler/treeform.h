@@ -1,5 +1,6 @@
 #pragma once
 #include "nodes.h"
+#include "../utils/flags.h"
 #include <list>
 
 namespace compiler {
@@ -11,6 +12,7 @@ namespace compiler {
 	}
 
 	namespace ast {
+		enum class MatchType;
 		class MatchData;
 
 		struct Node;
@@ -22,8 +24,13 @@ namespace compiler::ast {
 	// Context
 
 	struct TreeContext {
-		TreeContext() = default;
-		TreeContext(const TreeContext& other);
+		MatchType parentType;
+		Flags flags;
+
+		static constexpr Flags::bits_t FLAG_TYPE_DECL = 1;
+
+		TreeContext();
+		TreeContext(const MatchType parentType, const TreeContext& other);
 	};
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~

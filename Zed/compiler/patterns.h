@@ -29,6 +29,7 @@ namespace compiler::ast {
 	// Matches
 
 	enum class MatchType {
+		NONE,
 		TOKEN,
 		ROOT_GROUP,
 		PAREN_GROUP,

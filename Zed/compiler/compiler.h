@@ -57,10 +57,12 @@ namespace compiler {
 			INVALID_MACRO,
 			INVALID_TYPE_TYPE_LIST,
 			INVALID_TYPE_TYPE_ANNOTATION,
+			INVALID_NAME_TYPE_ANNOTATION,
 			MISSING_COMMA_TYPE_LIST,
 			// : with types
 			INVALID_TYPE_MACRO,
 			INVALID_TYPE_ARITH_BINOP,
+			INVALID_TYPE_ANNOTATED,
 
 			// Abortive
 			GEN_ABORT,
@@ -98,9 +100,11 @@ namespace compiler {
 			"Unknown macro name",
 			"Invalid type in type list",
 			"Invalid type in type annotation",
+			"Invalid name in type annotation",
 			"Missing comma in type list",
 			"Invalid type for macro argument",
 			"Invalid (illegal or non-matching) types for arithmetic binop",
+			"Expression type cannot be casted to annotation type",
 
 			"General abortive error",
 			"Maximum token length exceeded",

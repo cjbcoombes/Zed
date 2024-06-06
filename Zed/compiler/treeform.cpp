@@ -78,8 +78,12 @@ bool compiler::ast::TypeData::sameType(const ExprType a, const PrimType primType
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Context
 
-compiler::ast::TreeContext::TreeContext(const TreeContext& other) {
-	// TODO: keep stuff that persists across levels
+compiler::ast::TreeContext::TreeContext() : parentType(MatchType::NONE), flags() {}
+
+compiler::ast::TreeContext::TreeContext(const MatchType parentType, const TreeContext& other)
+: parentType(parentType), flags(other.flags) {
+	// This list is the flags that are KEPT
+	flags.unsetFlags(~(FLAG_TYPE_DECL));
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -211,9 +215,7 @@ static compiler::ast::treeres_t formTupleType(const compiler::ast::GroupMatch& m
 	using namespace compiler::ast;
 
 	treeres_t tempRes;
-	TreeContext newContext(context);
-
-	// TODO: add appropriate context?
+	TreeContext newContext(match.type, context);
 
 	std::vector<ExprType> nodes;
 
@@ -247,13 +249,15 @@ compiler::ast::treeres_t compiler::ast::GroupMatch::formTree(Tree& tree, const T
 	compiler::ast::treeres_t tempRes;
 	BlockNode* tempBlockNode;
 
+	TreeContext newContext(type, context);
+
 	switch (type) {
 		case MatchType::ROOT_GROUP:
 		case MatchType::CURLY_GROUP:
 			// block
 			tempBlockNode = tree.add(std::make_unique<BlockNode>(loc));
 			for (const Match* const match : matches) {
-				tempRes = match->formTree(tree, context, status, settings, stream);
+				tempRes = match->formTree(tree, newContext, status, settings, stream);
 				if (tempRes.second) {
 					return tempRes;
 				}
@@ -264,7 +268,7 @@ compiler::ast::treeres_t compiler::ast::GroupMatch::formTree(Tree& tree, const T
 			return formTupleType(*this, tree, context, status, settings, stream);
 		case MatchType::PAREN_GROUP:
 			if (matches.size() == 1) {
-				return matches.front()->formTree(tree, context, status, settings, stream);
+				return matches.front()->formTree(tree, newContext, status, settings, stream);
 			} else {
 				return { tree.add(std::make_unique<UnimplNode>("Paren group with multiple internal matches", loc)), 0 };
 			}
@@ -284,14 +288,17 @@ static compiler::ast::treeres_t formArithBinop(const compiler::ast::FixedSizeMat
 	using namespace compiler;
 	using tokens::TokenType;
 
+
+	TreeContext newContext(match.type, context);
+
 	if (match.matches.size() != 3 || match.matches[1]->type != MatchType::TOKEN) {
 		throw std::logic_error("Binary Arithmetic Match doesn't have exactly 3 children, where the second is a token");
 	}
-	treeres_t tempRes1 = match.matches[0]->formTree(tree, context, status, settings, stream);
+	treeres_t tempRes1 = match.matches[0]->formTree(tree, newContext, status, settings, stream);
 	if (tempRes1.second) {
 		return tempRes1;
 	}
-	treeres_t tempRes2 = match.matches[2]->formTree(tree, context, status, settings, stream);
+	treeres_t tempRes2 = match.matches[2]->formTree(tree, newContext, status, settings, stream);
 	if (tempRes2.second) {
 		return tempRes2;
 	}
@@ -338,13 +345,15 @@ static compiler::ast::treeres_t formMacro(const compiler::ast::FixedSizeMatch& m
 	using namespace compiler::ast;
 	using namespace compiler;
 
+	TreeContext newContext(match.type, context);
+
 	if (match.matches.size() != 3
 		|| match.matches[1]->type != MatchType::TOKEN
 		|| dynamic_cast<const TokenMatch*>(match.matches[1])->token->type != tokens::TokenType::IDENTIFIER) {
 		throw std::logic_error("Macro Match doesn't have exactly three children, the second of which is an identifier");
 	}
 
-	treeres_t res = match.matches[2]->formTree(tree, context, status, settings, stream);
+	treeres_t res = match.matches[2]->formTree(tree, newContext, status, settings, stream);
 	if (res.second) {
 		return res;
 	}
@@ -389,25 +398,67 @@ static compiler::ast::treeres_t formTypeAnnotation(const compiler::ast::FixedSiz
 	using namespace compiler;
 
 	if (match.matches.size() != 3
-		|| match.matches[0]->type != MatchType::TOKEN
-		|| dynamic_cast<const TokenMatch*>(match.matches[0])->token->type != tokens::TokenType::IDENTIFIER
 		|| match.matches[1]->type != MatchType::TOKEN
 		|| dynamic_cast<const TokenMatch*>(match.matches[1])->token->type != tokens::TokenType::COLON) {
-		throw std::logic_error("Type Annotation Match doesn't have exactly three children, the first of which is an identifier, and the second, a colon");
+		throw std::logic_error("Type Annotation Match doesn't have exactly three children, the second of which is a colon");
 	}
 
-	treeres_t res = match.matches[2]->formTree(tree, context, status, settings, stream);
-	if (res.second) {
-		return res;
+	TreeContext newContext(match.type, context);
+
+	newContext.flags.setFlags(TreeContext::FLAG_TYPE_DECL);
+
+	const treeres_t typeRes = match.matches[2]->formTree(tree, newContext, status, settings, stream);
+	if (typeRes.second) {
+		return typeRes;
 	}
 
-	if (res.first->type != NodeType::TYPE) {
-		status.addIssue(compiler::CompilerIssue::Type::INVALID_TYPE_TYPE_ANNOTATION, res.first->loc);
-		return { tree.addNode<TypeNode>(tree.typeData.err(), match.loc), 0 };
+	if (typeRes.first->type != NodeType::TYPE) {
+		status.addIssue(compiler::CompilerIssue::Type::INVALID_TYPE_TYPE_ANNOTATION, typeRes.first->loc);
+	}
+
+	if (context.flags.hasFlags(TreeContext::FLAG_TYPE_DECL)) {
+		// For a type decl the left side is an identifier
+
+		if (match.matches[1]->type != MatchType::TOKEN
+			|| dynamic_cast<const TokenMatch*>(match.matches[0])->token->type != tokens::TokenType::IDENTIFIER) {
+			status.addIssue(compiler::CompilerIssue::Type::INVALID_NAME_TYPE_ANNOTATION, match.matches[0]->loc);
+			return { tree.addNode<TypeNode>(tree.typeData.err(), match.loc), 0 };
+		}
+		
+		if (typeRes.first->type != NodeType::TYPE) {
+			return { tree.addNode<TypeNode>(tree.typeData.err(), match.loc), 0 };
+		} else {
+			const ExprType repType = dynamic_cast<TypeNode*>(typeRes.first)->repType;
+			std::string* const str = dynamic_cast<const TokenMatch*>(match.matches[0])->token->str;
+			return { tree.addNode<TypeNode>(tree.typeData.annotate(repType, str), match.loc), 0 };
+		}
 	} else {
-		const ExprType repType = dynamic_cast<TypeNode*>(res.first)->repType;
-		std::string* const str = dynamic_cast<const TokenMatch*>(match.matches[0])->token->str;
-		return { tree.addNode<TypeNode>(tree.typeData.annotate(repType, str), match.loc), 0 };
+		// Otherwise it could be an expression with an annotation being added
+
+		newContext = TreeContext(match.type, context);
+
+		const treeres_t valRes = match.matches[0]->formTree(tree, newContext, status, settings, stream);
+		if (valRes.second) {
+			return valRes;
+		}
+
+		if (typeRes.first->type != NodeType::TYPE) {
+			valRes.first->exprType = tree.typeData.err();
+			return valRes;
+		} else {
+			const ExprType repType = dynamic_cast<TypeNode*>(typeRes.first)->repType;
+
+			// TODO: Check for possibility of cast instead of exact equality
+			if (tree.typeData.sameType(valRes.first->exprType, repType)) {
+				// TODO: perform cast
+				valRes.first->exprType = repType;
+				return valRes;
+			} else {
+				status.addIssue(compiler::CompilerIssue::Type::INVALID_TYPE_ANNOTATED, match.loc);
+				valRes.first->exprType = tree.typeData.err();
+				return valRes;
+			}
+		}
 	}
 }
 
@@ -417,6 +468,8 @@ compiler::ast::treeres_t compiler::ast::FixedSizeMatch::formTree(Tree& tree,
 																 const CompilerSettings& settings,
 																 std::ostream& stream) const {
 	treeres_t tempRes1;
+
+	TreeContext newContext(type, context);
 
 	switch (type) {
 		case MatchType::ARITH_BINOP:
@@ -428,7 +481,7 @@ compiler::ast::treeres_t compiler::ast::FixedSizeMatch::formTree(Tree& tree,
 		default:
 			UnimplNode* unimplNode = tree.add(std::make_unique<UnimplNode>("fixed size match with unhandled type", loc));
 			for (const Match* match : matches) {
-				tempRes1 = match->formTree(tree, context, status, settings, stream);
+				tempRes1 = match->formTree(tree, newContext, status, settings, stream);
 				if (tempRes1.second) {
 					return tempRes1;
 				}
