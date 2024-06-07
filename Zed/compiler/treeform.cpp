@@ -9,26 +9,28 @@
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Types
 
-compiler::ast::TypeData::Type::Type() : subtypes(), name() {}
+compiler::ast::TypeData::Type::Type() : subtypes(), name(), primType(), returnType(nullptr) {}
+
+compiler::ast::TypeData::Type::Type(PrimType primType) : subtypes(), name(), primType(primType), returnType(nullptr) {}
 
 compiler::ast::TypeData::Type::Type(std::vector<const Type*>&& subtypes)
-	: subtypes(std::move(subtypes)), name() {
-}
-
-compiler::ast::TypeData::Type::Type(std::vector<const Type*>&& subtypes, std::string* name)
-	: subtypes(std::move(subtypes)), name(name) {
+	: subtypes(std::move(subtypes)), name(), primType(), returnType(nullptr) {
 }
 
 compiler::ast::TypeData::Type::Type(const Type& other, std::string* newname)
-	: subtypes(other.subtypes), name(newname) {
+	: subtypes(other.subtypes), name(newname), primType(other.primType), returnType(other.returnType) {
+}
+
+compiler::ast::TypeData::Type::Type(const Type& other, const Type* returnType)
+	: subtypes(other.subtypes), name(other.name), primType(other.primType), returnType(returnType) {
 }
 
 compiler::ast::ExprType::ExprType(TypeData::Type* type) : type(type) {}
 
 compiler::ast::TypeData::TypeData() : types(), prims() {
-	for (auto& prim : prims) {
-		types.emplace_back();
-		prim = &types.back();
+	for (int i = 0; i < primTypeCount; i++) {
+		types.emplace_back(static_cast<PrimType>(i));
+		prims[i] = &types.back();
 	}
 }
 
@@ -58,7 +60,12 @@ compiler::ast::ExprType compiler::ast::TypeData::tuple(const std::vector<ExprTyp
 }
 
 compiler::ast::ExprType compiler::ast::TypeData::annotate(const ExprType t, std::string* const newname) {
-	types.emplace_back(std::vector<const Type*>{ t.type }, newname);
+	types.emplace_back(*t.type, newname);
+	return ExprType(&types.back());
+}
+
+compiler::ast::ExprType compiler::ast::TypeData::withreturn(const ExprType t, const ExprType rt) {
+	types.emplace_back(*t.type, rt.type);
 	return ExprType(&types.back());
 }
 
@@ -216,6 +223,8 @@ static compiler::ast::treeres_t formTupleType(const compiler::ast::GroupMatch& m
 
 	treeres_t tempRes;
 	TreeContext newContext(match.type, context);
+
+	newContext.flags.setFlags(TreeContext::FLAG_TYPE_DECL);
 
 	std::vector<ExprType> nodes;
 
@@ -419,7 +428,7 @@ static compiler::ast::treeres_t formTypeAnnotation(const compiler::ast::FixedSiz
 	if (context.flags.hasFlags(TreeContext::FLAG_TYPE_DECL)) {
 		// For a type decl the left side is an identifier
 
-		if (match.matches[1]->type != MatchType::TOKEN
+		if (match.matches[0]->type != MatchType::TOKEN
 			|| dynamic_cast<const TokenMatch*>(match.matches[0])->token->type != tokens::TokenType::IDENTIFIER) {
 			status.addIssue(compiler::CompilerIssue::Type::INVALID_NAME_TYPE_ANNOTATION, match.matches[0]->loc);
 			return { tree.addNode<TypeNode>(tree.typeData.err(), match.loc), 0 };
@@ -462,6 +471,52 @@ static compiler::ast::treeres_t formTypeAnnotation(const compiler::ast::FixedSiz
 	}
 }
 
+static compiler::ast::treeres_t formReturnType(const compiler::ast::FixedSizeMatch& match,
+											   compiler::ast::Tree& tree,
+											   const compiler::ast::TreeContext& context,
+											   compiler::CompilerStatus& status,
+											   const compiler::CompilerSettings& settings,
+											   std::ostream& stream) {
+	using namespace compiler::ast;
+	using namespace compiler;
+
+	if (match.matches.size() != 3
+		|| match.matches[1]->type != MatchType::TOKEN
+		|| dynamic_cast<const TokenMatch*>(match.matches[1])->token->type != tokens::TokenType::DASH_RIGHT_ANGLE) {
+		throw std::logic_error("Return Type Match doesn't have exactly three children, the second of which is a right arrow");
+	}
+
+	TreeContext newContext(match.type, context);
+
+	newContext.flags.setFlags(TreeContext::FLAG_TYPE_DECL);
+
+	const treeres_t tempRes1 = match.matches[0]->formTree(tree, newContext, status, settings, stream);
+	if (tempRes1.second) {
+		return tempRes1;
+	}
+
+	const treeres_t tempRes2 = match.matches[2]->formTree(tree, newContext, status, settings, stream);
+	if (tempRes2.second) {
+		return tempRes2;
+	}
+
+	ExprType type1 = tree.typeData.err();
+	if (tempRes1.first->type != NodeType::TYPE) {
+		status.addIssue(compiler::CompilerIssue::Type::INVALID_TYPE_TYPE_ANNOTATION, tempRes1.first->loc);
+	} else {
+		type1 = dynamic_cast<TypeNode*>(tempRes1.first)->repType;
+	}
+
+	ExprType type2 = tree.typeData.err();
+	if (tempRes2.first->type != NodeType::TYPE) {
+		status.addIssue(compiler::CompilerIssue::Type::INVALID_TYPE_TYPE_ANNOTATION, tempRes2.first->loc);
+	} else {
+		type2 = dynamic_cast<TypeNode*>(tempRes2.first)->repType;
+	}
+
+	return { tree.addNode<TypeNode>(tree.typeData.withreturn(type1, type2), match.loc), 0 };
+}
+
 compiler::ast::treeres_t compiler::ast::FixedSizeMatch::formTree(Tree& tree, 
 																 const TreeContext& context, 
 																 CompilerStatus& status, 
@@ -478,8 +533,10 @@ compiler::ast::treeres_t compiler::ast::FixedSizeMatch::formTree(Tree& tree,
 			return formMacro(*this, tree, context, status, settings, stream);
 		case MatchType::TYPE_ANNOTATION:
 			return formTypeAnnotation(*this, tree, context, status, settings, stream);
+		case MatchType::RETURN_TYPE:
+			return formReturnType(*this, tree, context, status, settings, stream);
 		default:
-			UnimplNode* unimplNode = tree.add(std::make_unique<UnimplNode>("fixed size match with unhandled type", loc));
+			UnimplNode* unimplNode = tree.addNode<UnimplNode>("fixed size match with unhandled type", loc);
 			for (const Match* match : matches) {
 				tempRes1 = match->formTree(tree, newContext, status, settings, stream);
 				if (tempRes1.second) {

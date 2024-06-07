@@ -46,3 +46,15 @@ narrow myvar [
 		// myvar is still MyType, because this is the default case
 	}
 ]
+
+// normal function, no closures, must be top-level, 
+// can't be used as first-class, and calls go directly to address
+fun f [x: int, y: int] -> float {
+	return x
+}
+
+// lambda function, has closures, is first class
+// but has multiple levels of indirection when called
+let l = lambda [x: int] -> char {
+	return x
+}

@@ -15,27 +15,41 @@
 void compiler::ast::TypeData::printType(const Type* const t, std::ostream& stream) const {
 	if (t == nullptr) {
 		stream << "*";
-	} else if (t == prims[static_cast<int>(PrimType::ERR)]) {
-		stream << IO_FMT_ERR("err-type");
-	} else if (t == prims[static_cast<int>(PrimType::VOID)]) {
-		stream << IO_FMT_KEYWORD("void");
-	} else if (t == prims[static_cast<int>(PrimType::INT)]) {
-		stream << IO_FMT_KEYWORD("int");
-	} else if (t == prims[static_cast<int>(PrimType::FLOAT)]) {
-		stream << IO_FMT_KEYWORD("float");
-	} else if (t == prims[static_cast<int>(PrimType::CHAR)]) {
-		stream << IO_FMT_KEYWORD("char");
-	} else if (t == prims[static_cast<int>(PrimType::BOOL)]) {
-		stream << IO_FMT_KEYWORD("bool");
-	} else {
-		if (t->name.has_value()) {
-			stream << IO_FMT_ID(**(t->name)) << " : ";
+		return;
+	}
+
+	if (t->name.has_value()) {
+		stream << IO_FMT_ID(**(t->name)) << " : ";
+	}
+
+	if (t->primType.has_value()) {
+		PrimType pt = *t->primType;
+		switch (pt) {
+		case PrimType::ERR:
+			stream << IO_FMT_ERR("err-type");
+			break;
+		case PrimType::VOID:
+			stream << IO_FMT_KEYWORD("void");
+			break;
+		case PrimType::INT:
+			stream << IO_FMT_KEYWORD("int");
+			break;
+		case PrimType::FLOAT:
+			stream << IO_FMT_KEYWORD("float");
+			break;
+		case PrimType::BOOL:
+			stream << IO_FMT_KEYWORD("bool");
+			break;
+		case PrimType::CHAR:
+			stream << IO_FMT_KEYWORD("char");
+			break;
 		}
+	} else {
 		const auto sz = t->subtypes.size();
 		if (sz == 0) {
 			stream << "[ type with no internals ]";
 		} else {
-			if (sz != 1) stream << "[ ";
+			stream << "[ ";
 			for (auto tt = t->subtypes.cbegin(), 
 				 end = t->subtypes.cend(), 
 				 prev = std::prev(end); tt != end; ++tt) {
@@ -44,8 +58,13 @@ void compiler::ast::TypeData::printType(const Type* const t, std::ostream& strea
 					stream << ", ";
 				}
 			}
-			if (sz != 1) stream << " ]";
+			stream << " ]";
 		}
+	}
+
+	if (t->returnType != nullptr) {
+		stream << " -> ";
+		printType(t->returnType, stream);
 	}
 }
 

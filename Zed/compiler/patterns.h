@@ -39,7 +39,8 @@ namespace compiler::ast {
 		PROP_ACCESS,
 		ARITH_BINOP,
 		MACRO,
-		TYPE_ANNOTATION
+		TYPE_ANNOTATION,
+		RETURN_TYPE
 	};
 
 	// Parent Match

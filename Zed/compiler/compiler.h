@@ -57,6 +57,8 @@ namespace compiler {
 			INVALID_MACRO,
 			INVALID_TYPE_TYPE_LIST,
 			INVALID_TYPE_TYPE_ANNOTATION,
+			INVALID_TYPE_TYPE_PARAMETER,
+			INVALID_TYPE_TYPE_RETURN,
 			INVALID_NAME_TYPE_ANNOTATION,
 			MISSING_COMMA_TYPE_LIST,
 			// : with types
@@ -100,6 +102,8 @@ namespace compiler {
 			"Unknown macro name",
 			"Invalid type in type list",
 			"Invalid type in type annotation",
+			"Invalid type in parameter list",
+			"Invalid type in return type",
 			"Invalid name in type annotation",
 			"Missing comma in type list",
 			"Invalid type for macro argument",

@@ -93,7 +93,7 @@ static void putSymbols(const char* const str, const int slen, const code_locatio
 			if (multiSymbolStrings[i][j] != str[j]) break;
 			if (j >= currlen - 1) {
 				// PUT symbol
-				outputData.putType(static_cast<TokenType>(i + firstMultiSymbol), 
+				outputData.putType(static_cast<TokenType>(i + firstMultiSymbol),
 								   code_location(loc.startLine, loc.startCol, loc.startLine, loc.startCol + currlen - 1));
 				putSymbols(str + currlen, slen - currlen, code_location(loc.startLine, loc.startCol + currlen), outputData);
 				return;
@@ -497,6 +497,13 @@ void compiler::tokens::printToken(const Token& t, std::ostream& stream) {
 		stream << IO_FMT_FLOAT(t.float_);
 	} else if (t.type == TokenType::CHAR) {
 		stream << IO_FMT_CHAR(t.char_);
+	} else if (t.type == TokenType::LAMBDA) {
+		stream << "\033[38;2;255;82;82ml"
+			"\033[38;2;255;255;82ma"
+			"\033[38;2;82;255;82mm"
+			"\033[38;2;82;255;255mb"
+			"\033[38;2;82;82;255md"
+			"\033[38;2;255;82;255ma" IO_NORM;
 	} else if (type >= firstSymbol && type - firstSymbol < symbolCount) {
 		stream << IO_FMT_SYMB(symbolChars[type - firstSymbol]);
 	} else if (type >= firstMultiSymbol && type - firstMultiSymbol < multiSymbolCount) {
@@ -504,5 +511,5 @@ void compiler::tokens::printToken(const Token& t, std::ostream& stream) {
 	} else if (type >= firstKeyword && type - firstKeyword < keywordCount) {
 		stream << IO_FMT_KEYWORD(keywordStrings[type - firstKeyword]);
 	}
-	
+
 }

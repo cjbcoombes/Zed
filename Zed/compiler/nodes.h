@@ -30,12 +30,15 @@ namespace compiler::ast {
 		struct Type {
 			std::vector<const Type*> subtypes;
 			std::optional<std::string*> name;
+			std::optional<PrimType> primType;
+			const Type* returnType;
 
 			Type();
+			explicit Type(PrimType primType);
 			explicit Type(std::vector<const Type*>&& subtypes);
-			Type(std::vector<const Type*>&& subtypes, std::string* name);
 			Type(const Type& other) = default;
 			Type(const Type& other, std::string* newname);
+			Type(const Type& other, const Type* returnType);
 		};
 
 		std::list<Type> types;
@@ -51,6 +54,7 @@ namespace compiler::ast {
 		[[nodiscard]] ExprType prim(const PrimType primType) const;
 		[[nodiscard]] ExprType tuple(const std::vector<ExprType>& subtypes);
 		[[nodiscard]] ExprType annotate(const ExprType t, std::string* const  newname);
+		[[nodiscard]] ExprType withreturn(const ExprType t, const ExprType rt);
 
 		[[nodiscard]] static bool isNoneType(const ExprType t);
 		[[nodiscard]] bool sameType(const ExprType a, const ExprType b) const;

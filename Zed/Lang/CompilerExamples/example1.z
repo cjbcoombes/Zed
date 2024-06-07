@@ -1,5 +1,15 @@
-5 : int
+int -> char
 
-5 : float
+[int, float] -> char
 
-4 : [7: float, g :int, char]
+[int -> int, char]
+
+[x : int -> int]
+[x : (int -> int)]
+[(x: int) -> int]
+[[x: int] -> int]
+[x : [int -> int]]
+
+[x: int -> (y: float)]
+[(x: int) -> (y: float)]
+

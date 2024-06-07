@@ -175,7 +175,7 @@ int compiler::ast::FixedSizePattern::match(std::list<const Match*>& matches, Mat
 
 		if (matched) {
 			FixedSizeMatch* match = matchData.addMatch<FixedSizeMatch>(
-				matchType, 
+				matchType,
 				code_location((*start)->loc, (*std::prev(ptr))->loc));
 			std::copy(start, ptr, std::back_inserter(match->matches));
 
@@ -230,6 +230,8 @@ int compiler::ast::applyPatterns(std::list<const Match*>& matches, MatchData& ma
 		std::make_unique<FixedSizePattern, il_t>({ predTrue, predTokens({ TokenType::PLUS, TokenType::DASH }), predTrue }, MatchType::ARITH_BINOP),
 		// Macros #
 		std::make_unique<FixedSizePattern, il_t>({ predToken(TokenType::HASH), predToken(TokenType::IDENTIFIER), predTrue}, MatchType::MACRO),
+		// Return type Annotation :
+		std::make_unique<FixedSizePattern, il_t>({ predTrue, predToken(TokenType::DASH_RIGHT_ANGLE), predTrue }, MatchType::RETURN_TYPE),
 		// Type Annotation :
 		std::make_unique<FixedSizePattern, il_t>({ predTrue, predToken(TokenType::COLON), predTrue }, MatchType::TYPE_ANNOTATION),
 	};
