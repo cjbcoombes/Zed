@@ -196,6 +196,86 @@ int compiler::ast::FixedSizePattern::match(std::list<const Match*>& matches, Mat
 	return 0;
 }
 
+int compiler::ast::applyGrouping(std::list<const Match*>& matches, MatchData& matchData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) {
+	using tokens::TokenType;
+	using tokens::Token;
+	typedef std::list<const Match*>::iterator it_t;
+
+	std::stack<std::pair<MatchType, it_t>> openings;
+
+	// Iterate
+	// Open paren: push paren, push section
+	// Comma/Semi: pop section (enforce single child?), push section
+	// Close paren: pop section
+
+	auto it = matches.begin();
+	openings.emplace(MatchType::IMPLICIT_GROUP, it);
+
+	int out = 0;
+	for (; it != matches.end(); ++it) {
+		if ((*it)->type == MatchType::TOKEN) {
+			const TokenType tokenType = dynamic_cast<const TokenMatch*>(*it)->token->type;
+
+			if (tokenType == TokenType::LEFT_PAREN ||
+				tokenType == TokenType::LEFT_SQUARE ||
+				tokenType == TokenType::LEFT_CURLY) {
+				MatchType matchType;
+
+				if (tokenType == TokenType::LEFT_PAREN) matchType = MatchType::PAREN_GROUP;
+				else if (tokenType == TokenType::LEFT_SQUARE) matchType = MatchType::SQUARE_GROUP;
+				else if (tokenType == TokenType::LEFT_CURLY) matchType = MatchType::CURLY_GROUP;
+
+				openings.emplace(matchType, it);
+				openings.emplace(MatchType::IMPLICIT_GROUP, std::next(it));
+			} else if (tokenType == TokenType::RIGHT_PAREN ||
+					   tokenType == TokenType::RIGHT_SQUARE ||
+					   tokenType == TokenType::RIGHT_CURLY ||
+					   tokenType == TokenType::COMMA ||
+					   tokenType == TokenType::SEMICOLON) {
+
+				const Token* token = dynamic_cast<const TokenMatch*>(*openings.top().second)->token;
+
+				GroupMatch* group = matchData.addMatch<GroupMatch>(
+					MatchType::IMPLICIT_GROUP,
+					code_location(token->loc, dynamic_cast<const TokenMatch*>(*it)->token->loc));
+
+				group->matches.splice(group->matches.begin(), matches, openings.top().second, it);
+				out = applyPatterns(group->matches, matchData, status, settings, stream);
+
+				matches.insert(it, group);
+				--it;
+				matches.erase(std::next(it));
+				openings.pop();
+
+				// TODO: Apply the closing to the paren group where applicable, or open a new implicit group
+			}
+		}
+	}
+
+	while (!openings.empty() && openings.top().first == MatchType::IMPLICIT_GROUP) openings.pop();
+	if (!openings.empty()) {
+		const Token* token = dynamic_cast<const TokenMatch*>(*openings.top().second)->token;
+		switch (openings.top().first) {
+			case MatchType::PAREN_GROUP:
+				status.addIssue(CompilerIssue::Type::UNMATCHED_PAREN, token->loc);
+				break;
+			case MatchType::SQUARE_GROUP:
+				status.addIssue(CompilerIssue::Type::UNMATCHED_SQUARE, token->loc);
+				break;
+			case MatchType::CURLY_GROUP:
+				status.addIssue(CompilerIssue::Type::UNMATCHED_CURLY, token->loc);
+				break;
+			default:
+				throw std::logic_error("Group has unexpected MatchType");
+		}
+		return 1;
+	}
+
+	return 0;
+
+	return 0;
+}
+
 int compiler::ast::applyPatterns(std::list<const Match*>& matches, MatchData& matchData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) {
 	typedef FixedSizePattern::pred_t pred_t;
 	// Allows type deduction for use of initializer_list in make_unique
@@ -203,12 +283,12 @@ int compiler::ast::applyPatterns(std::list<const Match*>& matches, MatchData& ma
 	using tokens::TokenType;
 
 	pred_t predTrue = [](const Match* m) -> bool { return true; };
-	auto predToken = [](TokenType t) -> pred_t {
+	const auto predToken = [](TokenType t) -> pred_t {
 		return [=](const Match* m) -> bool {
 			return m->type == MatchType::TOKEN && dynamic_cast<const TokenMatch*>(m)->token->type == t;
 			};
 		};
-	auto predTokens = [](std::initializer_list<TokenType> tokens) -> pred_t {
+	const auto predTokens = [](std::initializer_list<TokenType> tokens) -> pred_t {
 		return [=](const Match* m) -> bool {
 			if (m->type != MatchType::TOKEN) return false;
 			const TokenType tt = dynamic_cast<const TokenMatch*>(m)->token->type;
@@ -230,7 +310,7 @@ int compiler::ast::applyPatterns(std::list<const Match*>& matches, MatchData& ma
 		std::make_unique<FixedSizePattern, il_t>({ predTrue, predTokens({ TokenType::PLUS, TokenType::DASH }), predTrue }, MatchType::ARITH_BINOP),
 		// Macros #
 		std::make_unique<FixedSizePattern, il_t>({ predToken(TokenType::HASH), predToken(TokenType::IDENTIFIER), predTrue}, MatchType::MACRO),
-		// Return type Annotation :
+		// Return type Annotation ->
 		std::make_unique<FixedSizePattern, il_t>({ predTrue, predToken(TokenType::DASH_RIGHT_ANGLE), predTrue }, MatchType::RETURN_TYPE),
 		// Type Annotation :
 		std::make_unique<FixedSizePattern, il_t>({ predTrue, predToken(TokenType::COLON), predTrue }, MatchType::TYPE_ANNOTATION),

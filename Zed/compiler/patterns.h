@@ -32,6 +32,7 @@ namespace compiler::ast {
 		NONE,
 		TOKEN,
 		ROOT_GROUP,
+		IMPLICIT_GROUP,
 		PAREN_GROUP,
 		SQUARE_GROUP,
 		CURLY_GROUP,
@@ -135,6 +136,7 @@ namespace compiler::ast {
 		int match(std::list<const Match*>& matches, MatchData& matchData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream) override;
 	};
 
+	int applyGrouping(std::list<const Match*>& matches, MatchData& matchData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream);
 	// Applies the patterns to reduce a list of matches
 	int applyPatterns(std::list<const Match*>& matches, MatchData& matchData, CompilerStatus& status, const CompilerSettings& settings, std::ostream& stream);
 
