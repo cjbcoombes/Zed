@@ -1,5 +1,17 @@
+
+(1 + 2) : float
+5 : float
+5.0 : float
+4 : [7: float, g :int, char]
+
+/*
+
+(1,2,3,4)
+
+5 : int
 int -> char
 
+5 : float
 [int, float] -> char
 
 [int -> int, char]
@@ -13,3 +25,6 @@ int -> char
 [x: int -> (y: float)]
 [(x: int) -> (y: float)]
 
+4 : [7: float, g :int, char]
+
+*/
